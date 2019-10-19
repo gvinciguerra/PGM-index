@@ -21,16 +21,6 @@
 #include <immintrin.h>
 #include "utils.hpp"
 
-/// Returns the length in bits of an integer x.
-inline uint8_t bit_length(uint32_t x) {
-    return x == 0 ? 1 : 32 - __builtin_clz(x);
-}
-
-/// Returns the length in bits of an integer x.
-inline uint8_t bit_length(uint64_t x) {
-    return x == 0 ? 1 : 64 - __builtin_clzl(x);
-}
-
 /**
  *  A container for integers whose bit-length is fixed. The size is not necessarily the one of standard types
  *  (e.g. 8, 16, 32, 64 bits).
@@ -56,6 +46,11 @@ class PackedVector {
     }
 
 public:
+    
+    /// Returns the length in bits of an integer x.
+    static inline uint8_t bit_length(uint64_t x) {
+        return x == 0 ? 1 : 64 - __builtin_clzl(x);
+    }
 
     /**
      * Constructs an empty container.
@@ -98,7 +93,7 @@ public:
      */
     template<typename T>
     explicit PackedVector(std::vector<T> &in)
-        : PackedVector(in, bit_length(*std::max_element(in.begin(), in.end()))) {}
+        : PackedVector(in, PackedVector::bit_length(*std::max_element(in.begin(), in.end()))) {}
 
     /**
      * Returns the specified element. No bounds checking is performed.

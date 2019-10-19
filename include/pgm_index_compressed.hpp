@@ -58,7 +58,7 @@ class CompressedPGMIndex {
             for (auto it = first_intercept; it != last_intercept; ++it)
                 intercept_bv[*it - intercept_offset] = 1;
             compressed_intercepts = CompressedBV(intercept_bv);
-            slopes_map = PackedVector(first_slope, last_slope, bit_length(slopes_table.size() - 1));
+            slopes_map = PackedVector(first_slope, last_slope, PackedVector::bit_length(slopes_table.size() - 1));
             sdsl::util::init_support(sel1, &compressed_intercepts);
         }
 
