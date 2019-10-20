@@ -484,7 +484,7 @@ public:
 };
 
 /**
- * A space-efficient index that finds the position of a sough key within a radius of @p Error.
+ * A space-efficient index that finds the position of a sought key within a radius of @p Error.
  *
  * Internally it uses a piecewise linear mapping from keys to their position in the sorted order. This mapping is
  * represented as a sequence of segment_t, which is itself indexed in one of three ways (collectively referred to as
@@ -564,7 +564,7 @@ public:
 };
 
 /**
- * A space-efficient index that finds the position of a sough key within a radius of @p Error. This variant uses a
+ * A space-efficient index that finds the position of a sought key within a radius of @p Error. This variant uses a
  * recursive structure to route query keys to the last level of the index.
  * @tparam K the type of the indexed elements
  * @tparam Error the maximum allowed error in the last level of the index
@@ -576,7 +576,7 @@ using RecursivePGMIndex = PGMIndex<K, Error, Floating,
                                    RecursiveStrategy<segmentation_t<K, Error, Floating>, RecursiveError>>;
 
 /**
- * A space-efficient index that finds the position of a sough key within a radius of @p Error. This variant uses an
+ * A space-efficient index that finds the position of a sought key within a radius of @p Error. This variant uses an
  * implicit multiway tree to route query keys to the last level of the index.
  * @tparam K the type of the indexed elements
  * @tparam Error the maximum allowed error in the last level of the index
@@ -588,7 +588,7 @@ using TreeBasedPGMIndex = PGMIndex<K, Error, Floating,
                                    TreeStrategy<segmentation_t<K, NodeSize, Floating>, NodeSize>>;
 
 /**
- * A space-efficient index that finds the position of a sough key within a radius of @p Error. This variant uses a
+ * A space-efficient index that finds the position of a sought key within a radius of @p Error. This variant uses a
  * binary search in the last level, and it should only be used when BinarySearchBasedPGMIndex::size_in_bytes() is low
  * (for example, less than the last level cache size).
  * @tparam K the type of the indexed elements

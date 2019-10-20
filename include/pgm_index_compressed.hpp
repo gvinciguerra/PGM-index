@@ -21,7 +21,7 @@
 #include "packed_vector.hpp"
 
 /**
- * A space-efficient and compressed index that finds the position of a sough key within a radius of @p Error.
+ * A space-efficient and compressed index that finds the position of a sought key within a radius of @p Error.
  * @tparam K the type of the indexed elements
  * @tparam Error the maximum allowed error in the last level of the index
  * @tparam RecursiveError the maximum allowed error in the upper levels of the index
