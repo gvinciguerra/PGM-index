@@ -496,7 +496,7 @@ public:
  * convenience. For example, the following two lines are equivalent:
  *
  * ```cpp
- * PGMIndex<int, 64, RecursiveStrategy<segmentation_t<K, Error>, 16>> index(data);
+ * PGMIndex<int, 64, RecursiveStrategy<segmentation_t<int, Error>, 16>> index(data);
  * RecursivePGMindex<int, 64, 16> index(data);
  * ```
  *
