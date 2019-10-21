@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
     using namespace args;
     ArgumentParser p("Space-time trade-off tuner for the PGM-index.",
                      "This program lets you specify a maximum space and get the PGM-index minimising the query time "
-                     "within that space.  Or, it lets you specify a maximum query time and get the PGM-index"
+                     "within that space.  Or, it lets you specify a maximum query time and get the PGM-index "
                      "minimising the space.");
     HelpFlag help(p, "help", "Display this help menu", {'h', "help"});
     Group g(p, "Operation modes:", args::Group::Validators::Xor, args::Options::Required);
