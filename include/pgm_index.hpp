@@ -172,7 +172,8 @@ struct segmentation_t {
 };
 
 /**
- * Stores the segment in an index built by repeating the segmentation process until there is only one segment left.
+ * An indexing strategy for PGMIndex that stores the segment in an index built by repeating the segmentation process
+ * until there is only one segment left.
  * @tparam RecursiveError the error of the repeated segmentation
  */
 template<typename SegmentationType, size_t RecursiveError>
@@ -304,7 +305,8 @@ public:
 };
 
 /**
- * Stores the segments in a sorted vector and, at query time, performs a binary search on it.
+ * An indexing strategy for PGMIndex that stores the segments in a sorted vector and, at query time, performs a binary
+ * search on it.
  */
 template<typename SegmentationType>
 class BinarySearchStrategy {
@@ -350,7 +352,7 @@ public:
 };
 
 /**
- * Store the segments in an implicit tree.
+ * An indexing strategy for PGMIndex that stores the segments in an implicit tree.
  * @tparam NodeSize the size of a node of the tree in bytes
  */
 template<typename SegmentationType, size_t NodeSize>
