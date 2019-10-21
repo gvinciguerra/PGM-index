@@ -35,7 +35,7 @@ TEMPLATE_TEST_CASE("Segmentation algorithm", "", float, uint32_t) {
         std::generate(data.begin(), data.end(), std::rand);
 
     std::sort(data.begin(), data.end());
-    auto segments = segmentation_t<TestType, 0>::build_segments(data, error);
+    auto segments = Segmentation<TestType, 0>::build_segments(data, error);
 
     for (auto i = 0; i < data.size(); ++i) {
         if (i == 0 || data[i] != data[i - 1]) {
@@ -48,7 +48,7 @@ TEMPLATE_TEST_CASE("Segmentation algorithm", "", float, uint32_t) {
     }
 }
 
-using S = segmentation_t<uint32_t, 32>;
+using S = Segmentation<uint32_t, 32>;
 TEMPLATE_TEST_CASE("PGM-index", "", (BinarySearchStrategy<S>), (TreeStrategy<S, 32>), (RecursiveStrategy<S, 32>)) {
     std::vector<uint32_t> data(1000000);
     std::generate(data.begin(), data.end(), [] { return std::rand() % 10000; });

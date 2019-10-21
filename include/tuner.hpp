@@ -24,16 +24,16 @@ class MockPGMIndex {
     size_t data_size;
     size_t error;
 
-    struct layer_t {
+    struct Layer {
         std::vector<K> segments_keys;
-        std::vector<segment_data_t<double>> segments_data;
+        std::vector<SegmentData<double>> segments_data;
 
         inline size_t size() const {
             return segments_data.size();
         }
 
         template<typename S>
-        layer_t(const S &segments, size_t error) {
+        Layer(const S &segments, size_t error) {
             segments_keys.reserve(segments.size() + 2 * error + 1);
             segments_data.reserve(segments.size());
             for (auto &s : segments) {
@@ -43,16 +43,16 @@ class MockPGMIndex {
         }
     };
 
-    std::vector<layer_t> layers;
+    std::vector<Layer> layers;
 
 public:
 
     MockPGMIndex(const std::vector<K> &data, size_t error) : data_size(data.size()), error(error) {
-        std::list<layer_t> tmp;
-        tmp.emplace_front(segmentation_t<K, 0>::build_segments(data, error), error);
+        std::list<Layer> tmp;
+        tmp.emplace_front(Segmentation<K, 0>::build_segments(data, error), error);
 
         while (tmp.front().size() > 1)
-            tmp.emplace_front(segmentation_t<K, 0>::build_segments(tmp.front().segments_keys, error), error);
+            tmp.emplace_front(Segmentation<K, 0>::build_segments(tmp.front().segments_keys, error), error);
 
         layers = {std::make_move_iterator(tmp.begin()), std::make_move_iterator(tmp.end())};
     }
@@ -89,7 +89,7 @@ public:
         auto total = 0;
         for (auto &l : layers)
             total += l.size();
-        return total * sizeof(segment_t<K, double>);
+        return total * sizeof(Segment<K, double>);
     }
 
     size_t segments_count() const {

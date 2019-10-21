@@ -177,7 +177,7 @@ public:
      * @return a struct with the approximate position
      * @see approx_pos_t
      */
-    inline approx_pos_t find_approximate_position(K key) const {
+    inline ApproxPos find_approximate_position(K key) const {
         if (UNLIKELY(key < first))
             return {0, 0, 0};
         if (UNLIKELY(key > last))

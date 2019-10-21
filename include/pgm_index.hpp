@@ -37,12 +37,12 @@
  * @tparam Floating the floating-point type of the segment's parameters
  */
 template<typename Floating>
-struct segment_data_t {
+struct SegmentData {
     static_assert(std::is_floating_point<Floating>());
     Floating slope;
     Floating intercept;
 
-    segment_data_t(Floating slope, Floating intercept) : slope(slope), intercept(intercept) {};
+    SegmentData(Floating slope, Floating intercept) : slope(slope), intercept(intercept) {};
 
     template<typename K>
     inline size_t operator()(K k) const {
@@ -54,7 +54,7 @@ struct segment_data_t {
 /**
  * A struct that stores the result of a query to a PGM-index.
  */
-struct approx_pos_t {
+struct ApproxPos {
     size_t pos; ///< the approximate position
     size_t lo;  ///< the lower bound of the range of size no more than 2*error where key can be found
     size_t hi;  ///< the upper bound of the range of size no more than 2*error where key can be found
@@ -66,13 +66,13 @@ struct approx_pos_t {
  * @tparam Floating the floating-point type of the segment's parameters
  */
 template<typename K, typename Floating>
-struct segment_t {
+struct Segment {
     static_assert(std::is_floating_point<Floating>());
     K key;              ///< the first key that the segment indexes
     Floating slope;     ///< the slope of the segment
     Floating intercept; ///< the intercept of the segment
 
-    segment_t() = default;
+    Segment() = default;
 
     /**
      * Constructs a new segment.
@@ -80,13 +80,13 @@ struct segment_t {
      * @param slope the slope of the segment
      * @param intercept the intercept of the segment
      */
-    segment_t(K key, Floating slope, Floating intercept) : key(key), slope(slope), intercept(intercept) {};
+    Segment(K key, Floating slope, Floating intercept) : key(key), slope(slope), intercept(intercept) {};
 
-    friend inline bool operator<(const segment_t &s, const K k) {
+    friend inline bool operator<(const Segment &s, const K k) {
         return s.key < k;
     }
 
-    friend inline bool operator<(const segment_t &s1, const segment_t &s2) {
+    friend inline bool operator<(const Segment &s1, const Segment &s2) {
         return s1.key < s2.key;
     }
 
@@ -102,30 +102,30 @@ struct segment_t {
 };
 
 /**
- * A struct that stores the result of a segmentation, that is, a piecewise linear model mapping keys to locations.
+ * Stores the result of a segmentation, that is, a piecewise linear model mapping keys to locations.
  * @tparam K the type of the elements upon which the segmentation is computed
  * @tparam Error the maximum allowed error of the segmentation
  * @tparam Floating the floating-point type used for slopes and intercepts
  */
 template<typename K, size_t Error, typename Floating = double>
-struct segmentation_t {
+struct Segmentation {
     using floating_type = Floating;
-    using segment_type = segment_t<K, Floating>;
-    using segment_data_type = segment_data_t<Floating>;
+    using segment_type = Segment<K, Floating>;
+    using segment_data_type = SegmentData<Floating>;
     using key_type = K;
 
     static const size_t error = Error;  ///< the maximum error of the segmentation
-    size_t data_size;                   ///< the size of the data upon which the segmentation was computed
+    size_t data_size = 0;               ///< the size of the data upon which the segmentation was computed
     std::vector<segment_type> segments; ///< the vector of segments
 
-    segmentation_t() = default;
+    Segmentation() = default;
 
     /**
     * Builds a piecewise linear model with the given data.
     * @param data the vector of keys, must be sorted
     * @return the vector of segments approximating the data
     */
-    explicit segmentation_t(const std::vector<K> &data)
+    explicit Segmentation(const std::vector<K> &data)
         : data_size(data.size()), segments(build_segments(data, error)) {}
 
     /**
@@ -181,10 +181,10 @@ class RecursiveStrategy {
     using K = typename SegmentationType::key_type;
     using Floating = typename SegmentationType::floating_type;
     using segment_type = typename SegmentationType::segment_type;
-    using segment_data_type = segment_data_t<Floating>;
+    using segment_data_type = SegmentData<Floating>;
     segment_type root;
 
-    struct layer_t {
+    struct Layer {
         std::vector<K> segments_keys;
         std::vector<segment_data_type> segments_data;
 
@@ -193,7 +193,7 @@ class RecursiveStrategy {
         }
 
         template<typename S>
-        explicit layer_t(const S &segmentation) {
+        explicit Layer(const S &segmentation) {
             segments_keys.reserve(segmentation.segments.size());
             segments_data.reserve(segmentation.segments.size());
             for (auto &s : segmentation.segments) {
@@ -203,7 +203,7 @@ class RecursiveStrategy {
         }
     };
 
-    std::vector<layer_t> layers;
+    std::vector<Layer> layers;
 
 protected:
 
@@ -213,12 +213,12 @@ protected:
             return;
         }
 
-        std::list<layer_t> tmp;
+        std::list<Layer> tmp;
         tmp.emplace_front(segmentation);
-        segmentation_t<K, RecursiveError, Floating> l;
+        Segmentation<K, RecursiveError, Floating> l;
 
         while (tmp.front().size() > 1) {
-            l = segmentation_t<K, RecursiveError, Floating>(tmp.front().segments_keys);
+            l = Segmentation<K, RecursiveError, Floating>(tmp.front().segments_keys);
             tmp.emplace_front(l);
         }
 
@@ -508,10 +508,10 @@ public:
  * @tparam Floating the floating-point type to use for slopes and intercept
  */
 template<typename K, size_t Error,
-    typename IndexingStrategy = RecursiveStrategy<segmentation_t<K, Error>, 16>,
+    typename IndexingStrategy = RecursiveStrategy<Segmentation<K, Error>, 16>,
     typename Floating = double>
 class PGMIndex : public IndexingStrategy {
-    using segmentation_type = segmentation_t<K, Error, Floating>;
+    using segmentation_type = Segmentation<K, Error, Floating>;
 
     K first;          ///< the smallest element in the data
     K last;           ///< the largest element in the data
@@ -547,7 +547,7 @@ public:
      * @return a struct with the approximate position
      * @see approx_pos_t
      */
-    inline approx_pos_t find_approximate_position(K key) const {
+    inline ApproxPos find_approximate_position(K key) const {
         if (UNLIKELY(key < first))
             return {0, 0, 0};
         if (UNLIKELY(key > last))
@@ -575,7 +575,7 @@ public:
  */
 template<typename K, size_t Error, size_t RecursiveError, typename Floating = double>
 using RecursivePGMIndex = PGMIndex<K, Error, Floating,
-                                   RecursiveStrategy<segmentation_t<K, Error, Floating>, RecursiveError>>;
+                                   RecursiveStrategy<Segmentation<K, Error, Floating>, RecursiveError>>;
 
 /**
  * A space-efficient index that finds the position of a sought key within a radius of @p Error. This variant uses an
@@ -587,7 +587,7 @@ using RecursivePGMIndex = PGMIndex<K, Error, Floating,
  */
 template<typename K, size_t Error, size_t NodeSize, typename Floating = double>
 using TreeBasedPGMIndex = PGMIndex<K, Error, Floating,
-                                   TreeStrategy<segmentation_t<K, NodeSize, Floating>, NodeSize>>;
+                                   TreeStrategy<Segmentation<K, NodeSize, Floating>, NodeSize>>;
 
 /**
  * A space-efficient index that finds the position of a sought key within a radius of @p Error. This variant uses a
@@ -599,4 +599,4 @@ using TreeBasedPGMIndex = PGMIndex<K, Error, Floating,
  */
 template<typename K, size_t Error, typename Floating = double>
 using BinarySearchBasedPGMIndex = PGMIndex<K, Error, Floating,
-                                           BinarySearchStrategy<segmentation_t<K, Error, Floating>>>;
+                                           BinarySearchStrategy<Segmentation<K, Error, Floating>>>;
