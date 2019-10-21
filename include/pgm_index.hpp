@@ -33,14 +33,23 @@
 #define UNLIKELY(x) __builtin_expect(!!(x), 0)
 
 /**
+ * A struct that stores the result of a query to a PGMIndex.
+ */
+struct ApproxPos {
+    size_t pos; ///< The approximate position.
+    size_t lo;  ///< The lower bound of the range of size no more than 2*error where key can be found.
+    size_t hi;  ///< The upper bound of the range of size no more than 2*error where key can be found.
+};
+
+/**
  * A struct that stores the parameters (slope and intercept) of a segment.
  * @tparam Floating the floating-point type of the segment's parameters
  */
 template<typename Floating>
 struct SegmentData {
     static_assert(std::is_floating_point<Floating>());
-    Floating slope;
-    Floating intercept;
+    Floating slope;     ///< The slope of the segment.
+    Floating intercept; ///< The intercept of the segment.
 
     SegmentData(Floating slope, Floating intercept) : slope(slope), intercept(intercept) {};
 
@@ -52,15 +61,6 @@ struct SegmentData {
 };
 
 /**
- * A struct that stores the result of a query to a PGM-index.
- */
-struct ApproxPos {
-    size_t pos; ///< the approximate position
-    size_t lo;  ///< the lower bound of the range of size no more than 2*error where key can be found
-    size_t hi;  ///< the upper bound of the range of size no more than 2*error where key can be found
-};
-
-/**
  * A struct that stores a segment.
  * @tparam K the type of the elements that the segment indexes
  * @tparam Floating the floating-point type of the segment's parameters
@@ -68,9 +68,9 @@ struct ApproxPos {
 template<typename K, typename Floating>
 struct Segment {
     static_assert(std::is_floating_point<Floating>());
-    K key;              ///< the first key that the segment indexes
-    Floating slope;     ///< the slope of the segment
-    Floating intercept; ///< the intercept of the segment
+    K key;              ///< The first key that the segment indexes.
+    Floating slope;     ///< The slope of the segment.
+    Floating intercept; ///< The intercept of the segment.
 
     Segment() = default;
 
@@ -114,9 +114,9 @@ struct Segmentation {
     using segment_data_type = SegmentData<Floating>;
     using key_type = K;
 
-    static const size_t error = Error;  ///< the maximum error of the segmentation
-    size_t data_size = 0;               ///< the size of the data upon which the segmentation was computed
-    std::vector<segment_type> segments; ///< the vector of segments
+    static const size_t error = Error;  ///< The maximum error of the segmentation
+    size_t data_size = 0;               ///< The size of the data upon which the segmentation was computed.
+    std::vector<segment_type> segments; ///< The vector of segments.
 
     Segmentation() = default;
 
@@ -513,9 +513,9 @@ template<typename K, size_t Error,
 class PGMIndex : public IndexingStrategy {
     using segmentation_type = Segmentation<K, Error, Floating>;
 
-    K first;          ///< the smallest element in the data
-    K last;           ///< the largest element in the data
-    size_t data_size; ///< the number of elements in the input data
+    K first;          ///< The smallest element in the data.
+    K last;           ///< The largest element in the data.
+    size_t data_size; ///< The number of elements in the data.
 
 public:
 

@@ -104,7 +104,7 @@ public:
 
 /*------- INDEX STATS -------*/
 
-struct index_stats_t {
+struct IndexStats {
     size_t error;
     size_t segments_count;
     size_t size_in_bytes;
@@ -113,10 +113,10 @@ struct index_stats_t {
     size_t construction_time;
     size_t height;
 
-    index_stats_t() {};
+    IndexStats() {};
 
     template<typename K>
-    index_stats_t(std::vector<K> &data, size_t error) : error(error) {
+    IndexStats(std::vector<K> &data, size_t error) : error(error) {
         auto start = std::chrono::high_resolution_clock::now();
         MockPGMIndex<K> pgmIndex(data, error);
         auto end = std::chrono::high_resolution_clock::now();
@@ -164,7 +164,7 @@ void segments_count_model_grad_c(const alglib::real_1d_array &c, const alglib::r
     grad[1] = -grad[0] * c[0] * std::log(x[0]);
 }
 
-auto fit_segments_count_model(const std::vector<index_stats_t> &all_index_stats, alglib::real_1d_array c_space) {
+auto fit_segments_count_model(const std::vector<IndexStats> &all_index_stats, alglib::real_1d_array c_space) {
     alglib::real_2d_array x;
     alglib::real_1d_array y_space;
     x.setlength(all_index_stats.size(), 1);
@@ -217,7 +217,7 @@ double guess_error_space(double x, double a, double b, double max_space, double 
 
 /*------- CORE FUNCTIONS -------*/
 
-void minimize_time_logging(index_stats_t &stats, bool verbose, size_t lo_error, size_t hi_error) {
+void minimize_time_logging(IndexStats &stats, bool verbose, size_t lo_error, size_t hi_error) {
     auto kib = stats.size_in_bytes / double(1u << 10u);
     auto query_time = std::to_string(stats.lookup_time) + "±" + std::to_string(stats.lookup_time_std);
     printf("%-19zu %-19.1f %-19.2f %-19s", stats.error, stats.construction_time * 1.e-9, kib, query_time.c_str());
@@ -229,14 +229,13 @@ void minimize_time_logging(index_stats_t &stats, bool verbose, size_t lo_error, 
 }
 
 template<typename K>
-void
-minimize_space_given_time(size_t max_time, float tolerance, std::vector<K> &data,
-                          size_t lo_error, size_t hi_error, bool verbose) {
+void minimize_space_given_time(size_t max_time, float tolerance, std::vector<K> &data,
+                               size_t lo_error, size_t hi_error, bool verbose) {
     auto latency = 82.1;
     size_t cache_line = x86_cache_line();
     auto block_size = cache_line / sizeof(int64_t);
     auto starting_error = std::clamp(size_t(block_size * std::pow(2., max_time / latency - 1.)), lo_error, hi_error);
-    std::vector<index_stats_t> all_stats;
+    std::vector<IndexStats> all_stats;
 
     const size_t starting_i = 2048;
     size_t i = starting_i;
@@ -275,7 +274,7 @@ minimize_space_given_time(size_t max_time, float tolerance, std::vector<K> &data
         minimize_time_logging(all_stats.back(), verbose, bin_search_lo, bin_search_hi);
     }
 
-    auto predicate = [max_time, tolerance](const index_stats_t &a) {
+    auto predicate = [max_time, tolerance](const IndexStats &a) {
         return a.lookup_time <= max_time * (1 + tolerance);
     };
     if (!std::any_of(all_stats.cbegin(), all_stats.cend(), predicate)) {
@@ -283,14 +282,14 @@ minimize_space_given_time(size_t max_time, float tolerance, std::vector<K> &data
         exit(1);
     }
 
-    auto comp = [max_time, tolerance, predicate](const index_stats_t &a, const index_stats_t &b) {
+    auto comp = [max_time, tolerance, predicate](const IndexStats &a, const IndexStats &b) {
         return !predicate(b) || (predicate(a) && a.size_in_bytes < b.size_in_bytes);
     };
     auto best = std::min_element(all_stats.cbegin(), all_stats.cend(), comp);
 
     printf("%s\n", std::string(80, '-').c_str());
     auto time = std::accumulate(all_stats.cbegin(), all_stats.cend(), 0ul,
-                                [](size_t result, const index_stats_t &s) { return result + s.construction_time; });
+                                [](size_t result, const IndexStats &s) { return result + s.construction_time; });
     printf("%zu iterations for a total construction time of %.0f s\n", all_stats.size(), time * 1.e-9);
     printf("Set the error to %zu for an index of %zu bytes\n", best->error, best->size_in_bytes);
 }
@@ -300,7 +299,7 @@ void minimize_time_given_space(size_t max_space, float tolerance, std::vector<K>
                                size_t lo_error, size_t hi_error, bool verbose) {
     const auto guess_steps_threshold = size_t(2 * std::log2(std::log2(hi_error - lo_error)));
     size_t guess_steps = 0;
-    std::vector<index_stats_t> all_index_stats;
+    std::vector<IndexStats> all_index_stats;
 
     double p[2] = {data.size() / 2., 1.000000001};
     alglib::real_1d_array c_starting_point;
@@ -330,7 +329,7 @@ void minimize_time_given_space(size_t max_space, float tolerance, std::vector<K>
             guess_steps++;
         }
 
-        index_stats_t stats(data, mid);
+        IndexStats stats(data, mid);
         all_index_stats.push_back(stats);
         auto kib = stats.size_in_bytes / double(1u << 10u);
         auto query_time = std::to_string(stats.lookup_time) + "±" + std::to_string(stats.lookup_time_std);
@@ -351,7 +350,7 @@ void minimize_time_given_space(size_t max_space, float tolerance, std::vector<K>
 
     printf("%s\n", std::string(80, '-').c_str());
     auto time = std::accumulate(all_index_stats.cbegin(), all_index_stats.cend(), 0ul,
-                                [](size_t result, const index_stats_t &s) { return result + s.construction_time; });
+                                [](size_t result, const IndexStats &s) { return result + s.construction_time; });
     printf("Total construction time %.0f s\n", time * 1.e-9);
     printf("Set the error to %zu\n", lo_error);
 }

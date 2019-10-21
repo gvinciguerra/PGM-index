@@ -31,22 +31,22 @@
 template<typename K, size_t Error, size_t RecursiveError = 16, typename Floating = double,
     typename CompressedBV = sdsl::sd_vector<>>
 class CompressedPGMIndex {
-    size_t data_size;                   ///< the number of elements in the indexed data
-    std::vector<Floating> slopes_table; ///< the vector containing the slopes used by the segments in the index
-    const std::vector<K> &data;         ///< the indexed data
-    K root_key;                         ///< the key of the root segment
-    Floating root_slope;                ///< the slope of the root segment
-    Floating root_intercept;            ///< the intercept of the root segment
-    K first;                            ///< the smallest element in the data
-    K last;                             ///< the largest element in the data
+    size_t data_size;                   ///< The number of elements in the indexed data.
+    std::vector<Floating> slopes_table; ///< The vector containing the slopes used by the segments in the index.
+    const std::vector<K> &data;         ///< The indexed data.
+    K root_key;                         ///< The key of the root segment.
+    Floating root_slope;                ///< The slope of the root segment.
+    Floating root_intercept;            ///< The intercept of the root segment.
+    K first;                            ///< The smallest element in the data.
+    K last;                             ///< The largest element in the data.
 
     struct CompressedLayer {
-        std::vector<K> keys;                       ///< the keys of the segment in this layer
-        PackedVector slopes_map;                   ///< the ith element is an index into slopes_table
-        std::vector<Floating> &slopes_table;       ///< a reference to the vector containing the slopes
-        int64_t intercept_offset;                  ///< an offset to make the intercepts start from 0 in the bitvector
-        CompressedBV compressed_intercepts;        ///< the compressed bitvector storing the intercepts
-        typename CompressedBV::select_1_type sel1; ///< the select1 succinct data structure on compressed_intercepts
+        std::vector<K> keys;                       ///< The keys of the segment in this layer.
+        PackedVector slopes_map;                   ///< The ith element is an index into slopes_table.
+        std::vector<Floating> &slopes_table;       ///< A reference to the vector containing the slopes.
+        int64_t intercept_offset;                  ///< An offset to make the intercepts start from 0 in the bitvector.
+        CompressedBV compressed_intercepts;        ///< The compressed bitvector storing the intercepts.
+        typename CompressedBV::select_1_type sel1; ///< The select1 succinct data structure on compressed_intercepts.
 
         template<typename IterK, typename IterI, typename IterM>
         CompressedLayer(IterK first_key, IterK last_key,
