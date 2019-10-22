@@ -14,12 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include <cstdint>
 #include <vector>
 #include <chrono>
 #include <numeric>
-#include <iostream>
 #include <iomanip>
+#include <cstdint>
+#include <iostream>
+#include <algorithm>
 #include "utils.hpp"
 #include "tuner.hpp"
 #include "args.hxx"
