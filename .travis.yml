@@ -1,5 +1,10 @@
 language: cpp
 dist: bionic
+addons:
+  apt:
+    packages:
+      - libc++-8-dev
+      - libc++abi-8-dev
 compiler:
   - clang
   - gcc
