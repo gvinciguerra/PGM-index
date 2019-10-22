@@ -1,0 +1,9 @@
+language: cpp
+dist: xenial
+compiler:
+  - clang
+  - gcc
+script:
+  - cmake .
+  - make
+  - ./test/tests
