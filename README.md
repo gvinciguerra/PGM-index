@@ -1,15 +1,21 @@
-<img src="https://gvinciguerra.github.io/PGM-index/images/logo.svg" alt="The PGM-index" style="width: 565px">
+<p align="center">
+  <img src="https://gvinciguerra.github.io/PGM-index/images/logo.svg" alt="The PGM-index" style="width: 565px">
+</p>
 
-The Piecewise Geometric Model index (PGM-index) is a data structure that enables fast point and range searches in arrays of billions of items using orders of magnitude less space than traditional indexes.
+<p align="center">The Piecewise Geometric Model index (PGM-index) is a data structure that enables fast point and range searches in arrays of billions of items using orders of magnitude less space than traditional indexes.</p>
 
-[Website](https://gvinciguerra.github.io/PGM-index)
-| [Documentation](https://gvinciguerra.github.io/PGM-index/docs)
-| [Paper](https://arxiv.org/abs/1910.06169)
-| [A³ Lab](http://acube.di.unipi.it)
+<p align="center">
+    <a href="https://gvinciguerra.github.io/PGM-index" rel="nofollow" class="rich-diff-level-one">Website</a>
+    | <a href="https://gvinciguerra.github.io/PGM-index/docs" rel="nofollow" class="rich-diff-level-one">Documentation</a>
+    | <a href="https://arxiv.org/abs/1910.06169" rel="nofollow" class="rich-diff-level-one">Paper</a>
+    | <a href="http://acube.di.unipi.it" rel="nofollow" class="rich-diff-level-one">A³ Lab</a></p>
+</p>
 
-[![Travis (.org)](https://img.shields.io/travis/gvinciguerra/PGM-index)](https://travis-ci.org/gvinciguerra/PGM-index)
-[![License](https://img.shields.io/github/license/gvinciguerra/PGM-index)](https://github.com/gvinciguerra/PGM-index/blob/master/LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/gvinciguerra/PGM-index)](https://github.com/gvinciguerra/PGM-index/stargazers)
+<p align="center">
+    <a href="https://travis-ci.org/gvinciguerra/PGM-index"><img src="https://img.shields.io/travis/gvinciguerra/PGM-index" alt="Travis (.org)"></a>
+    <a href="https://github.com/gvinciguerra/PGM-index/blob/master/LICENSE" class="rich-diff-level-one"><img src="https://img.shields.io/github/license/gvinciguerra/PGM-index" alt="License"></a>
+    <a href="https://github.com/gvinciguerra/PGM-index/stargazers" class="rich-diff-level-one"><img src="https://img.shields.io/github/stars/gvinciguerra/PGM-index" alt="GitHub stars"></a></p>
+</p>
 
 ## Building the code
 
