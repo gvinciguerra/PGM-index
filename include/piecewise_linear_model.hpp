@@ -49,6 +49,10 @@ private:
         bool operator<(Point p) const {
             return y * p.x < x * p.y;
         }
+
+        bool operator>(Point p) const {
+            return y * p.x > x * p.y;
+        }
     };
 
     const SY error_fwd;
@@ -98,43 +102,44 @@ public:
         auto slope1 = rectangle[2] - rectangle[0];
         auto slope2 = rectangle[3] - rectangle[1];
 
-        bool outside_line1 = slope1.y * (xx - rectangle[2].x) > slope1.x * (yy - rectangle[2].y + error_fwd);
-        bool outside_line2 = slope2.y * (xx - rectangle[3].x) < slope2.x * (yy - rectangle[3].y - error_bwd);
+        Point p1(xx, yy + error_fwd);
+        Point p2(xx, yy - error_bwd);
+        bool outside_line1 = p1 - rectangle[2] < slope1;
+        bool outside_line2 = p2 - rectangle[3] > slope2;
+
         if (outside_line1 || outside_line2) {
             points_in_hull = 0;
             return false;
         }
 
-        {
-            Point s(xx, yy + error_fwd);
-            auto m = minmax(lower, s).first;
-            auto new_slope = s - *m;
+        if (p1 - rectangle[1] < slope2) {
+            auto m = minmax(lower, p1).first;
+            auto new_slope = p1 - *m;
             if (new_slope < slope2) {
                 rectangle[1] = *m;
-                rectangle[3] = s;
+                rectangle[3] = p1;
                 lower.erase(lower.begin(), m);
             }
 
             // Hull update
-            while (upper.size() >= 2 && cross(*std::prev(upper.end(), 2), *std::prev(upper.end()), s) <= 0)
+            while (upper.size() >= 2 && cross(*std::prev(upper.end(), 2), *std::prev(upper.end()), p1) <= 0)
                 upper.pop_back();
-            upper.push_back(s);
+            upper.push_back(p1);
         }
 
-        {
-            Point s(xx, yy - error_bwd);
-            auto m = minmax(upper, s).second;
-            auto new_slope = s - *m;
+        if (p2 - rectangle[0] > slope1) {
+            auto m = minmax(upper, p2).second;
+            auto new_slope = p2 - *m;
             if (slope1 < new_slope) {
                 rectangle[0] = *m;
-                rectangle[2] = s;
+                rectangle[2] = p2;
                 upper.erase(upper.begin(), m);
             }
 
             // Hull update
-            while (lower.size() >= 2 && cross(*std::prev(lower.end(), 2), *std::prev(lower.end()), s) >= 0)
+            while (lower.size() >= 2 && cross(*std::prev(lower.end(), 2), *std::prev(lower.end()), p2) >= 0)
                 lower.pop_back();
-            lower.push_back(s);
+            lower.push_back(p2);
         }
 
         ++points_in_hull;
@@ -146,16 +151,16 @@ public:
         auto &p1 = rectangle[1];
         auto &p2 = rectangle[2];
         auto &p3 = rectangle[3];
-        auto slope1 = rectangle[2] - rectangle[0];
-        auto slope2 = rectangle[3] - rectangle[1];
+        auto slope1 = p2 - p0;
+        auto slope2 = p3 - p1;
 
         if (points_in_hull == 1 || slope1.x * slope2.y == slope1.y * slope2.x)
             return std::make_pair(double(p0.x), double(p0.y));
 
         double a = slope1.x * slope2.y - slope1.y * slope2.x;
         double b = ((p1.x - p0.x) * (p3.y - p1.y) - (p1.y - p0.y) * (p3.x - p1.x)) / a;
-        auto i_x = rectangle[0].x + b * (rectangle[2].x - rectangle[0].x);
-        auto i_y = rectangle[0].y + b * (rectangle[2].y - rectangle[0].y);
+        auto i_x = p0.x + b * slope1.x;
+        auto i_y = p0.y + b * slope1.y;
         return std::make_pair(i_x, i_y);
     }
 
