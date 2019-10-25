@@ -574,8 +574,8 @@ public:
  * @tparam Floating the floating-point type used for slopes and intercepts
  */
 template<typename K, size_t Error, size_t RecursiveError, typename Floating = double>
-using RecursivePGMIndex = PGMIndex<K, Error, Floating,
-                                   RecursiveStrategy<Segmentation<K, Error, Floating>, RecursiveError>>;
+using RecursivePGMIndex = PGMIndex<K, Error, RecursiveStrategy<Segmentation<K, Error, Floating>, RecursiveError>,
+                                   Floating>;
 
 /**
  * A space-efficient index that finds the position of a sought key within a radius of @p Error. This variant uses an
@@ -586,8 +586,7 @@ using RecursivePGMIndex = PGMIndex<K, Error, Floating,
  * @tparam Floating the floating-point type used for slopes and intercepts
  */
 template<typename K, size_t Error, size_t NodeSize, typename Floating = double>
-using TreeBasedPGMIndex = PGMIndex<K, Error, Floating,
-                                   TreeStrategy<Segmentation<K, NodeSize, Floating>, NodeSize>>;
+using TreeBasedPGMIndex = PGMIndex<K, Error, TreeStrategy<Segmentation<K, Error, Floating>, NodeSize>, Floating>;
 
 /**
  * A space-efficient index that finds the position of a sought key within a radius of @p Error. This variant uses a
@@ -598,5 +597,4 @@ using TreeBasedPGMIndex = PGMIndex<K, Error, Floating,
  * @tparam Floating the floating-point type used for slopes and intercepts
  */
 template<typename K, size_t Error, typename Floating = double>
-using BinarySearchBasedPGMIndex = PGMIndex<K, Error, Floating,
-                                           BinarySearchStrategy<Segmentation<K, Error, Floating>>>;
+using BinarySearchBasedPGMIndex = PGMIndex<K, Error, BinarySearchStrategy<Segmentation<K, Error, Floating>>,  Floating>;
