@@ -26,7 +26,11 @@
 #include "utils.hpp"
 
 template<typename T>
-using LargeSigned = typename std::conditional<std::is_integral<T>::value, intmax_t, long double>::type;
+using LargeSigned = typename std::conditional<std::is_floating_point<T>::value,
+                                              long double,
+                                              typename std::conditional<(sizeof(T) < 8),
+                                                                        int64_t,
+                                                                        __int128>::type>::type;
 
 template<typename X, typename Y, typename Floating = double>
 class OptimalPiecewiseLinearModel {
