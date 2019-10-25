@@ -189,17 +189,18 @@ class RecursiveStrategy {
         std::vector<segment_data_type> segments_data;
 
         inline size_t size() const {
-            return segments_data.size();
+            return segments_keys.size();
         }
 
         template<typename S>
         explicit Layer(const S &segmentation) {
             segments_keys.reserve(segmentation.segments.size());
-            segments_data.reserve(segmentation.segments.size());
+            segments_data.reserve(segmentation.segments.size() + 1);
             for (auto &s : segmentation.segments) {
                 segments_keys.push_back(s.key);
                 segments_data.emplace_back(s.slope, s.intercept);
             }
+            segments_data.emplace_back(0, segmentation.data_size);
         }
     };
 
@@ -265,7 +266,7 @@ public:
             approx_pos = it.segments_data[pos](key - node_key);
             slope = it.segments_data[pos].slope;
             intercept = it.segments_data[pos].intercept;
-            if (pos + 1 < it.size())
+            if (pos + 1 <= it.size())
                 approx_pos = std::min(approx_pos, (size_t) it.segments_data[pos + 1].intercept);
 
             assert(node_key <= key);
@@ -597,4 +598,4 @@ using TreeBasedPGMIndex = PGMIndex<K, Error, TreeStrategy<Segmentation<K, Error,
  * @tparam Floating the floating-point type used for slopes and intercepts
  */
 template<typename K, size_t Error, typename Floating = double>
-using BinarySearchBasedPGMIndex = PGMIndex<K, Error, BinarySearchStrategy<Segmentation<K, Error, Floating>>,  Floating>;
+using BinarySearchBasedPGMIndex = PGMIndex<K, Error, BinarySearchStrategy<Segmentation<K, Error, Floating>>, Floating>;
