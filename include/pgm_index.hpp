@@ -238,7 +238,7 @@ public:
         auto slope = root.slope;
         auto intercept = root.intercept;
         auto node_key = root.key;
-        size_t approx_pos = root(key);
+        size_t approx_pos = std::min(root(key), layers[0].size() - 1);
         size_t pos = 0;
 
         for (auto &it : layers) {
