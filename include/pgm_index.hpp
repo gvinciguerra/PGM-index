@@ -514,9 +514,9 @@ template<typename K, size_t Error,
 class PGMIndex : public IndexingStrategy {
     using segmentation_type = Segmentation<K, Error, Floating>;
 
+    size_t data_size; ///< The number of elements in the data.
     K first;          ///< The smallest element in the data.
     K last;           ///< The largest element in the data.
-    size_t data_size; ///< The number of elements in the data.
 
 public:
 
