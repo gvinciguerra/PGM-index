@@ -135,6 +135,9 @@ struct Segmentation {
      * @return the piecewise linear model as a vector of segments
      */
     static std::vector<segment_type> build_segments(const std::vector<K> &data, size_t error) {
+        if (data.empty())
+            return {};
+
         std::vector<segment_type> segments;
         segments.reserve(8192);
 
@@ -209,7 +212,15 @@ class RecursiveStrategy {
 
 protected:
 
+    RecursiveStrategy() = default;
+
     RecursiveStrategy(const std::vector<K> &data, const SegmentationType &segmentation) : layers() {
+        if (segmentation.segments.empty()) {
+            root = segment_type(0, 0, 0);
+            root_limit = 1;
+            return;
+        }
+
         if (segmentation.segments.size() == 1) {
             root = segment_type(segmentation.segments[0]);
             root_limit = data.size();
@@ -321,6 +332,8 @@ class BinarySearchStrategy {
 
 protected:
 
+    BinarySearchStrategy() = default;
+
     BinarySearchStrategy(const std::vector<K> &data, const SegmentationType &segmentation)
         : segments(segmentation.segments) {}
 
@@ -382,6 +395,8 @@ class TreeStrategy {
     }
 
 protected:
+
+    TreeStrategy() = default;
 
     TreeStrategy(const std::vector<K> &data, const SegmentationType &segmentation) : leaves() {
         const std::vector<segment_type> &segments = segmentation.segments;
@@ -524,12 +539,20 @@ class PGMIndex : public IndexingStrategy {
 public:
 
     /**
+     * Builds an empty index.
+     */
+    PGMIndex() = default;
+
+    /**
      * Builds the index on the given data.
      * @param data the vector of keys, must be sorted
      */
     explicit PGMIndex(const std::vector<K> &data)
-        : IndexingStrategy(data, segmentation_type(data)), data_size(data.size()),
-          first(data.front()), last(data.back()) {
+        : IndexingStrategy(data, segmentation_type(data)), data_size(data.size()), first(), last() {
+        if (!data.empty()) {
+            first = data.front();
+            last = data.back();
+        }
         assert(std::is_sorted(data.cbegin(), data.cend()));
     }
 
@@ -539,8 +562,11 @@ public:
      * @param segmentation the precomputed segmentation
      */
     explicit PGMIndex(const std::vector<K> &data, const segmentation_type &segmentation)
-        : IndexingStrategy(data, segmentation), data_size(data.size()),
-          first(data.front()), last(data.back()) {
+        : IndexingStrategy(data, segmentation), data_size(data.size()), first(), last() {
+        if (!data.empty()) {
+            first = data.front();
+            last = data.back();
+        }
         assert(std::is_sorted(data.cbegin(), data.cend()));
         assert(segmentation.data_size == data_size);
     }
