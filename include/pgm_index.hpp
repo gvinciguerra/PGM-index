@@ -183,6 +183,7 @@ class RecursiveStrategy {
     using segment_type = typename SegmentationType::segment_type;
     using segment_data_type = SegmentData<Floating>;
     segment_type root;
+    size_t root_limit;
 
     struct Layer {
         std::vector<K> segments_keys;
@@ -211,6 +212,7 @@ protected:
     RecursiveStrategy(const std::vector<K> &data, const SegmentationType &segmentation) : layers() {
         if (segmentation.segments.size() == 1) {
             root = segment_type(segmentation.segments[0]);
+            root_limit = data.size();
             return;
         }
 
@@ -224,6 +226,7 @@ protected:
         }
 
         root = l.segments[0];
+        root_limit = l.data_size;
         layers = {std::make_move_iterator(std::next(tmp.begin())), std::make_move_iterator(tmp.end())};
     }
 
@@ -238,7 +241,7 @@ public:
         auto slope = root.slope;
         auto intercept = root.intercept;
         auto node_key = root.key;
-        size_t approx_pos = std::min(root(key), layers[0].size() - 1);
+        size_t approx_pos = std::min(root(key), root_limit);
         size_t pos = 0;
 
         for (auto &it : layers) {
@@ -292,7 +295,7 @@ public:
      * @return the number of segments
      */
     size_t segments_count() const {
-        return layers.back().size();
+        return layers.empty() ? 1 : layers.back().size();
     }
 
     /**
