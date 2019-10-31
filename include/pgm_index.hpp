@@ -500,7 +500,7 @@ public:
  *
  * ```cpp
  * PGMIndex<int, 64, RecursiveStrategy<segmentation_t<int, Error>, 16>> index(data);
- * RecursivePGMindex<int, 64, 16> index(data);
+ * RecursivePGMIndex<int, 64, 16> index(data);
  * ```
  *
  * @tparam K the type of the indexed elements
