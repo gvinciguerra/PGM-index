@@ -44,7 +44,7 @@ TEMPLATE_TEST_CASE("Segmentation algorithm", "", float, double, uint32_t, uint64
     }
 
     std::sort(data.begin(), data.end());
-    auto segments = Segmentation<TestType, 0>::build_segments(data, error);
+    auto segments = Segmentation<TestType, 0>::build_segments(data.begin(), data.end(), error);
 
     for (auto i = 0; i < data.size(); ++i) {
         if (i == 0 || data[i] != data[i - 1]) {
