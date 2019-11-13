@@ -33,12 +33,11 @@ template<typename K, size_t Error, size_t RecursiveError = 16, typename Floating
 class CompressedPGMIndex {
     size_t data_size;                   ///< The number of elements in the indexed data.
     std::vector<Floating> slopes_table; ///< The vector containing the slopes used by the segments in the index.
-    const std::vector<K> &data;         ///< The indexed data.
     K root_key;                         ///< The key of the root segment.
     Floating root_slope;                ///< The slope of the root segment.
     Floating root_intercept;            ///< The intercept of the root segment.
-    K first;                            ///< The smallest element in the data.
-    K last;                             ///< The largest element in the data.
+    K first_key;                        ///< The smallest element in the data.
+    K last_key;                         ///< The largest element in the data.
 
     struct CompressedLayer {
         std::vector<K> keys;                       ///< The keys of the segment in this layer.
@@ -89,14 +88,24 @@ class CompressedPGMIndex {
 public:
 
     /**
-     * Builds the compressed index on the given data.
+     * Constructs the compressed index on the given sorted data.
      * @param data the vector of keys, must be sorted
      */
-    explicit CompressedPGMIndex(std::vector<K> &data)
-        : data(data), data_size(data.size()), first(data.front()), last(data.back()) {
-        assert(std::is_sorted(data.cbegin(), data.cend()));
-        std::vector<size_t> layers_boundaries({0});
+    explicit CompressedPGMIndex(std::vector<K> &data) : CompressedPGMIndex(data.begin(), data.end()) {}
 
+    /**
+     * Constructs the compressed index on the sorted data in the range [first, last).
+     * @param first, last the range containing the sorted elements to be indexed
+     */
+    template<typename Iterator>
+    CompressedPGMIndex(Iterator first, Iterator last) : data_size(std::distance(first, last)) {
+        assert(std::is_sorted(data.cbegin(), data.cend()));
+        if (data_size > 0) {
+            first_key = *first;
+            last_key = *std::prev(last);
+        }
+
+        std::vector<size_t> layers_boundaries({0});
         std::vector<K> tmp_keys;
         std::vector<std::pair<Floating, Floating>> tmp_ranges;
         std::vector<std::pair<Floating, Floating>> tmp_intersections;
@@ -107,31 +116,38 @@ public:
 
         // Iterative construction of the levels
         while (needs_more_layers) {
-            std::vector<K> &keys = layers_boundaries.size() == 1 ? data : tmp_keys;
-            size_t error = layers_boundaries.size() == 1 ? Error : RecursiveError;
-
-            OptimalPiecewiseLinearModel<K, size_t> algorithm(error, error);
-            size_t offset = layers_boundaries.size() == 1 ? 0 : layers_boundaries[layers_boundaries.size() - 2];
+            bool first_level = layers_boundaries.size() == 1;
+            size_t error = first_level ? Error : RecursiveError;
+            size_t offset = first_level ? 0 : layers_boundaries[layers_boundaries.size() - 2];
             size_t start = offset;
-            size_t n = keys.size();
-            algorithm.add_point(keys[offset], 0);
+            size_t n = first_level ? data_size : tmp_keys.size();
+            auto it = first_level ? first : tmp_keys.begin() + offset;
+            auto key = *it;
 
-            for (size_t i = offset + 1; i < n; ++i) {
-                if (keys[i] == keys[i - 1])
+            // Compute segmentation for this level
+            OptimalPiecewiseLinearModel<K, size_t> algorithm(error, error);
+            algorithm.add_point(*it, 0);
+            ++it;
+
+            for (size_t i = offset + 1; i < n; ++i, ++it) {
+                if (*it == *(it - 1))
                     continue;
 
-                if (!algorithm.add_point(keys[i], i - offset)) {
-                    tmp_keys.emplace_back(keys[start]);
+                if (!algorithm.add_point(*it, i - offset)) {
+                    tmp_keys.emplace_back(key);
                     tmp_ranges.emplace_back(algorithm.get_slope_range());
                     tmp_intersections.emplace_back(algorithm.get_intersection());
+
+                    key = *it;
                     start = i;
                     --i;
+                    --it;
                 }
             }
 
             // Last segment
             if (start < n - 1) {
-                tmp_keys.emplace_back(keys[start]);
+                tmp_keys.emplace_back(key);
                 tmp_ranges.emplace_back(algorithm.get_slope_range());
                 tmp_intersections.emplace_back(algorithm.get_intersection());
             }
@@ -178,9 +194,9 @@ public:
      * @see approx_pos_t
      */
     inline ApproxPos find_approximate_position(K key) const {
-        if (UNLIKELY(key < first))
+        if (UNLIKELY(key < first_key))
             return {0, 0, 0};
-        if (UNLIKELY(key > last))
+        if (UNLIKELY(key > last_key))
             return {data_size - 1, data_size - 1, data_size - 1};
 
         size_t approx_pos = std::max<Floating>(0, root_intercept + root_slope * (key - root_key));

@@ -121,48 +121,60 @@ struct Segmentation {
     Segmentation() = default;
 
     /**
-    * Builds a piecewise linear model with the given data.
-    * @param data the vector of keys, must be sorted
-    * @return the vector of segments approximating the data
-    */
+     * Constructs a piecewise linear model with the given sorted data.
+     * @param data the vector of keys, must be sorted
+     */
     explicit Segmentation(const std::vector<K> &data)
-        : data_size(data.size()), segments(build_segments(data, error)) {}
+        : data_size(data.size()), segments(build_segments(data.begin(), data.end(), error)) {}
 
     /**
-     * Computes a piecewise linear model with the given data.
-     * @param data the vector of keys, must be sorted
+     * Constructs a piecewise linear model with the contents of the range [first, last).
+     * @param first, last the range containing the sorted elements
+     */
+    template<typename Iterator>
+    Segmentation(Iterator first, Iterator last)
+        : data_size(std::distance(first, last)), segments(build_segments(first, last, error)) {}
+
+    /**
+     * Computes a piecewise linear model on the contents of the range [first, last).
+     * @param first, last the range containing the sorted elements
      * @param error the maximum allowed error of the piecewise linear model
      * @return the piecewise linear model as a vector of segments
      */
-    static std::vector<segment_type> build_segments(const std::vector<K> &data, size_t error) {
-        if (data.empty())
+    template<typename Iterator>
+    static std::vector<segment_type> build_segments(Iterator first, Iterator last, size_t error) {
+        size_t n = std::distance(first, last);
+        if (n == 0)
             return {};
 
         std::vector<segment_type> segments;
         segments.reserve(8192);
 
         OptimalPiecewiseLinearModel<K, size_t> algorithm(error, error);
-        algorithm.add_point(data[0], 0);
+        algorithm.add_point(*first, 0);
+        K key = *first;
+        Iterator it = std::next(first);
         size_t start = 0;
 
-        for (size_t i = 1; i < data.size(); ++i) {
-            if (data[i] == data[i - 1])
+        for (size_t i = 1; i < n; ++i, ++it) {
+            if (*it == *(it - 1))
                 continue;
 
-            if (!algorithm.add_point(data[i], i)) {
-                auto key = data[start];
+            if (!algorithm.add_point(*it, i)) {
                 auto intercept = algorithm.get_intercept(key);
                 auto[min_slope, max_slope] = algorithm.get_slope_range();
                 auto slope = 0.5 * (min_slope + max_slope);
                 segments.emplace_back(key, slope, intercept);
+
+                key = *it;
                 start = i;
                 --i;
+                --it;
             }
         }
 
         // Last segment
-        if (start < data.size() - 1) {
-            auto key = data[start];
+        if (start < n - 1) {
             auto intercept = algorithm.get_intercept(key);
             auto[min_slope, max_slope] = algorithm.get_slope_range();
             auto slope = 0.5 * (min_slope + max_slope);
@@ -214,7 +226,7 @@ protected:
 
     RecursiveStrategy() = default;
 
-    RecursiveStrategy(const std::vector<K> &data, const SegmentationType &segmentation) : layers() {
+    explicit RecursiveStrategy(const SegmentationType &segmentation) : layers() {
         if (segmentation.segments.empty()) {
             root = segment_type(0, 0, 0);
             root_limit = 1;
@@ -223,7 +235,7 @@ protected:
 
         if (segmentation.segments.size() == 1) {
             root = segment_type(segmentation.segments[0]);
-            root_limit = data.size();
+            root_limit = segmentation.data_size;
             return;
         }
 
@@ -334,7 +346,7 @@ protected:
 
     BinarySearchStrategy() = default;
 
-    BinarySearchStrategy(const std::vector<K> &data, const SegmentationType &segmentation)
+    explicit BinarySearchStrategy(const SegmentationType &segmentation)
         : segments(segmentation.segments) {}
 
 public:
@@ -398,7 +410,7 @@ protected:
 
     TreeStrategy() = default;
 
-    TreeStrategy(const std::vector<K> &data, const SegmentationType &segmentation) : leaves() {
+    explicit TreeStrategy(const SegmentationType &segmentation) : leaves() {
         const std::vector<segment_type> &segments = segmentation.segments;
 
         // store segments and keys of segments separately: the latter are accessed more frequently and it is
@@ -533,39 +545,46 @@ class PGMIndex : public IndexingStrategy {
     using segmentation_type = Segmentation<K, Error, Floating>;
 
     size_t data_size; ///< The number of elements in the data.
-    K first;          ///< The smallest element in the data.
-    K last;           ///< The largest element in the data.
+    K first_key;      ///< The smallest element in the data.
+    K last_key;       ///< The largest element in the data.
 
 public:
 
     /**
-     * Builds an empty index.
+     * Constructs an empty index.
      */
     PGMIndex() = default;
 
     /**
-     * Builds the index on the given data.
+     * Constructs the index on the given sorted data.
      * @param data the vector of keys, must be sorted
      */
-    explicit PGMIndex(const std::vector<K> &data)
-        : IndexingStrategy(data, segmentation_type(data)), data_size(data.size()), first(), last() {
-        if (!data.empty()) {
-            first = data.front();
-            last = data.back();
+    explicit PGMIndex(const std::vector<K> &data) : PGMIndex(data.begin(), data.end()) {}
+
+    /**
+     * Constructs the index on the sorted data in the range [first, last).
+     * @param first, last the range containing the sorted elements to be indexed
+     */
+    template<typename Iterator>
+    PGMIndex(Iterator first, Iterator last)
+        : IndexingStrategy(segmentation_type(first, last)), data_size(std::distance(first, last)) {
+        assert(std::is_sorted(first, last));
+        if (data_size > 0) {
+            first_key = *first;
+            last_key = *std::prev(last);
         }
-        assert(std::is_sorted(data.cbegin(), data.cend()));
     }
 
     /**
-     * Builds the index with a precomputed segmentation.
+     * Constructs the index with a precomputed segmentation.
      * @param data the vector of keys, must be sorted
      * @param segmentation the precomputed segmentation
      */
     explicit PGMIndex(const std::vector<K> &data, const segmentation_type &segmentation)
-        : IndexingStrategy(data, segmentation), data_size(data.size()), first(), last() {
+        : IndexingStrategy(segmentation), data_size(data.size()) {
         if (!data.empty()) {
-            first = data.front();
-            last = data.back();
+            first_key = data.front();
+            last_key = data.back();
         }
         assert(std::is_sorted(data.cbegin(), data.cend()));
         assert(segmentation.data_size == data_size);
@@ -578,9 +597,9 @@ public:
      * @see approx_pos_t
      */
     inline ApproxPos find_approximate_position(K key) const {
-        if (UNLIKELY(key < first))
+        if (UNLIKELY(key < first_key))
             return {0, 0, 0};
-        if (UNLIKELY(key > last))
+        if (UNLIKELY(key > last_key))
             return {data_size - 1, data_size - 1, data_size - 1};
 
         auto segment = this->find_segment_for_key(key);
