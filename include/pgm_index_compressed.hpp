@@ -130,7 +130,7 @@ public:
             ++it;
 
             for (size_t i = offset + 1; i < n; ++i, ++it) {
-                if (*it == *(it - 1))
+                if (*it == *std::prev(it))
                     continue;
 
                 if (!algorithm.add_point(*it, i - offset)) {

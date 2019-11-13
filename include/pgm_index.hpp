@@ -157,7 +157,7 @@ struct Segmentation {
         size_t start = 0;
 
         for (size_t i = 1; i < n; ++i, ++it) {
-            if (*it == *(it - 1))
+            if (*it == *std::prev(it))
                 continue;
 
             if (!algorithm.add_point(*it, i)) {
