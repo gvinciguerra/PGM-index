@@ -99,7 +99,7 @@ public:
      */
     template<typename Iterator>
     CompressedPGMIndex(Iterator first, Iterator last) : data_size(std::distance(first, last)) {
-        assert(std::is_sorted(data.cbegin(), data.cend()));
+        assert(std::is_sorted(first, last));
         if (data_size > 0) {
             first_key = *first;
             last_key = *std::prev(last);
