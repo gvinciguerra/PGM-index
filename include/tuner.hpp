@@ -49,10 +49,13 @@ public:
 
     MockPGMIndex(const std::vector<K> &data, size_t error) : data_size(data.size()), error(error) {
         std::list<Layer> tmp;
-        tmp.emplace_front(Segmentation<K, 0>::build_segments(data, error), error);
+        tmp.emplace_front(Segmentation<K, 0>::build_segments(data.begin(), data.end(), error), error);
 
-        while (tmp.front().size() > 1)
-            tmp.emplace_front(Segmentation<K, 0>::build_segments(tmp.front().segments_keys, error), error);
+        while (tmp.front().size() > 1) {
+            auto first = tmp.front().segments_keys.begin();
+            auto last = tmp.front().segments_keys.end();
+            tmp.emplace_front(Segmentation<K, 0>::build_segments(first, last, error), error);
+        }
 
         layers = {std::make_move_iterator(tmp.begin()), std::make_move_iterator(tmp.end())};
     }
