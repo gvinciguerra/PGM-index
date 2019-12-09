@@ -174,7 +174,7 @@ struct Segmentation {
         }
 
         // Last segment
-        if (start < n - 1) {
+        if (start < n) {
             auto intercept = algorithm.get_intercept(key);
             auto[min_slope, max_slope] = algorithm.get_slope_range();
             auto slope = 0.5 * (min_slope + max_slope);
