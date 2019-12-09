@@ -154,7 +154,6 @@ struct Segmentation {
         algorithm.add_point(*first, 0);
         K key = *first;
         Iterator it = std::next(first);
-        size_t start = 0;
 
         for (size_t i = 1; i < n; ++i, ++it) {
             if (*it == *std::prev(it))
@@ -167,19 +166,16 @@ struct Segmentation {
                 segments.emplace_back(key, slope, intercept);
 
                 key = *it;
-                start = i;
                 --i;
                 --it;
             }
         }
 
         // Last segment
-        if (start < n) {
-            auto intercept = algorithm.get_intercept(key);
-            auto[min_slope, max_slope] = algorithm.get_slope_range();
-            auto slope = 0.5 * (min_slope + max_slope);
-            segments.emplace_back(key, slope, intercept);
-        }
+        auto intercept = algorithm.get_intercept(key);
+        auto[min_slope, max_slope] = algorithm.get_slope_range();
+        auto slope = 0.5 * (min_slope + max_slope);
+        segments.emplace_back(key, slope, intercept);
 
         return segments;
     }

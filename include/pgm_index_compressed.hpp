@@ -119,7 +119,6 @@ public:
             bool first_level = layers_boundaries.size() == 1;
             size_t error = first_level ? Error : RecursiveError;
             size_t offset = first_level ? 0 : layers_boundaries[layers_boundaries.size() - 2];
-            size_t start = offset;
             size_t n = first_level ? data_size : tmp_keys.size();
             auto it = first_level ? first : tmp_keys.begin() + offset;
             auto key = *it;
@@ -139,18 +138,15 @@ public:
                     tmp_intersections.emplace_back(algorithm.get_intersection());
 
                     key = *it;
-                    start = i;
                     --i;
                     --it;
                 }
             }
 
             // Last segment
-            if (start < n - 1) {
-                tmp_keys.emplace_back(key);
-                tmp_ranges.emplace_back(algorithm.get_slope_range());
-                tmp_intersections.emplace_back(algorithm.get_intersection());
-            }
+            tmp_keys.emplace_back(key);
+            tmp_ranges.emplace_back(algorithm.get_slope_range());
+            tmp_intersections.emplace_back(algorithm.get_intersection());
 
             needs_more_layers = tmp_keys.size() - layers_boundaries.back() > 1;
             layers_boundaries.push_back(tmp_keys.size());
