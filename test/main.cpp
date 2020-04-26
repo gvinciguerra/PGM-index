@@ -18,6 +18,7 @@
 
 #include "catch.hpp"
 #include "pgm_index.hpp"
+#include "pgm_index_dynamic.hpp"
 #include "pgm_index_compressed.hpp"
 #include <type_traits>
 
@@ -119,5 +120,56 @@ TEST_CASE("Compressed PGM-index") {
         auto hi = data.cbegin() + approx_range.hi;
         auto k = std::lower_bound(lo, hi, q);
         REQUIRE(*k == q);
+    }
+}
+
+TEMPLATE_TEST_CASE_SIG("Dynamic PGM-index", "",
+                       ((typename V, uint8_t MinIndexedLevel), V, MinIndexedLevel),
+                       (uint32_t*, 8), (uint32_t, 10), (uint32_t*, 16), (uint32_t, 20)) {
+    V time = 0;
+    auto gen = [&time] { return std::pair<uint32_t, V>{std::rand() % 1000000000, ++time}; };
+
+    std::vector<std::pair<uint32_t, V>> bulk(1000000);
+    std::generate(bulk.begin(), bulk.end(), gen);
+    std::sort(bulk.begin(), bulk.end());
+
+    using PGMType = PGMIndex<uint32_t, 64, 16>;
+    DynamicPGMIndex<uint32_t, V, PGMType, MinIndexedLevel> pgm_index(bulk.begin(), bulk.end());
+
+    for (auto i = 1; i <= 1000; ++i) {
+        auto q = bulk[std::rand() % bulk.size()];
+        auto c = pgm_index.count(q.first);
+        auto it = pgm_index.lower_bound(q.first);
+        REQUIRE(c == 1);
+        REQUIRE(it->key() == q.first);
+    }
+
+    // Overwrite some elements
+    for (auto i = 1; i <= 10000; ++i)
+        pgm_index.insert(bulk[i].first, ++time);
+
+    // Insert new elements
+    for (auto i = 1; i <= 10000; ++i) {
+        auto[k, v] = gen();
+        pgm_index.insert(k, v);
+    }
+
+    // Test for most recent values
+    for (auto i = 1; i <= 10000; ++i) {
+        auto q = bulk[i];
+        auto it = pgm_index.lower_bound(q.first);
+        REQUIRE(it->key() == q.first);
+        REQUIRE(it->value() > q.second);
+    }
+
+    // Delete some elements
+    for (auto i = 10000; i <= 10500; ++i)
+        pgm_index.erase(bulk[i].first);
+
+    // Check if elements are deleted
+    auto end = pgm_index.end();
+    for (auto i = 10000; i <= 10500; ++i) {
+        auto it = pgm_index.find(bulk[i].first);
+        REQUIRE(it == end);
     }
 }
