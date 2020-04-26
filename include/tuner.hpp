@@ -24,21 +24,37 @@ class MockPGMIndex {
     size_t data_size;
     size_t error;
 
+    struct SegmentData {
+        double slope;
+        double intercept;
+
+        explicit SegmentData(const typename OptimalPiecewiseLinearModel<K, size_t>::CanonicalSegment &cs) {
+            std::tie(slope, intercept) = cs.get_floating_point_segment(cs.get_first_x());
+        }
+
+        SegmentData(double slope, double intercept) : slope(slope), intercept(intercept) {};
+
+        inline size_t operator()(const K &k) const {
+            double pos = slope * k + intercept;
+            return pos > 0. ? pos : 0ul;
+        }
+    };
+
     struct Layer {
         std::vector<K> segments_keys;
-        std::vector<SegmentData<double>> segments_data;
+        std::vector<SegmentData> segments_data;
 
         inline size_t size() const {
             return segments_data.size();
         }
 
         template<typename S>
-        Layer(const S &segments, size_t error) {
-            segments_keys.reserve(segments.size() + 2 * error + 1);
+        explicit Layer(const S &segments) {
+            segments_keys.reserve(segments.size());
             segments_data.reserve(segments.size());
-            for (auto &s : segments) {
-                segments_keys.push_back(s.key);
-                segments_data.emplace_back(s.slope, s.intercept);
+            for (auto &cs : segments) {
+                segments_keys.push_back(cs.get_first_x());
+                segments_data.emplace_back(cs);
             }
         }
     };
@@ -49,12 +65,12 @@ public:
 
     MockPGMIndex(const std::vector<K> &data, size_t error) : data_size(data.size()), error(error) {
         std::list<Layer> tmp;
-        tmp.emplace_front(Segmentation<K, 0>::build_segments(data.begin(), data.end(), error), error);
+        tmp.emplace_front(make_segmentation(data.begin(), data.end(), error));
 
         while (tmp.front().size() > 1) {
             auto first = tmp.front().segments_keys.begin();
             auto last = tmp.front().segments_keys.end();
-            tmp.emplace_front(Segmentation<K, 0>::build_segments(first, last, error), error);
+            tmp.emplace_front(make_segmentation(first, last, error));
         }
 
         layers = {std::make_move_iterator(tmp.begin()), std::make_move_iterator(tmp.end())};
@@ -67,7 +83,7 @@ public:
 
         for (auto it = layers.cbegin() + 1; it < layers.cend(); ++it) {
             auto layer_size = it->size();
-            auto lo = SUB_ERR(approx_pos, error, layer_size);
+            auto lo = SUB_ERR(approx_pos, error);
             auto hi = ADD_ERR(approx_pos, error + 1, layer_size);
 
             for (; lo <= hi && it->segments_keys[lo] <= key; ++lo);
@@ -82,7 +98,7 @@ public:
         auto slope = layers.back().segments_data[pos].slope;
         auto intercept = layers.back().segments_data[pos].intercept;
         auto p = (size_t) std::fmax(0., slope * (key - node_key) + intercept);
-        auto lo = SUB_ERR(p, error, data_size);
+        auto lo = SUB_ERR(p, error);
         auto hi = ADD_ERR(p, error, data_size);
 
         return *std::lower_bound(data.cbegin() + lo, data.cbegin() + hi + 1, key);
@@ -92,7 +108,7 @@ public:
         auto total = 0;
         for (auto &l : layers)
             total += l.size();
-        return total * sizeof(Segment<K, double>);
+        return total * (sizeof(SegmentData) + sizeof(K));
     }
 
     size_t segments_count() const {

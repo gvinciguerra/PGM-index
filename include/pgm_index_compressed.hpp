@@ -22,13 +22,16 @@
 
 /**
  * A space-efficient and compressed index that finds the position of a sought key within a radius of @p Error.
+ *
+ * This is a variant of the @ref PGMIndex that internally uses compression to reduce the space of the index.
+ *
  * @tparam K the type of the indexed elements
- * @tparam Error the maximum allowed error in the last level of the index
- * @tparam RecursiveError the maximum allowed error in the upper levels of the index
+ * @tparam Error the maximum error allowed in the last level of the index
+ * @tparam RecursiveError the maximum error allowed in the upper levels of the index
  * @tparam Floating the floating-point type to use for slopes
  * @tparam CompressedBV the type of the compressed bitvector storing the intercepts
  */
-template<typename K, size_t Error, size_t RecursiveError = 16, typename Floating = double,
+template<typename K, size_t Error, size_t RecursiveError = 8, typename Floating = double,
     typename CompressedBV = sdsl::sd_vector<>>
 class CompressedPGMIndex {
     size_t data_size;                   ///< The number of elements in the indexed data.
@@ -83,7 +86,7 @@ class CompressedPGMIndex {
         }
     };
 
-    std::vector<CompressedLayer> layers;   ///< the layers composing the compressed index
+    std::vector<CompressedLayer> layers;   ///< The layers composing the compressed index.
 
 public:
 
@@ -124,7 +127,7 @@ public:
             auto key = *it;
 
             // Compute segmentation for this level
-            OptimalPiecewiseLinearModel<K, size_t> algorithm(error, error);
+            OptimalPiecewiseLinearModel<K, size_t> algorithm(error);
             algorithm.add_point(*it, 0);
             ++it;
 
@@ -133,10 +136,10 @@ public:
                     continue;
 
                 if (!algorithm.add_point(*it, i - offset)) {
+                    auto cs = algorithm.get_segment();
                     tmp_keys.emplace_back(key);
-                    tmp_ranges.emplace_back(algorithm.get_slope_range());
-                    tmp_intersections.emplace_back(algorithm.get_intersection());
-
+                    tmp_ranges.emplace_back(cs.get_slope_range());
+                    tmp_intersections.emplace_back(cs.get_intersection());
                     key = *it;
                     --i;
                     --it;
@@ -144,9 +147,10 @@ public:
             }
 
             // Last segment
+            auto cs = algorithm.get_segment();
             tmp_keys.emplace_back(key);
-            tmp_ranges.emplace_back(algorithm.get_slope_range());
-            tmp_intersections.emplace_back(algorithm.get_intersection());
+            tmp_ranges.emplace_back(cs.get_slope_range());
+            tmp_intersections.emplace_back(cs.get_intersection());
 
             needs_more_layers = tmp_keys.size() - layers_boundaries.back() > 1;
             layers_boundaries.push_back(tmp_keys.size());
@@ -173,8 +177,8 @@ public:
     }
 
     /**
-     * Returns the size in bytes of the index.
-     * @return the size in bytes of the index
+     * Returns the size of the index in bytes.
+     * @return the size of the index in bytes
      */
     size_t size_in_bytes() const {
         size_t accum = 0;
@@ -185,14 +189,13 @@ public:
 
     /**
      * Returns the approximate position of a key.
-     * @param key the value to search for
+     * @param key the value of the element to search for
      * @return a struct with the approximate position
-     * @see approx_pos_t
      */
-    inline ApproxPos find_approximate_position(K key) const {
-        if (UNLIKELY(key < first_key))
+    ApproxPos find_approximate_position(K key) const {
+        if (key < first_key)
             return {0, 0, 0};
-        if (UNLIKELY(key > last_key))
+        if (key > last_key)
             return {data_size - 1, data_size - 1, data_size - 1};
 
         size_t approx_pos = std::max<Floating>(0, root_intercept + root_slope * (key - root_key));
@@ -201,7 +204,7 @@ public:
         for (auto layer_i = 0; layer_i < layers.size(); ++layer_i) {
             auto &it = layers[layer_i];
             auto layer_size = it.size();
-            auto lo = SUB_ERR(approx_pos, RecursiveError, layer_size);
+            auto lo = SUB_ERR(approx_pos, RecursiveError);
             auto hi = ADD_ERR(approx_pos, RecursiveError + 1, layer_size);
 
             for (; lo <= hi && it.keys[lo] <= key; ++lo);
@@ -215,7 +218,7 @@ public:
         }
 
         auto p = layers.back()(pos, key);
-        auto lo = SUB_ERR(p, Error, data_size);
+        auto lo = SUB_ERR(p, Error);
         auto hi = ADD_ERR(p, Error + 1, data_size);
 
         return {p, lo, hi};
@@ -230,8 +233,8 @@ public:
     }
 
     /**
-     * Returns the height of the index.
-     * @return the height of the index
+     * Returns the number of levels in the index.
+     * @return the number of levels in the index
      */
     size_t height() const {
         return layers.size() + 1;
