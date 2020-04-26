@@ -19,7 +19,6 @@
 #include <vector>
 #include <stdexcept>
 #include <immintrin.h>
-#include "utils.hpp"
 
 /**
  *  A container for integers whose bit-length is fixed. The size is not necessarily the one of standard types

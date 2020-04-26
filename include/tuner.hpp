@@ -107,6 +107,11 @@ public:
 
 /*------- INDEX STATS -------*/
 
+template<class T>
+void do_not_optimize(T const &value) {
+    asm volatile("" : : "r,m"(value) : "memory");
+}
+
 struct IndexStats {
     size_t error;
     size_t segments_count;
@@ -219,6 +224,12 @@ double guess_error_space(double x, double a, double b, double max_space, double 
 }
 
 /*------- CORE FUNCTIONS -------*/
+
+size_t x86_cache_line() {
+    size_t _, c;
+    __asm__ __volatile__("cpuid":"=a"(_), "=b"(_), "=c"(c), "=d"(_):"a"(0x80000006));
+    return c & 0xFF;
+}
 
 void minimize_time_logging(IndexStats &stats, bool verbose, size_t lo_error, size_t hi_error) {
     auto kib = stats.size_in_bytes / double(1u << 10u);

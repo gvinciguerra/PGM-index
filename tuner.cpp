@@ -17,13 +17,45 @@
 #include <vector>
 #include <chrono>
 #include <numeric>
-#include <iomanip>
 #include <cstdint>
+#include <cstring>
+#include <fstream>
 #include <iostream>
 #include <algorithm>
-#include "utils.hpp"
-#include "tuner.hpp"
 #include "args.hxx"
+#include "tuner.hpp"
+
+std::vector<int64_t> read_data_csv(const std::string &file, size_t max_lines = std::numeric_limits<size_t>::max()) {
+    std::fstream in(file);
+    in.exceptions(std::ios::failbit | std::ios::badbit);
+    std::string line;
+    std::vector<int64_t> data;
+    data.reserve(max_lines == std::numeric_limits<size_t>::max() ? 1024 : max_lines);
+
+    for (size_t i = 0; i < max_lines && std::getline(in, line); ++i) {
+        int value;
+        std::stringstream stringstream(line);
+        stringstream >> value;
+        data.push_back(value);
+    }
+
+    return data;
+}
+
+template<typename TypeIn, typename TypeOut>
+std::vector<TypeOut> read_data_binary(const std::string &file, size_t max_size = std::numeric_limits<size_t>::max()) {
+    std::fstream in(file, std::ios::in | std::ios::binary | std::ios::ate);
+    in.exceptions(std::ios::failbit | std::ios::badbit);
+
+    auto size = std::min(max_size, static_cast<size_t>(in.tellg() / sizeof(TypeIn)));
+    std::vector<TypeIn> data(size);
+    in.seekg(0);
+    in.read((char *) data.data(), size * sizeof(TypeIn));
+
+    if constexpr (std::is_same<TypeIn, TypeOut>::value)
+        return data;
+    return std::vector<TypeOut>(data.begin(), data.end());
+}
 
 int main(int argc, char **argv) {
     using namespace args;
@@ -55,7 +87,15 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    std::vector<int64_t> data = bin.Get() ? read_data_binary<int32_t, int64_t>(file.Get()) : read_data_csv(file.Get());
+    std::vector<int64_t> data;
+    try {
+        data = bin.Get() ? read_data_binary<int32_t, int64_t>(file.Get()) : read_data_csv(file.Get());
+    } catch (std::ios_base::failure &e) {
+        std::cerr << e.what() << std::endl;
+        std::cerr << std::strerror(errno) << std::endl;
+        exit(1);
+    }
+
     std::sort(data.begin(), data.end());
     const size_t lo_error = 2 * x86_cache_line() / sizeof(int64_t);
     const size_t hi_error = data.size() / 2;

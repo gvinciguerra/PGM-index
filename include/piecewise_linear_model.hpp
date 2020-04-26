@@ -19,10 +19,8 @@
 #include <cmath>
 #include <limits>
 #include <vector>
-#include <cassert>
 #include <stdexcept>
 #include <type_traits>
-#include "utils.hpp"
 
 template<typename T>
 using LargeSigned = typename std::conditional<std::is_floating_point<T>::value,
