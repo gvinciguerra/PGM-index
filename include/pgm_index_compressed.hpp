@@ -18,7 +18,6 @@
 
 #include <sdsl/bit_vectors.hpp>
 #include "pgm_index.hpp"
-#include "packed_vector.hpp"
 
 /**
  * A space-efficient and compressed index that finds the position of a sought key within a radius of @p Error.
@@ -29,39 +28,45 @@
  * @tparam Error the maximum error allowed in the last level of the index
  * @tparam RecursiveError the maximum error allowed in the upper levels of the index
  * @tparam Floating the floating-point type to use for slopes
- * @tparam CompressedBV the type of the compressed bitvector storing the intercepts
  */
-template<typename K, size_t Error, size_t RecursiveError = 8, typename Floating = double,
-    typename CompressedBV = sdsl::sd_vector<>>
+template<typename K, size_t Error, size_t RecursiveError = 8, typename Floating = double>
 class CompressedPGMIndex {
-    size_t data_size;                   ///< The number of elements in the indexed data.
-    std::vector<Floating> slopes_table; ///< The vector containing the slopes used by the segments in the index.
-    K root_key;                         ///< The key of the root segment.
-    Floating root_slope;                ///< The slope of the root segment.
-    Floating root_intercept;            ///< The intercept of the root segment.
-    K first_key;                        ///< The smallest element in the data.
-    K last_key;                         ///< The largest element in the data.
+    struct CompressedLevel;
 
-    struct CompressedLayer {
-        std::vector<K> keys;                       ///< The keys of the segment in this layer.
-        PackedVector slopes_map;                   ///< The ith element is an index into slopes_table.
+    size_t n;                             ///< The number of elements in the indexed data.
+    K root_key;                           ///< The key of the root segment.
+    Floating root_slope;                  ///< The slope of the root segment.
+    Floating root_intercept;              ///< The intercept of the root segment.
+    K first_key;                          ///< The smallest element in the data.
+    K last_key;                           ///< The largest element in the data.
+    std::vector<Floating> slopes_table;   ///< The vector containing the slopes used by the segments in the index.
+    std::vector<CompressedLevel> levels;  ///< The levels composing the compressed index.
+
+    struct CompressedLevel {
+        std::vector<K> keys;                       ///< The keys of the segment in this level.
+        sdsl::int_vector<> slopes_map;             ///< The ith element is an index into slopes_table.
         std::vector<Floating> &slopes_table;       ///< A reference to the vector containing the slopes.
         int64_t intercept_offset;                  ///< An offset to make the intercepts start from 0 in the bitvector.
-        CompressedBV compressed_intercepts;        ///< The compressed bitvector storing the intercepts.
-        typename CompressedBV::select_1_type sel1; ///< The select1 succinct data structure on compressed_intercepts.
+        sdsl::sd_vector<> compressed_intercepts;   ///< The compressed bitvector storing the intercepts.
+        sdsl::sd_vector<>::select_1_type sel1;     ///< The select1 succinct data structure on compressed_intercepts.
 
         template<typename IterK, typename IterI, typename IterM>
-        CompressedLayer(IterK first_key, IterK last_key,
+        CompressedLevel(IterK first_key, IterK last_key,
                         IterI first_intercept, IterI last_intercept,
                         IterM first_slope, IterM last_slope,
                         std::vector<Floating> &slopes_table)
-            : keys(first_key, last_key), intercept_offset(*first_intercept), slopes_table(slopes_table) {
+            : keys(first_key, last_key), slopes_table(slopes_table), intercept_offset(*first_intercept) {
             sdsl::bit_vector intercept_bv(*(last_intercept - 1) - intercept_offset + 1);
             for (auto it = first_intercept; it != last_intercept; ++it)
                 intercept_bv[*it - intercept_offset] = 1;
-            compressed_intercepts = CompressedBV(intercept_bv);
-            slopes_map = PackedVector(first_slope, last_slope, PackedVector::bit_length(slopes_table.size() - 1));
+            compressed_intercepts = sdsl::sd_vector<>(intercept_bv);
             sdsl::util::init_support(sel1, &compressed_intercepts);
+
+            size_t i = 0;
+            size_t map_size = std::distance(first_slope, last_slope);
+            slopes_map = sdsl::int_vector<>(map_size, 0, sdsl::bits::hi(slopes_table.size() - 1) + 1);
+            for (auto it = first_slope; it != last_slope; ++it)
+                slopes_map[i++] = *it;
         }
 
         inline size_t operator()(size_t i, K k) const {
@@ -82,11 +87,9 @@ class CompressedPGMIndex {
         }
 
         inline size_t size_in_bytes() const {
-            return keys.size() * sizeof(K) + slopes_map.size_in_bytes() + sdsl::size_in_bytes(compressed_intercepts);
+            return keys.size() * sizeof(K) + slopes_map.bit_size() / 8 + sdsl::size_in_bytes(compressed_intercepts);
         }
     };
-
-    std::vector<CompressedLayer> layers;   ///< The layers composing the compressed index.
 
 public:
 
@@ -101,28 +104,29 @@ public:
      * @param first, last the range containing the sorted elements to be indexed
      */
     template<typename Iterator>
-    CompressedPGMIndex(Iterator first, Iterator last) : data_size(std::distance(first, last)) {
+    CompressedPGMIndex(Iterator first, Iterator last) : n(std::distance(first, last)) {
         assert(std::is_sorted(first, last));
-        if (data_size > 0) {
-            first_key = *first;
-            last_key = *std::prev(last);
-        }
+        if (n == 0)
+            return;
 
-        std::vector<size_t> layers_boundaries({0});
+        first_key = *first;
+        last_key = *std::prev(last);
+
+        std::vector<size_t> levels_boundaries({0});
         std::vector<K> tmp_keys;
         std::vector<std::pair<Floating, Floating>> tmp_ranges;
         std::vector<std::pair<Floating, Floating>> tmp_intersections;
         tmp_keys.reserve(2048);
         tmp_ranges.reserve(2048);
         tmp_intersections.reserve(2048);
-        bool needs_more_layers = true;
+        bool needs_more_levels = true;
 
         // Iterative construction of the levels
-        while (needs_more_layers) {
-            bool first_level = layers_boundaries.size() == 1;
+        while (needs_more_levels) {
+            bool first_level = levels_boundaries.size() == 1;
             size_t error = first_level ? Error : RecursiveError;
-            size_t offset = first_level ? 0 : layers_boundaries[layers_boundaries.size() - 2];
-            size_t n = first_level ? data_size : tmp_keys.size();
+            size_t offset = first_level ? 0 : levels_boundaries[levels_boundaries.size() - 2];
+            size_t last_n = first_level ? n : tmp_keys.size();
             auto it = first_level ? first : tmp_keys.begin() + offset;
             auto key = *it;
 
@@ -131,7 +135,7 @@ public:
             algorithm.add_point(*it, 0);
             ++it;
 
-            for (size_t i = offset + 1; i < n; ++i, ++it) {
+            for (size_t i = offset + 1; i < last_n; ++i, ++it) {
                 if (*it == *std::prev(it))
                     continue;
 
@@ -152,25 +156,25 @@ public:
             tmp_ranges.emplace_back(cs.get_slope_range());
             tmp_intersections.emplace_back(cs.get_intersection());
 
-            needs_more_layers = tmp_keys.size() - layers_boundaries.back() > 1;
-            layers_boundaries.push_back(tmp_keys.size());
+            needs_more_levels = tmp_keys.size() - levels_boundaries.back() > 1;
+            levels_boundaries.push_back(tmp_keys.size());
         }
 
         // Compress the slopes
         auto[tmp_table, tmp_map, tmp_intercepts] = merge_slopes(tmp_ranges, tmp_intersections, tmp_keys);
         slopes_table = tmp_table;
 
-        // Build layers
+        // Build levels
         auto[i_x, i_y] = tmp_intersections.back();
         root_key = tmp_keys.back();
         root_slope = 0.5 * (tmp_ranges.back().first + tmp_ranges.back().second);
         root_intercept = std::floor(i_y - (i_x - root_key) * root_slope);
 
-        layers.reserve(layers_boundaries.size() - 2);
-        for (int i = layers_boundaries.size() - 2; i > 0; --i) {
-            auto l = layers_boundaries[i - 1];
-            auto r = layers_boundaries[i];
-            layers.emplace_back(tmp_keys.begin() + l, tmp_keys.begin() + r,
+        levels.reserve(levels_boundaries.size() - 2);
+        for (int i = levels_boundaries.size() - 2; i > 0; --i) {
+            auto l = levels_boundaries[i - 1];
+            auto r = levels_boundaries[i];
+            levels.emplace_back(tmp_keys.begin() + l, tmp_keys.begin() + r,
                                 tmp_intercepts.begin() + l, tmp_intercepts.begin() + r,
                                 tmp_map.begin() + l, tmp_map.begin() + r, slopes_table);
         }
@@ -182,7 +186,7 @@ public:
      */
     size_t size_in_bytes() const {
         size_t accum = 0;
-        for (auto &l : layers)
+        for (auto &l : levels)
             accum += l.size_in_bytes();
         return accum + slopes_table.size() * sizeof(Floating);
     }
@@ -193,33 +197,40 @@ public:
      * @return a struct with the approximate position
      */
     ApproxPos find_approximate_position(K key) const {
-        if (key < first_key)
-            return {0, 0, 0};
-        if (key > last_key)
-            return {data_size - 1, data_size - 1, data_size - 1};
+        if (key <= first_key)
+            return {0, 0, 1};
+        if (key >= last_key)
+            return {n - 1, n - 1, n};
 
         size_t approx_pos = std::max<Floating>(0, root_intercept + root_slope * (key - root_key));
         size_t pos = 0;
 
-        for (auto layer_i = 0; layer_i < layers.size(); ++layer_i) {
-            auto &it = layers[layer_i];
-            auto layer_size = it.size();
-            auto lo = SUB_ERR(approx_pos, RecursiveError);
-            auto hi = ADD_ERR(approx_pos, RecursiveError + 1, layer_size);
+        for (auto &level : levels) {
+            auto lo = level.keys.begin() + SUB_ERR(approx_pos, RecursiveError + 1);
+            auto hi = level.keys.begin() + ADD_ERR(approx_pos, RecursiveError + 1, level.size());
 
-            for (; lo <= hi && it.keys[lo] <= key; ++lo);
-            pos = lo - 1;
+            static constexpr size_t linear_search_threshold = 8 * 64 / sizeof(K);
+            if constexpr (RecursiveError <= linear_search_threshold) {
+                for (; lo < hi && *lo <= key; ++lo);
+                --lo;
+            } else {
+                auto it = std::upper_bound(lo, hi, key);
+                lo == level.keys.begin() ? it : std::prev(it);
+            }
+            pos = std::distance(level.keys.begin(), lo);
 
-            approx_pos = it(pos, key);
-            if (pos + 1 < it.size())
-                approx_pos = std::min(approx_pos, (size_t) it.get_intercept(pos + 1));
-            assert(it.keys[pos] <= key);
-            assert(pos + 1 >= hi || it.keys[pos + 1] > key);
+            approx_pos = level(pos, key);
+            if (pos + 1 < level.size())
+                approx_pos = std::min(approx_pos, (size_t) level.get_intercept(pos + 1));
+
+            assert(level.keys[pos] <= key);
+            assert(pos + 1 >= level.size() || level.keys[pos + 1] > key);
         }
 
-        auto p = layers.back()(pos, key);
+        auto p = levels.back()(pos, key);
         auto lo = SUB_ERR(p, Error);
-        auto hi = ADD_ERR(p, Error + 1, data_size);
+        auto hi = ADD_ERR(p, Error + 1, n);
+        p = p >= n ? n - 1 : p;
 
         return {p, lo, hi};
     }
@@ -229,7 +240,7 @@ public:
      * @return the number of segments
      */
     size_t segments_count() const {
-        return layers.back().size();
+        return levels.back().size();
     }
 
     /**
@@ -237,7 +248,7 @@ public:
      * @return the number of levels in the index
      */
     size_t height() const {
-        return layers.size() + 1;
+        return levels.size() + 1;
     }
 
 private:
