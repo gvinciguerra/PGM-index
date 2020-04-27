@@ -7,7 +7,7 @@
 <p align="center">
     <a href="https://gvinciguerra.github.io/PGM-index" rel="nofollow" class="rich-diff-level-one">Website</a>
     | <a href="https://gvinciguerra.github.io/PGM-index/docs" rel="nofollow" class="rich-diff-level-one">Documentation</a>
-    | <a href="https://arxiv.org/abs/1910.06169" rel="nofollow" class="rich-diff-level-one">Paper</a>
+    | <a href="http://www.vldb.org/pvldb/vol13/p1162-ferragina.pdf" rel="nofollow" class="rich-diff-level-one">Paper</a>
     | <a href="http://acube.di.unipi.it" rel="nofollow" class="rich-diff-level-one">A³ Lab</a></p>
 </p>
 
@@ -71,15 +71,19 @@ int main(int argc, char **argv) {
 This project is licensed under the terms of the GNU General Public License v3.0.
 
 If you use the library please put a link to the [website](https://gvinciguerra.github.io/PGM-index) and cite the following paper:
+
+> Paolo Ferragina and Giorgio Vinciguerra. The PGM-index: a fully-dynamic compressed learned index with provable worst-case bounds. PVLDB, 13(8): 1162-1175, 2020.
+
 ```tex
-@misc{FerraginaVinciguerra:2019,
-  Archiveprefix = {arXiv},
+@article{Ferragina:2020pgm,
   Author = {Paolo Ferragina and Giorgio Vinciguerra},
-  Day = {14},
-  Eprint = {1910.06169},
-  Month = {10},
-  Primaryclass = {cs.DS},
-  Title = {The PGM-index: a multicriteria, compressed and learned approach to data indexing},
-  Url = {https://arxiv.org/abs/1910.06169},
-  Year = {2019}}
+  Title = {The {PGM-index}: a fully-dynamic compressed learned index with provable worst-case bounds},
+  Year = {2020},
+  Volume = {13},
+  Number = {8},
+  Pages = {1162--1175},
+  Doi = {10.14778/3389133.3389135},
+  Url = {https://pgm.di.unipi.it},
+  Issn = {2150-8097},
+  Journal = {{PVLDB}}}
 ```
