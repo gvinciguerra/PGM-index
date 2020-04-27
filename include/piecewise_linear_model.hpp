@@ -231,9 +231,10 @@ class OptimalPiecewiseLinearModel<X, Y>::CanonicalSegment {
     Point rectangle[4];
     X first;
 
-    CanonicalSegment(const Point &p0, const Point &p1, X first) : rectangle({p0, p1, p0, p1}), first(first) {};
+    CanonicalSegment(const Point &p0, const Point &p1, X first) : rectangle{p0, p1, p0, p1}, first(first) {};
 
-    CanonicalSegment(const Point (&rectangle)[4], X first) : rectangle(rectangle), first(first) {};
+    CanonicalSegment(const Point (&rectangle)[4], X first)
+        : rectangle{rectangle[0], rectangle[1], rectangle[2], rectangle[3]}, first(first) {};
 
     bool one_point() const {
         return rectangle[0].x == rectangle[2].x && rectangle[0].y == rectangle[2].y
