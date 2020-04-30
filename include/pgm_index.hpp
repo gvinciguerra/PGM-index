@@ -131,18 +131,23 @@ public:
 
         levels_offsets.push_back(0);
         segments.reserve(n / (Error * Error));
+
         auto last_n = n;
+        auto n_segments = 0ull;
+        auto back_check = [this, last, &n_segments, &last_n]() {
+            if (segments.back().slope == 0) {
+                // In this (rare) situation, we need to ensure that keys > *(last-1) are approximated to a position == n
+                segments.emplace_back(*std::prev(last) + 1, 0, last_n);
+                ++n_segments;
+            }
+            segments.emplace_back(last_n);
+        };
 
         // Build first level
         auto in_fun = [first](auto i) { return std::pair<K, size_t>(first[i], i); };
         auto out_fun = [this](auto, auto, auto cs) { segments.emplace_back(cs); };
-        auto n_segments = make_segmentation(last_n, Error, in_fun, out_fun);
-        if (segments.back().slope == 0) {
-            // In this (rare) situation, we need to ensure that keys > *(last-1) are approximated to a position == n
-            segments.emplace_back(*std::prev(last) + 1, 0, last_n);
-            ++n_segments;
-        }
-        segments.emplace_back(last_n);
+        n_segments = make_segmentation(last_n, Error, in_fun, out_fun);
+        back_check();
         levels_offsets.push_back(levels_offsets.back() + n_segments + 1);
         levels_sizes.push_back(n_segments);
         last_n = n_segments;
@@ -150,9 +155,9 @@ public:
         // Build upper levels
         while (RecursiveError && last_n > 1) {
             auto offset = levels_offsets[levels_offsets.size() - 2];
-            auto in_fun = [this, offset](auto i) { return std::pair<K, size_t>(segments[offset + i].key, i); };
-            auto n_segments = make_segmentation(last_n, RecursiveError, in_fun, out_fun);
-            segments.emplace_back(last_n);
+            auto in_fun_rec = [this, offset](auto i) { return std::pair<K, size_t>(segments[offset + i].key, i); };
+            n_segments = make_segmentation(last_n, RecursiveError, in_fun_rec, out_fun);
+            back_check();
             levels_offsets.push_back(levels_offsets.back() + n_segments + 1);
             levels_sizes.push_back(n_segments);
             last_n = n_segments;
