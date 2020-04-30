@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include <tuple>
 #include <limits>
 #include <vector>
 #include <cassert>
@@ -54,7 +53,7 @@ struct ApproxPos {
  * @tparam K the type of the indexed elements
  * @tparam Error the maximum error allowed in the last level of the index
  * @tparam RecursiveError the maximum error allowed in the upper levels of the index
- * @tparam Floating the floating-point type to use for slopes and intercepts
+ * @tparam Floating the floating-point type to use for slopes
  */
 template<typename K, size_t Error = 64, size_t RecursiveError = 16, typename Floating = double>
 class PGMIndex {
@@ -211,9 +210,9 @@ public:
 
 template<typename K, size_t Error, size_t RecursiveError, typename Floating>
 struct PGMIndex<K, Error, RecursiveError, Floating>::Segment {
-    K key;              ///< The first key that the segment indexes.
-    Floating slope;     ///< The slope of the segment.
-    Floating intercept; ///< The intercept of the segment.
+    K key;             ///< The first key that the segment indexes.
+    Floating slope;    ///< The slope of the segment.
+    int32_t intercept; ///< The intercept of the segment.
 
     Segment() = default;
 
@@ -229,7 +228,11 @@ struct PGMIndex<K, Error, RecursiveError, Floating>::Segment {
 
     explicit Segment(const typename OptimalPiecewiseLinearModel<K, size_t>::CanonicalSegment &cs)
         : key(cs.get_first_x()) {
-        std::tie(slope, intercept) = cs.get_floating_point_segment(key);
+        auto[cs_slope, cs_intercept] = cs.get_floating_point_segment(key);
+        if (cs_intercept > std::numeric_limits<decltype(intercept)>::max())
+            throw std::overflow_error("Change the type of Segment::intercept to int64");
+        slope = cs_slope;
+        intercept = cs_intercept;
     }
 
     friend inline bool operator<(const Segment &s, const K &k) {
@@ -246,8 +249,8 @@ struct PGMIndex<K, Error, RecursiveError, Floating>::Segment {
      * @return the approximate position of the specified key
      */
     inline size_t operator()(const K &k) const {
-        Floating pos = slope * (k - key) + intercept;
-        return pos > Floating(0) ? pos : 0ul;
+        auto pos = int64_t(slope * (k - key)) + intercept;
+        return pos > 0 ? size_t(pos) : 0ull;
     }
 };
 
