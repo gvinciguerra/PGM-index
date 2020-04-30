@@ -130,7 +130,7 @@ public:
             return;
 
         levels_offsets.push_back(0);
-        segments.reserve(segments.size() + n / (Error * Error));
+        segments.reserve(n / (Error * Error));
         auto last_n = n;
 
         // Build first level
@@ -149,8 +149,8 @@ public:
 
         // Build upper levels
         while (RecursiveError && last_n > 1) {
-            auto level_begin = segments.begin() + levels_offsets[levels_offsets.size() - 2];
-            auto in_fun = [level_begin](auto i) { return std::pair<K, size_t>(level_begin[i].key, i); };
+            auto offset = levels_offsets[levels_offsets.size() - 2];
+            auto in_fun = [this, offset](auto i) { return std::pair<K, size_t>(segments[offset + i].key, i); };
             auto n_segments = make_segmentation(last_n, RecursiveError, in_fun, out_fun);
             segments.emplace_back(last_n);
             levels_offsets.push_back(levels_offsets.back() + n_segments + 1);
