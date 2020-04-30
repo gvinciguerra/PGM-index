@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <tuple>
 #include <limits>
 #include <vector>
 #include <cassert>
