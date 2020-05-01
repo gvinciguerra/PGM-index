@@ -23,18 +23,15 @@
 #include <type_traits>
 
 template<typename T>
-using LargeSigned = typename std::conditional<std::is_floating_point<T>::value,
-                                              long double,
-                                              typename std::conditional<(sizeof(T) < 8),
-                                                                        int64_t,
-                                                                        __int128>::type>::type;
+using LargeSigned = typename std::conditional_t<std::is_floating_point_v<T>,
+                                                long double,
+                                                std::conditional_t<(sizeof(T) < 8), int64_t, __int128>>;
 
 template<typename X, typename Y>
 class OptimalPiecewiseLinearModel {
 private:
     using SX = LargeSigned<X>;
     using SY = LargeSigned<Y>;
-    using UY = typename std::make_unsigned<Y>::type;
 
     struct Slope {
         SX dx{};
@@ -93,7 +90,7 @@ private:
         void push(X x, Y y) { std::vector<StoredPoint>::emplace_back(StoredPoint{x, y}); };
     };
 
-    const UY error;
+    const Y error;
     Hull<false> lower;
     Hull<true> upper;
     size_t lower_start = 0;
@@ -112,7 +109,10 @@ public:
 
     class CanonicalSegment;
 
-    explicit OptimalPiecewiseLinearModel(UY error) : error(error), lower(error), upper(error) {
+    explicit OptimalPiecewiseLinearModel(Y error) : error(error), lower(error), upper(error) {
+        if (error < 0)
+            throw std::invalid_argument("error cannot be negative");
+
         upper.reserve(1u << 16);
         lower.reserve(1u << 16);
     }
@@ -121,12 +121,13 @@ public:
         if (points_in_hull > 0 && (x < rectangle[2].x || x < rectangle[3].x))
             throw std::logic_error("Points must be increasing by x.");
 
-        SY yy = y;
+        Point p1{x, SY(y) + error};
+        Point p2{x, SY(y) - error};
 
         if (points_in_hull == 0) {
             first = {x, y};
-            rectangle[0] = {x, yy + error};
-            rectangle[1] = {x, yy - error};
+            rectangle[0] = p1;
+            rectangle[1] = p2;
             upper.clear();
             lower.clear();
             upper.push(x, y);
@@ -137,16 +138,14 @@ public:
         }
 
         if (points_in_hull == 1) {
-            rectangle[2] = {x, yy - error};
-            rectangle[3] = {x, yy + error};
+            rectangle[2] = p2;
+            rectangle[3] = p1;
             upper.push(x, y);
             lower.push(x, y);
             ++points_in_hull;
             return true;
         }
 
-        Point p1{x, yy + error};
-        Point p2{x, yy - error};
         auto slope1 = rectangle[2] - rectangle[0];
         auto slope2 = rectangle[3] - rectangle[1];
         bool outside_line1 = p1 - rectangle[2] < slope1;
@@ -165,10 +164,8 @@ public:
                 auto val = (lower[i] - p1);
                 if (val > min)
                     break;
-                else {
-                    min = val;
-                    min_i = i;
-                }
+                min = val;
+                min_i = i;
             }
 
             rectangle[1] = lower[min_i];
@@ -190,10 +187,8 @@ public:
                 auto val = (upper[i] - p2);
                 if (val < max)
                     break;
-                else {
-                    max = val;
-                    max_i = i;
-                }
+                max = val;
+                max_i = i;
             }
 
             rectangle[0] = upper[max_i];

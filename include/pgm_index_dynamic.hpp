@@ -51,7 +51,7 @@ class DynamicPGMIndex {
     static_assert(2 * PGMType::error_value < 1ul << MinIndexedLevel);
 
     using LevelType = std::vector<Item, DefaultInitAllocator<Item>>;
-    using BaseItem = typename std::conditional<std::is_pointer<V>::value, BaseItemA, BaseItemB>::type;
+    using BaseItem = std::conditional_t<std::is_pointer_v<V>, BaseItemA, BaseItemB>;
 
     uint8_t used_levels;         ///< Equal to 1 + last level whose size is greater than 0, or = min_level if no data.
     std::vector<LevelType> data; ///< (i-min_level)th element is the data array on the ith level.
@@ -494,7 +494,7 @@ private:
         using A::A;
 
         template<typename U>
-        void construct(U *ptr) noexcept(std::is_nothrow_default_constructible<U>::value) {
+        void construct(U *ptr) noexcept(std::is_nothrow_default_constructible_v<U>) {
             ::new(static_cast<void *>(ptr)) U;
         }
 
@@ -616,7 +616,7 @@ protected:
 };
 
 template<typename K, typename V, typename PGMType, uint8_t MinIndexedLevel>
-V DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::BaseItemA::tombstone = new typename std::remove_pointer<V>::type();
+V DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::BaseItemA::tombstone = new std::remove_pointer_t<V>();
 
 template<typename K, typename V, typename PGMType, uint8_t MinIndexedLevel>
 class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::BaseItemB {

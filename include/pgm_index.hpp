@@ -171,13 +171,10 @@ public:
      * @return a struct with the approximate position
      */
     ApproxPos find_approximate_position(const K &key) const {
-        if (__builtin_expect(key <= segments[0].key, 0))
-            return {0, 0, 1};
         auto it = segment_for_key(key);
         auto pos = std::min<size_t>((*it)(key), std::next(it)->intercept);
         auto lo = SUB_ERR(pos, Error);
         auto hi = ADD_ERR(pos, Error + 1, n);
-        pos = pos >= n ? n - 1 : pos;
         return {pos, lo, hi};
     }
 
@@ -249,7 +246,7 @@ struct PGMIndex<K, Error, RecursiveError, Floating>::Segment {
      * @return the approximate position of the specified key
      */
     inline size_t operator()(const K &k) const {
-        auto pos = int64_t(slope * (k - key)) + intercept;
+        auto pos = int64_t(slope * std::make_signed_t<K>(k - key)) + intercept;
         return pos > 0 ? size_t(pos) : 0ull;
     }
 };
