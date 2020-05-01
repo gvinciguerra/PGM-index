@@ -82,7 +82,6 @@ class PGMIndex {
             auto level_begin = segments.begin() + levels_offsets[l];
             auto pos = std::min<size_t>((*it)(key), std::next(it)->intercept);
             auto lo = level_begin + SUB_ERR(pos, RecursiveError + 1);
-            assert(lo->key <= key);
 
             static constexpr size_t linear_search_threshold = 8 * 64 / sizeof(Segment);
             if constexpr (RecursiveError <= linear_search_threshold) {
@@ -91,13 +90,9 @@ class PGMIndex {
             } else {
                 auto level_size = levels_sizes[l];
                 auto hi = level_begin + ADD_ERR(pos, RecursiveError + 1, level_size);
-                assert(key < hi->key);
                 it = std::upper_bound(lo, hi, key);
                 it = it == segments.begin() ? it : std::prev(it);
             }
-
-            assert(it->key <= key);
-            assert(std::next(it)->key > key);
         }
         return it;
     }

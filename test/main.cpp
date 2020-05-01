@@ -96,8 +96,6 @@ TEMPLATE_TEST_CASE_SIG("PGM-index", "",
     auto approx_range = pgm_index.find_approximate_position(q);
     auto lo = data.begin() + approx_range.lo;
     auto hi = data.begin() + approx_range.hi;
-    if (approx_range.hi != 2000000)
-        std::cout << data.back() << ", " << approx_range.lo << ", " << approx_range.hi << std::endl;
     REQUIRE(std::lower_bound(lo, hi, q) == data.end());
 
     q = 0;
