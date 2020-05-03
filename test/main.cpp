@@ -25,8 +25,7 @@
 TEMPLATE_TEST_CASE("Segmentation algorithm", "", float, double, uint32_t, uint64_t) {
     const auto error = GENERATE(32, 64, 128);
     std::vector<TestType> data(1000000);
-    std::random_device rnd_device;
-    std::mt19937 engine{rnd_device()};
+    std::mt19937 engine(42);
     using RandomFunction = std::function<TestType()>;
 
     if constexpr (std::is_floating_point<TestType>()) {
@@ -68,8 +67,7 @@ TEMPLATE_TEST_CASE_SIG("PGM-index", "",
                        (uint64_t, 16, 4), (uint64_t, 32, 4), (uint64_t, 64, 4),
                        (uint64_t, 4, 16), (uint64_t, 4, 32), (uint64_t, 4, 64)) {
     std::vector<T> data(2000000);
-    std::random_device rnd_device;
-    std::mt19937 engine{rnd_device()};
+    std::mt19937 engine(42);
 
     using RandomFunction = std::function<T()>;
     RandomFunction uniform_dense = std::bind(std::uniform_int_distribution<T>(0, 10000), engine);
@@ -106,6 +104,7 @@ TEMPLATE_TEST_CASE_SIG("PGM-index", "",
 }
 
 TEST_CASE("Compressed PGM-index") {
+    std::srand(42);
     std::vector<uint32_t> data(1000000);
     std::generate(data.begin(), data.end(), [] { return std::rand() % 10000; });
     std::sort(data.begin(), data.end());
@@ -125,6 +124,7 @@ TEMPLATE_TEST_CASE_SIG("Dynamic PGM-index", "",
                        ((typename V, uint8_t MinIndexedLevel), V, MinIndexedLevel),
                        (uint32_t*, 8), (uint32_t, 10), (uint32_t*, 16), (uint32_t, 20)) {
     V time = 0;
+    std::srand(42);
     auto gen = [&time] { return std::pair<uint32_t, V>{std::rand() % 1000000000, ++time}; };
 
     std::vector<std::pair<uint32_t, V>> bulk(1000000);
