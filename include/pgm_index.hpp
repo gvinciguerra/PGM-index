@@ -61,6 +61,7 @@ class PGMIndex {
     struct Segment;
 
     size_t n;                           ///< The number of elements this index was built on.
+    K first_key;                        ///< The smallest element.
     std::vector<Segment> segments;      ///< The segments composing the index.
     std::vector<size_t> levels_sizes;   ///< The number of segment in each level, in reverse order.
     std::vector<size_t> levels_offsets; ///< The starting position of each level in segments[], in reverse order.
@@ -118,7 +119,7 @@ public:
      */
     template<typename RandomIt>
     PGMIndex(RandomIt first, RandomIt last)
-        : n(std::distance(first, last)), segments(), levels_sizes(), levels_offsets() {
+        : n(std::distance(first, last)), first_key(*first), segments(), levels_sizes(), levels_offsets() {
         assert(std::is_sorted(first, last));
         if (n == 0)
             return;
@@ -166,8 +167,9 @@ public:
      * @return a struct with the approximate position
      */
     ApproxPos find_approximate_position(const K &key) const {
-        auto it = segment_for_key(key);
-        auto pos = std::min<size_t>((*it)(key), std::next(it)->intercept);
+        auto k = std::max(first_key, key);
+        auto it = segment_for_key(k);
+        auto pos = std::min<size_t>((*it)(k), std::next(it)->intercept);
         auto lo = SUB_ERR(pos, Error);
         auto hi = ADD_ERR(pos, Error + 1, n);
         return {pos, lo, hi};
@@ -241,7 +243,7 @@ struct PGMIndex<K, Error, RecursiveError, Floating>::Segment {
      * @return the approximate position of the specified key
      */
     inline size_t operator()(const K &k) const {
-        auto pos = int64_t(slope * std::make_signed_t<K>(k - key)) + intercept;
+        auto pos = int64_t(slope * (k - key)) + intercept;
         return pos > 0 ? size_t(pos) : 0ull;
     }
 };
@@ -254,7 +256,7 @@ struct PGMIndex<K, Error, RecursiveError, Floating>::Segment {
  * (for example, less than the last level cache size).
  * @tparam K the type of the indexed elements
  * @tparam Error the maximum allowed error in the last level of the index
- * @tparam Floating the floating-point type to use for slopes and intercepts
+ * @tparam Floating the floating-point type to use for slopes
  */
 template<typename K, size_t Error, typename Floating = double>
 using BinarySearchBasedPGMIndex = PGMIndex<K, Error, 0, Floating>;
