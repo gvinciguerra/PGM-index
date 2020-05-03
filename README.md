@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
 
 This project is licensed under the terms of the GNU General Public License v3.0.
 
-If you use the library please put a link to the [website](https://gvinciguerra.github.io/PGM-index) and cite the following paper:
+If you use the library please put a link to the [website](https://pgm.di.unipi.it) and cite the following paper:
 
 > Paolo Ferragina and Giorgio Vinciguerra. The PGM-index: a fully-dynamic compressed learned index with provable worst-case bounds. PVLDB, 13(8): 1162-1175, 2020.
 
