@@ -98,11 +98,12 @@ private:
     const Y error;
     Hull<false> lower;
     Hull<true> upper;
+    X first_x = 0;
+    X last_x = 0;
     size_t lower_start = 0;
     size_t upper_start = 0;
     size_t points_in_hull = 0;
     Point rectangle[4];
-    Point first;
 
     auto cross(const Point &O, const Point &A, const Point &B) const {
         auto OA = A - O;
@@ -123,14 +124,15 @@ public:
     }
 
     bool add_point(const X &x, const Y &y) {
-        if (points_in_hull > 0 && (x < rectangle[2].x || x < rectangle[3].x))
+        if (points_in_hull > 0 && x <= last_x)
             throw std::logic_error("Points must be increasing by x.");
 
+        last_x = x;
         Point p1{x, SY(y) + error};
         Point p2{x, SY(y) - error};
 
         if (points_in_hull == 0) {
-            first = {x, y};
+            first_x = x;
             rectangle[0] = p1;
             rectangle[1] = p2;
             upper.clear();
@@ -213,8 +215,8 @@ public:
 
     CanonicalSegment get_segment() {
         if (points_in_hull == 1)
-            return CanonicalSegment(rectangle[0], rectangle[1], first.x);
-        return CanonicalSegment(rectangle, first.x);
+            return CanonicalSegment(rectangle[0], rectangle[1], first_x);
+        return CanonicalSegment(rectangle, first_x);
     }
 
     void reset() {
