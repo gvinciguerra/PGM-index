@@ -7,18 +7,24 @@ set(CMAKE_CXX_STANDARD 17)
 
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
-if(COMPILER_SUPPORTS_MARCH_NATIVE)
+if (COMPILER_SUPPORTS_MARCH_NATIVE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
-endif()
+endif ()
 
 CHECK_CXX_COMPILER_FLAG("-ftree-vectorize" COMPILER_SUPPORTS_FTREE_VECTORIZE)
-if(COMPILER_SUPPORTS_FTREE_VECTORIZE)
+if (COMPILER_SUPPORTS_FTREE_VECTORIZE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftree-vectorize")
-endif()
+endif ()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
-endif()
+endif ()
+
+find_package(OpenMP REQUIRED)
+if (OPENMP_FOUND)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif ()
 
 include_directories(include lib)
 

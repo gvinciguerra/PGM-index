@@ -16,6 +16,11 @@
 
 #pragma once
 
+#ifndef _OPENMP
+    #error Compile with -fopenmp
+#endif
+
+#include <omp.h>
 #include <cmath>
 #include <limits>
 #include <vector>
@@ -292,8 +297,8 @@ size_t make_segmentation(size_t n, size_t error, Fin in, Fout out) {
     if (n == 0)
         return 0;
 
-    using X = typename std::invoke_result<Fin, size_t>::type::first_type;
-    using Y = typename std::invoke_result<Fin, size_t>::type::second_type;
+    using X = typename std::invoke_result_t<Fin, size_t>::first_type;
+    using Y = typename std::invoke_result_t<Fin, size_t>::second_type;
     size_t c = 0;
     size_t start = 0;
     auto p = in(0);
@@ -316,6 +321,59 @@ size_t make_segmentation(size_t n, size_t error, Fin in, Fout out) {
 
     out(start, n, opt.get_segment());
     return ++c;
+}
+
+template<typename Fin, typename Fout>
+size_t make_segmentation_par(size_t n, size_t error, Fin in, Fout out) {
+    auto parallelism = std::min<int>(omp_get_max_threads(), 20);
+    auto chunk_size = n / parallelism;
+    auto c = 0ull;
+
+    if (chunk_size < 1ull << 20)
+        return make_segmentation(n, error, in, out);
+
+    using X = typename std::invoke_result_t<Fin, size_t>::first_type;
+    using Y = typename std::invoke_result_t<Fin, size_t>::second_type;
+    using canonical_segment = typename OptimalPiecewiseLinearModel<X, Y>::CanonicalSegment;
+
+    std::vector<size_t> firsts(parallelism);
+    std::vector<size_t> lasts(parallelism);
+    std::vector<std::vector<canonical_segment>> results(parallelism);
+
+    // Create chunks [firsts[i], lasts[i]) while guaranteeing that equal elements belong to the same chunk
+    int i;
+    size_t last_last = 0;
+    for (i = 0; i < parallelism; ++i) {
+        auto first = last_last;
+        auto last = i == parallelism - 1 ? n : first + chunk_size;
+
+        for (; last < n && in(last - 1).first == in(last).first; ++last);
+
+        firsts[i] = first;
+        lasts[i] = last;
+        results[i].reserve((last - first) / (error > 0 ? (error * error) : 16));
+        last_last = last;
+
+        if (last == n) {
+            parallelism = i + 1;
+            break;
+        }
+    }
+
+    #pragma omp parallel for reduction(+:c) num_threads(parallelism)
+    for (i = 0; i < parallelism; ++i) {
+        auto first = firsts[i];
+        auto last = lasts[i];
+        auto in_fun = [in, first](auto j) { return in(first + j); };
+        auto out_fun = [&results, i](auto, auto, auto cs) { results[i].push_back(cs); };
+        c += make_segmentation(last - first, error, in_fun, out_fun);
+    }
+
+    for (auto &v : results)
+        for (auto &cs : v)
+            out(0, 0, cs); // TODO: fix first two arguments with the endpoints of the segment
+
+    return c;
 }
 
 template<typename RandomIt>

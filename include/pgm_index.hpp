@@ -140,7 +140,7 @@ public:
         // Build first level
         auto in_fun = [first](auto i) { return std::pair<K, size_t>(first[i], i); };
         auto out_fun = [this](auto, auto, auto cs) { segments.emplace_back(cs); };
-        n_segments = make_segmentation(last_n, Error, in_fun, out_fun);
+        n_segments = make_segmentation_par(last_n, Error, in_fun, out_fun);
         back_check();
         levels_offsets.push_back(levels_offsets.back() + n_segments + 1);
         levels_sizes.push_back(n_segments);
