@@ -89,7 +89,7 @@ class PGMIndex {
                 it = lo;
             } else {
                 auto level_size = levels_sizes[l];
-                auto hi = level_begin + ADD_ERR(pos, RecursiveError + 1, level_size);
+                auto hi = level_begin + ADD_ERR(pos, RecursiveError + 2, level_size);
                 it = std::upper_bound(lo, hi, key);
                 it = it == level_begin ? it : std::prev(it);
             }
