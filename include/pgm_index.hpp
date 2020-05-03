@@ -127,11 +127,14 @@ public:
         levels_offsets.push_back(0);
         segments.reserve(n / (Error * Error));
 
-        auto last_n = n;
         auto n_segments = 0ull;
+        auto ignore_last = *std::prev(last) == std::numeric_limits<K>::max(); // max is reserved for padding
+        auto last_n = n - ignore_last;
+        last -= ignore_last;
+
         auto back_check = [this, last, &n_segments, &last_n]() {
             if (segments.back().slope == 0) {
-                // In this (rare) situation, we need to ensure that keys > *(last-1) are approximated to a position == n
+                // Here, we need to ensure that keys > *(last-1) are approximated to a position == n
                 segments.emplace_back(*std::prev(last) + 1, 0, last_n);
                 ++n_segments;
             }
