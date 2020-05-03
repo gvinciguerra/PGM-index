@@ -9,6 +9,7 @@ compiler:
   - clang
   - gcc
 script:
+  - export LD_LIBRARY_PATH=$(if [[ $CXX == "clang++" ]]; then echo -n '/usr/local/clang/lib'; fi)
   - cmake .
   - make
   - ./test/tests
