@@ -337,10 +337,11 @@ size_t make_segmentation_par(size_t n, size_t error, Fin in, Fout out) {
     using X = typename std::invoke_result_t<Fin, size_t>::first_type;
     using Y = typename std::invoke_result_t<Fin, size_t>::second_type;
     using canonical_segment = typename OptimalPiecewiseLinearModel<X, Y>::CanonicalSegment;
+    using cs_pair = std::pair<canonical_segment, size_t>;
 
     std::vector<size_t> firsts(parallelism);
     std::vector<size_t> lasts(parallelism);
-    std::vector<std::vector<canonical_segment>> results(parallelism);
+    std::vector<std::vector<cs_pair>> results(parallelism);
 
     // Create chunks [firsts[i], lasts[i]) while guaranteeing that equal elements belong to the same chunk
     int i;
@@ -367,13 +368,17 @@ size_t make_segmentation_par(size_t n, size_t error, Fin in, Fout out) {
         auto first = firsts[i];
         auto last = lasts[i];
         auto in_fun = [in, first](auto j) { return in(first + j); };
-        auto out_fun = [&results, i](auto, auto, auto cs) { results[i].push_back(cs); };
+        auto out_fun = [&results, i, first](auto, auto end, auto cs) { results[i].emplace_back(cs, first + end); };
         c += make_segmentation(last - first, error, in_fun, out_fun);
     }
 
-    for (auto &v : results)
-        for (auto &cs : v)
-            out(0, 0, cs); // TODO: fix first two arguments with the endpoints of the segment
+    size_t start = 0;
+    for (auto &v : results) {
+        for (auto &cs : v) {
+            out(start, cs.second, cs.first);
+            start = cs.second;
+        }
+    }
 
     return c;
 }
