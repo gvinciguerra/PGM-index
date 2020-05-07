@@ -142,8 +142,14 @@ public:
         };
 
         // Build first level
-        auto in_fun = [first](auto i) { return std::pair<K, size_t>(first[i], i); };
+        auto in_fun = [this, first](auto i) {
+            auto x = first[i];
+            if (i > 0 && i + 1u < n && x == first[i - 1] && x != first[i + 1] && x + 1 != first[i + 1])
+                return std::pair<K, size_t>(x + 1, i);
+            return std::pair<K, size_t>(x, i);
+        };
         auto out_fun = [this](auto, auto, auto cs) { segments.emplace_back(cs); };
+
         n_segments = make_segmentation_par(last_n, Error, in_fun, out_fun);
         back_check();
         levels_offsets.push_back(levels_offsets.back() + n_segments + 1);
@@ -229,7 +235,7 @@ struct PGMIndex<K, Error, RecursiveError, Floating>::Segment {
         if (cs_intercept > std::numeric_limits<decltype(intercept)>::max())
             throw std::overflow_error("Change the type of Segment::intercept to int64");
         slope = cs_slope;
-        intercept = cs_intercept;
+        intercept = std::round(cs_intercept);
     }
 
     friend inline bool operator<(const Segment &s, const K &k) {
