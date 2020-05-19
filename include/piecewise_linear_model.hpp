@@ -331,7 +331,7 @@ size_t make_segmentation_par(size_t n, size_t error, Fin in, Fout out) {
     auto chunk_size = n / parallelism;
     auto c = 0ull;
 
-    if (chunk_size < 1ull << 20)
+    if (parallelism == 1 || chunk_size < 1ull << 20)
         return make_segmentation(n, error, in, out);
 
     using X = typename std::invoke_result_t<Fin, size_t>::first_type;

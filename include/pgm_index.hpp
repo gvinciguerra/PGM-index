@@ -55,7 +55,7 @@ struct ApproxPos {
  * @tparam RecursiveError the maximum error allowed in the upper levels of the index
  * @tparam Floating the floating-point type to use for slopes
  */
-template<typename K, size_t Error = 64, size_t RecursiveError = 16, typename Floating = double>
+template<typename K, size_t Error = 64, size_t RecursiveError = 4, typename Floating = double>
 class PGMIndex {
     static_assert(Error > 0);
     struct Segment;
