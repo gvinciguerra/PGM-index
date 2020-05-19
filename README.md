@@ -5,16 +5,17 @@
 <p align="center">The Piecewise Geometric Model index (PGM-index) is a data structure that enables fast point and range searches in arrays of billions of items using orders of magnitude less space than traditional indexes.</p>
 
 <p align="center">
-    <a href="https://gvinciguerra.github.io/PGM-index" rel="nofollow" class="rich-diff-level-one">Website</a>
-    | <a href="https://gvinciguerra.github.io/PGM-index/docs" rel="nofollow" class="rich-diff-level-one">Documentation</a>
-    | <a href="http://www.vldb.org/pvldb/vol13/p1162-ferragina.pdf" rel="nofollow" class="rich-diff-level-one">Paper</a>
-    | <a href="http://acube.di.unipi.it" rel="nofollow" class="rich-diff-level-one">A³ Lab</a></p>
+    <a href="https://pgm.di.unipi.it/">Website</a>
+    | <a href="https://pgm.di.unipi.it/docs">Documentation</a>
+    | <a href="https://dl.acm.org/doi/pdf/10.14778/3389133.3389135">Paper</a>
+    | <a href="http://acube.di.unipi.it">A³ Lab</a>
 </p>
 
 <p align="center">
     <a href="https://travis-ci.org/gvinciguerra/PGM-index"><img src="https://img.shields.io/travis/gvinciguerra/PGM-index" alt="Travis (.org)"></a>
-    <a href="https://github.com/gvinciguerra/PGM-index/blob/master/LICENSE" class="rich-diff-level-one"><img src="https://img.shields.io/github/license/gvinciguerra/PGM-index" alt="License"></a>
-    <a href="https://github.com/gvinciguerra/PGM-index/stargazers" class="rich-diff-level-one"><img src="https://img.shields.io/github/stars/gvinciguerra/PGM-index" alt="GitHub stars"></a></p>
+    <a href="https://github.com/gvinciguerra/PGM-index/blob/master/LICENSE"><img src="https://img.shields.io/github/license/gvinciguerra/PGM-index" alt="License"></a>
+    <a href="https://github.com/gvinciguerra/PGM-index/stargazers"><img src="https://img.shields.io/github/stars/gvinciguerra/PGM-index" alt="GitHub stars"></a>
+    <a href="https://github.com/gvinciguerra/PGM-index/network/members"><img alt="GitHub forks" src="https://img.shields.io/github/forks/gvinciguerra/PGM-index"></a>
 </p>
 
 ## Building the code
