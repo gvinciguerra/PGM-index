@@ -288,6 +288,9 @@ public:
     }
 
     std::pair<long double, long double> get_slope_range() const {
+        if (one_point())
+            return {0, 1};
+
         auto min_slope = static_cast<long double>(rectangle[2] - rectangle[0]);
         auto max_slope = static_cast<long double>(rectangle[3] - rectangle[1]);
         return {min_slope, max_slope};
