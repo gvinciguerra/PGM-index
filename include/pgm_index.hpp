@@ -72,7 +72,7 @@ class PGMIndex {
      * @return an iterator to the segment responsible for the given key
      */
     auto segment_for_key(const K &key) const {
-        if (RecursiveError == 0) {
+        if constexpr (RecursiveError == 0) {
             auto it = std::upper_bound(segments.begin(), segments.begin() + levels_sizes[0], key);
             return it == segments.begin() ? it : std::prev(it);
         }
@@ -119,7 +119,11 @@ public:
      */
     template<typename RandomIt>
     PGMIndex(RandomIt first, RandomIt last)
-        : n(std::distance(first, last)), first_key(*first), segments(), levels_sizes(), levels_offsets() {
+        : n(std::distance(first, last)),
+          first_key(*first),
+          segments(),
+          levels_sizes(),
+          levels_offsets() {
         assert(std::is_sorted(first, last));
         if (n == 0)
             return;
@@ -127,18 +131,18 @@ public:
         levels_offsets.push_back(0);
         segments.reserve(n / (Error * Error));
 
-        auto n_segments = 0ull;
         auto ignore_last = *std::prev(last) == std::numeric_limits<K>::max(); // max is reserved for padding
         auto last_n = n - ignore_last;
         last -= ignore_last;
 
-        auto back_check = [this, last, &n_segments, &last_n]() {
+        auto back_check = [this, last](size_t n_segments, size_t prev_level_size) {
             if (segments.back().slope == 0) {
-                // Here, we need to ensure that keys > *(last-1) are approximated to a position == n
-                segments.emplace_back(*std::prev(last) + 1, 0, last_n);
+                // Here, we need to ensure that keys > *(last-1) are approximated to a position == prev_level_size
+                segments.emplace_back(*std::prev(last) + 1, 0, prev_level_size);
                 ++n_segments;
             }
-            segments.emplace_back(last_n);
+            segments.emplace_back(prev_level_size);
+            return n_segments;
         };
 
         // Build first level
@@ -149,22 +153,17 @@ public:
             return std::pair<K, size_t>(x, i);
         };
         auto out_fun = [this](auto, auto, auto cs) { segments.emplace_back(cs); };
-
-        n_segments = make_segmentation_par(last_n, Error, in_fun, out_fun);
-        back_check();
-        levels_offsets.push_back(levels_offsets.back() + n_segments + 1);
-        levels_sizes.push_back(n_segments);
-        last_n = n_segments;
+        last_n = back_check(make_segmentation_par(last_n, Error, in_fun, out_fun), last_n);
+        levels_offsets.push_back(levels_offsets.back() + last_n + 1);
+        levels_sizes.push_back(last_n);
 
         // Build upper levels
         while (RecursiveError && last_n > 1) {
             auto offset = levels_offsets[levels_offsets.size() - 2];
             auto in_fun_rec = [this, offset](auto i) { return std::pair<K, size_t>(segments[offset + i].key, i); };
-            n_segments = make_segmentation(last_n, RecursiveError, in_fun_rec, out_fun);
-            back_check();
-            levels_offsets.push_back(levels_offsets.back() + n_segments + 1);
-            levels_sizes.push_back(n_segments);
-            last_n = n_segments;
+            last_n = back_check(make_segmentation(last_n, RecursiveError, in_fun_rec, out_fun), last_n);
+            levels_offsets.push_back(levels_offsets.back() + last_n + 1);
+            levels_sizes.push_back(last_n);
         }
 
         levels_offsets.pop_back();
