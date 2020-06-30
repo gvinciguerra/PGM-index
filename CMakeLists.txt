@@ -31,10 +31,8 @@ endif ()
 include_directories(include lib)
 
 # PGM-index library
-add_subdirectory(lib/sdsl-lite/)
 add_library(pgmindexlib INTERFACE)
-target_include_directories(pgmindexlib INTERFACE include/)
-target_link_libraries(pgmindexlib INTERFACE sdsl)
+target_include_directories(pgmindexlib INTERFACE include/ lib/)
 
 # tuner
 if (${BUILD_PGM_TUNER})

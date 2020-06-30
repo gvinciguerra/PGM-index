@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include <sdsl/bit_vectors.hpp>
+#include "sdsl.hpp"
 #include "pgm_index.hpp"
 
 /**
