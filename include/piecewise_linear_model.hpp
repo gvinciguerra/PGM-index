@@ -330,48 +330,34 @@ size_t make_segmentation(size_t n, size_t error, Fin in, Fout out) {
 
 template<typename Fin, typename Fout>
 size_t make_segmentation_par(size_t n, size_t error, Fin in, Fout out) {
-    auto parallelism = std::min<int>(omp_get_max_threads(), 20);
+    auto parallelism = std::min<size_t>(omp_get_max_threads(), 20);
     auto chunk_size = n / parallelism;
     auto c = 0ull;
 
-    if (parallelism == 1 || chunk_size < 1ull << 20)
+    if (parallelism == 1 || n < 1ull << 15)
         return make_segmentation(n, error, in, out);
 
     using X = typename std::invoke_result_t<Fin, size_t>::first_type;
     using Y = typename std::invoke_result_t<Fin, size_t>::second_type;
     using canonical_segment = typename OptimalPiecewiseLinearModel<X, Y>::CanonicalSegment;
     using cs_pair = std::pair<canonical_segment, size_t>;
-
-    std::vector<size_t> firsts(parallelism);
-    std::vector<size_t> lasts(parallelism);
     std::vector<std::vector<cs_pair>> results(parallelism);
 
-    // Create chunks [firsts[i], lasts[i]) while guaranteeing that equal elements belong to the same chunk
-    int i;
-    size_t last_last = 0;
-    for (i = 0; i < parallelism; ++i) {
-        auto first = last_last;
-        auto last = i == parallelism - 1 ? n : first + chunk_size;
-
-        for (; last < n && in(last - 1).first == in(last).first; ++last);
-
-        firsts[i] = first;
-        lasts[i] = last;
-        results[i].reserve((last - first) / (error > 0 ? (error * error) : 16));
-        last_last = last;
-
-        if (last == n) {
-            parallelism = i + 1;
-            break;
-        }
-    }
-
     #pragma omp parallel for reduction(+:c) num_threads(parallelism)
-    for (i = 0; i < parallelism; ++i) {
-        auto first = firsts[i];
-        auto last = lasts[i];
+    for (auto i = 0ull; i < parallelism; ++i) {
+        auto first = i * chunk_size;
+        auto last = i == parallelism - 1 ? n : first + chunk_size;
+        if (first > 0) {
+            for (; first < last; ++first)
+                if (in(first).first != in(first - 1).first)
+                    break;
+            if (first == last)
+                continue;
+        }
+
         auto in_fun = [in, first](auto j) { return in(first + j); };
         auto out_fun = [&results, i, first](auto, auto end, auto cs) { results[i].emplace_back(cs, first + end); };
+        results[i].reserve(chunk_size / (error > 0 ? error * error : 16));
         c += make_segmentation(last - first, error, in_fun, out_fun);
     }
 
