@@ -20,18 +20,18 @@
 #include "pgm_index.hpp"
 
 /**
- * A space-efficient and compressed index that finds the position of a sought key within a radius of @p Error.
+ * A space-efficient and compressed index that finds the position of a sought key within a radius of @p Epsilon.
  *
  * This is a variant of the @ref PGMIndex that internally uses compression to reduce the space of the index.
  *
  * @tparam K the type of the indexed elements
- * @tparam Error the maximum error allowed in the last level of the index
- * @tparam RecursiveError the maximum error allowed in the upper levels of the index
+ * @tparam Epsilon the maximum error allowed in the last level of the index
+ * @tparam EpsilonRecursive the maximum error allowed in the upper levels of the index
  * @tparam Floating the floating-point type to use for slopes
  */
-template<typename K, size_t Error, size_t RecursiveError = 4, typename Floating = double>
+template<typename K, size_t Epsilon, size_t EpsilonRecursive = 4, typename Floating = double>
 class CompressedPGMIndex {
-    static_assert(Error > 0);
+    static_assert(Epsilon > 0);
     struct CompressedLevel;
 
     size_t n;                             ///< The number of elements in the indexed data.
@@ -45,6 +45,13 @@ class CompressedPGMIndex {
     using canonical_segment = typename OptimalPiecewiseLinearModel<K, size_t>::CanonicalSegment;
 
 public:
+
+    static constexpr size_t epsilon_value = Epsilon;
+
+    /**
+     * Constructs an empty index.
+     */
+    CompressedPGMIndex() = default;
 
     /**
      * Constructs the compressed index on the given sorted data.
@@ -64,7 +71,7 @@ public:
 
         std::vector<size_t> levels_offsets({0});
         std::vector<canonical_segment> segments;
-        segments.reserve(n / (Error * Error));
+        segments.reserve(n / (Epsilon * Epsilon));
 
         auto ignore_last = *std::prev(last) == std::numeric_limits<K>::max(); // max is reserved for padding
         auto last_n = n - ignore_last;
@@ -78,14 +85,14 @@ public:
             return std::pair<K, size_t>(x, i);
         };
         auto out_fun = [&, this](auto, auto, auto cs) { segments.emplace_back(cs); };
-        last_n = make_segmentation_par(last_n, Error, in_fun, out_fun);
+        last_n = make_segmentation_par(last_n, Epsilon, in_fun, out_fun);
         levels_offsets.push_back(levels_offsets.back() + last_n);
 
         // Build upper levels
-        while (RecursiveError && last_n > 1) {
+        while (EpsilonRecursive && last_n > 1) {
             auto offset = levels_offsets[levels_offsets.size() - 2];
             auto in_fun_rec = [&, this](auto i) { return std::pair<K, size_t>(segments[offset + i].get_first_x(), i); };
-            last_n = make_segmentation(last_n, RecursiveError, in_fun_rec, out_fun);
+            last_n = make_segmentation(last_n, EpsilonRecursive, in_fun_rec, out_fun);
             levels_offsets.push_back(levels_offsets.back() + last_n);
         }
 
@@ -95,13 +102,13 @@ public:
 
         // Build levels
         first_key = *first;
-        if constexpr (RecursiveError > 0) {
+        if constexpr (EpsilonRecursive > 0) {
             auto root = *std::prev(levels_offsets.end(), 2);
             std::tie(root_slope, root_intercept) = segments[root].get_floating_point_segment(first_key);
         }
 
         levels.reserve(levels_offsets.size() - 2);
-        for (auto i = RecursiveError == 0 ? 1 : int(levels_offsets.size()) - 2; i > 0; --i) {
+        for (auto i = EpsilonRecursive == 0 ? 1 : int(levels_offsets.size()) - 2; i > 0; --i) {
             auto l = levels_offsets[i - 1];
             auto r = levels_offsets[i];
             auto prev_level_size = i == 1 ? n : l - levels_offsets[i - 2];
@@ -131,14 +138,14 @@ public:
     ApproxPos find_approximate_position(K key) const {
         auto k = std::max(first_key, key);
 
-        if constexpr (RecursiveError == 0) {
+        if constexpr (EpsilonRecursive == 0) {
             auto &level = levels.front();
             auto it = std::upper_bound(level.keys.begin(), level.keys.begin() + level.size(), key);
             auto i = std::distance(level.keys.begin(), it);
             i = i == 0 ? 0 : i - 1;
             auto pos = std::min<size_t>(level(slopes_table, i, k), level.get_intercept(i + 1));
-            auto lo = SUB_ERR(pos, Error);
-            auto hi = ADD_ERR(pos, Error + 1, n);
+            auto lo = SUB_ERR(pos, Epsilon);
+            auto hi = ADD_ERR(pos, Epsilon + 1, n);
             return {pos, lo, hi};
         }
 
@@ -146,13 +153,13 @@ public:
         auto pos = std::min<size_t>(p > 0 ? size_t(p) : 0ull, levels.front().size());
 
         for (auto &level : levels) {
-            auto lo = level.keys.begin() + SUB_ERR(pos, RecursiveError + 1);
+            auto lo = level.keys.begin() + SUB_ERR(pos, EpsilonRecursive + 1);
 
             static constexpr size_t linear_search_threshold = 8 * 64 / sizeof(K);
-            if constexpr (RecursiveError <= linear_search_threshold) {
+            if constexpr (EpsilonRecursive <= linear_search_threshold) {
                 for (; *std::next(lo) <= key; ++lo);
             } else {
-                auto hi = level.keys.begin() + ADD_ERR(pos, RecursiveError + 2, level.size());
+                auto hi = level.keys.begin() + ADD_ERR(pos, EpsilonRecursive + 2, level.size());
                 auto it = std::upper_bound(lo, hi, k);
                 lo == level.keys.begin() ? it : std::prev(it);
             }
@@ -161,8 +168,8 @@ public:
             pos = std::min<size_t>(level(slopes_table, i, k), level.get_intercept(i + 1));
         }
 
-        auto lo = SUB_ERR(pos, Error);
-        auto hi = ADD_ERR(pos, Error + 1, n);
+        auto lo = SUB_ERR(pos, Epsilon);
+        auto hi = ADD_ERR(pos, Epsilon + 1, n);
         return {pos, lo, hi};
     }
 
@@ -238,8 +245,8 @@ private:
     }
 };
 
-template<typename K, size_t Error, size_t RecursiveError, typename Floating>
-struct CompressedPGMIndex<K, Error, RecursiveError, Floating>::CompressedLevel {
+template<typename K, size_t Epsilon, size_t EpsilonRecursive, typename Floating>
+struct CompressedPGMIndex<K, Epsilon, EpsilonRecursive, Floating>::CompressedLevel {
     std::vector<K> keys;                       ///< The keys of the segment in this level.
     sdsl::int_vector<> slopes_map;             ///< The ith element is an index into slopes_table.
     int64_t intercept_offset;                  ///< An offset to make the intercepts start from 0 in the bitvector.

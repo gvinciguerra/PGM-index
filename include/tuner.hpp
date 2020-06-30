@@ -22,7 +22,7 @@
 template<typename K>
 class MockPGMIndex {
     size_t data_size;
-    size_t error;
+    size_t epsilon;
 
     struct SegmentData {
         double slope;
@@ -63,14 +63,26 @@ class MockPGMIndex {
 
 public:
 
-    MockPGMIndex(const std::vector<K> &data, size_t error) : data_size(data.size()), error(error) {
+    MockPGMIndex(const std::vector<K> &data, size_t epsilon) : data_size(data.size()), epsilon(epsilon) {
         std::list<Layer> tmp;
-        tmp.emplace_front(make_segmentation(data.begin(), data.end(), error));
+        {
+            using canonical_segment = typename OptimalPiecewiseLinearModel<K, size_t>::CanonicalSegment;
+            std::vector<canonical_segment> segments;
+            auto in_fun = [this, &data](auto i) {
+                auto x = data[i];
+                if (i > 0 && i + 1u < data_size && x == data[i - 1] && x != data[i + 1] && x + 1 != data[i + 1])
+                    return std::pair<K, size_t>(x + 1, i);
+                return std::pair<K, size_t>(x, i);
+            };
+            auto out_fun = [this, &segments](auto, auto, auto cs) { segments.emplace_back(cs); };
+            make_segmentation_par(data.size(), epsilon, in_fun, out_fun);
+            tmp.emplace_front(segments);
+        }
 
         while (tmp.front().size() > 1) {
             auto first = tmp.front().segments_keys.begin();
             auto last = tmp.front().segments_keys.end();
-            tmp.emplace_front(make_segmentation(first, last, error));
+            tmp.emplace_front(make_segmentation(first, last, epsilon));
         }
 
         layers = {std::make_move_iterator(tmp.begin()), std::make_move_iterator(tmp.end())};
@@ -83,8 +95,8 @@ public:
 
         for (auto it = layers.cbegin() + 1; it < layers.cend(); ++it) {
             auto layer_size = it->size();
-            auto lo = SUB_ERR(approx_pos, error);
-            auto hi = ADD_ERR(approx_pos, error + 1, layer_size);
+            auto lo = SUB_ERR(approx_pos, epsilon);
+            auto hi = ADD_ERR(approx_pos, epsilon + 1, layer_size);
 
             for (; lo <= hi && it->segments_keys[lo] <= key; ++lo);
             pos = lo - 1;
@@ -98,8 +110,8 @@ public:
         auto slope = layers.back().segments_data[pos].slope;
         auto intercept = layers.back().segments_data[pos].intercept;
         auto p = (size_t) std::fmax(0., slope * (key - node_key) + intercept);
-        auto lo = SUB_ERR(p, error);
-        auto hi = ADD_ERR(p, error, data_size);
+        auto lo = SUB_ERR(p, epsilon);
+        auto hi = ADD_ERR(p, epsilon, data_size);
 
         return *std::lower_bound(data.cbegin() + lo, data.cbegin() + hi + 1, key);
     }
@@ -129,7 +141,7 @@ void do_not_optimize(T const &value) {
 }
 
 struct IndexStats {
-    size_t error;
+    size_t epsilon;
     size_t segments_count;
     size_t size_in_bytes;
     size_t lookup_time;
@@ -140,9 +152,9 @@ struct IndexStats {
     IndexStats() {};
 
     template<typename K>
-    IndexStats(std::vector<K> &data, size_t error) : error(error) {
+    IndexStats(std::vector<K> &data, size_t epsilon) : epsilon(epsilon) {
         auto start = std::chrono::high_resolution_clock::now();
-        MockPGMIndex<K> pgmIndex(data, error);
+        MockPGMIndex<K> pgmIndex(data, epsilon);
         auto end = std::chrono::high_resolution_clock::now();
         construction_time = size_t(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
         height = pgmIndex.height();
@@ -194,7 +206,7 @@ auto fit_segments_count_model(const std::vector<IndexStats> &all_index_stats, al
     x.setlength(all_index_stats.size(), 1);
     y_space.setlength(all_index_stats.size());
     for (int r = 0; r < all_index_stats.size(); ++r) {
-        x[r][0] = all_index_stats[r].error;
+        x[r][0] = all_index_stats[r].epsilon;
         y_space[r] = all_index_stats[r].segments_count;
     }
 
@@ -212,21 +224,21 @@ auto fit_segments_count_model(const std::vector<IndexStats> &all_index_stats, al
 
 /*------- ROOT FINDING -------*/
 
-double target_space_function(double error, double a, double b, double max_space, double constants) {
+double target_space_function(double epsilon, double a, double b, double max_space, double constants) {
     // s(ε) = c (m + (m-1) / (2ε-1), where m=aε^-b
-    double last_layer_segments = std::fmax(1., a * std::pow(error, -b));
-    double total_segments = (2 * error * last_layer_segments - 1) / (2. * error - 1);
+    double last_layer_segments = std::fmax(1., a * std::pow(epsilon, -b));
+    double total_segments = (2 * epsilon * last_layer_segments - 1) / (2. * epsilon - 1);
     return total_segments * constants - max_space;
 }
 
-double target_space_function_derivative(double error, double a, double b, double max_space, double constants) {
+double target_space_function_derivative(double epsilon, double a, double b, double max_space, double constants) {
     // s'(ε) = (2c ε^(-b) (ab ε^b - a - 2abε)) / (2ε - 1)^2
-    double numerator = 2 * constants * std::pow(error, -b) * (a * b + std::pow(error, b) - a - 2 * a * b * error);
-    double denominator = std::pow(2 * error - 1, 2.);
+    double numerator = 2 * constants * std::pow(epsilon, -b) * (a * b + std::pow(epsilon, b) - a - 2 * a * b * epsilon);
+    double denominator = std::pow(2 * epsilon - 1, 2.);
     return numerator / denominator;
 }
 
-double guess_error_space(double x, double a, double b, double max_space, double constants) {
+double guess_epsilon_space(double x, double a, double b, double max_space, double constants) {
     double n = target_space_function(x, a, b, max_space, constants);
     double d = target_space_function_derivative(x, a, b, max_space, constants);
 
@@ -247,12 +259,12 @@ size_t x86_cache_line() {
     return c & 0xFF;
 }
 
-void minimize_time_logging(IndexStats &stats, bool verbose, size_t lo_error, size_t hi_error) {
+void minimize_time_logging(IndexStats &stats, bool verbose, size_t lo_eps, size_t hi_eps) {
     auto kib = stats.size_in_bytes / double(1u << 10u);
     auto query_time = std::to_string(stats.lookup_time) + "±" + std::to_string(stats.lookup_time_std);
-    printf("%-19zu %-19.1f %-19.2f %-19s", stats.error, stats.construction_time * 1.e-9, kib, query_time.c_str());
+    printf("%-19zu %-19.1f %-19.2f %-19s", stats.epsilon, stats.construction_time * 1.e-9, kib, query_time.c_str());
     if (verbose) {
-        auto bounds = ("(" + std::to_string(lo_error) + ", " + std::to_string(hi_error) + ")").c_str();
+        auto bounds = ("(" + std::to_string(lo_eps) + ", " + std::to_string(hi_eps) + ")").c_str();
         printf("\t↝ search space=%-15s", bounds);
     }
     printf("\n");
@@ -260,38 +272,38 @@ void minimize_time_logging(IndexStats &stats, bool verbose, size_t lo_error, siz
 
 template<typename K>
 void minimize_space_given_time(size_t max_time, float tolerance, std::vector<K> &data,
-                               size_t lo_error, size_t hi_error, bool verbose) {
+                               size_t lo_eps, size_t hi_eps, bool verbose) {
     auto latency = 82.1;
     size_t cache_line = x86_cache_line();
     auto block_size = cache_line / sizeof(int64_t);
-    auto starting_error = std::clamp(size_t(block_size * std::pow(2., max_time / latency - 1.)), lo_error, hi_error);
+    auto eps_start = std::clamp(size_t(block_size * std::pow(2., max_time / latency - 1.)), lo_eps, hi_eps);
     std::vector<IndexStats> all_stats;
 
     const size_t starting_i = 2048;
     size_t i = starting_i;
-    size_t bin_search_lo = lo_error;
-    size_t bin_search_hi = hi_error;
-    all_stats.emplace_back(data, starting_error);
-    minimize_time_logging(all_stats.back(), verbose, starting_error, starting_error);
+    size_t bin_search_lo = lo_eps;
+    size_t bin_search_hi = hi_eps;
+    all_stats.emplace_back(data, eps_start);
+    minimize_time_logging(all_stats.back(), verbose, eps_start, eps_start);
 
     if (all_stats.back().lookup_time < max_time) {
-        while (starting_error + (i << 1) < hi_error && all_stats.back().lookup_time < max_time * (1 + tolerance)) {
+        while (eps_start + (i << 1) < hi_eps && all_stats.back().lookup_time < max_time * (1 + tolerance)) {
             i <<= 1;
-            all_stats.emplace_back(data, starting_error + i);
-            bin_search_lo = starting_error + i / 2;
-            bin_search_hi = starting_error + i;
+            all_stats.emplace_back(data, eps_start + i);
+            bin_search_lo = eps_start + i / 2;
+            bin_search_hi = eps_start + i;
             minimize_time_logging(all_stats.back(), verbose, bin_search_lo, bin_search_hi);
         }
-        bin_search_lo = i <= (starting_i << 1) ? starting_error : starting_error + i / 2;
+        bin_search_lo = i <= (starting_i << 1) ? eps_start : eps_start + i / 2;
     } else {
-        while (starting_error > (i << 1) + lo_error && all_stats.back().lookup_time > max_time * (1 - tolerance)) {
+        while (eps_start > (i << 1) + lo_eps && all_stats.back().lookup_time > max_time * (1 - tolerance)) {
             i <<= 1;
-            all_stats.emplace_back(data, starting_error - i);
-            bin_search_lo = starting_error - i;
-            bin_search_hi = starting_error - i / 2;
+            all_stats.emplace_back(data, eps_start - i);
+            bin_search_lo = eps_start - i;
+            bin_search_hi = eps_start - i / 2;
             minimize_time_logging(all_stats.back(), verbose, bin_search_lo, bin_search_hi);
         }
-        bin_search_hi = i <= (starting_i << 1) ? starting_error : starting_error - i / 2;
+        bin_search_hi = i <= (starting_i << 1) ? eps_start : eps_start - i / 2;
     }
 
     while (bin_search_hi - bin_search_lo > cache_line / 2) {
@@ -321,13 +333,13 @@ void minimize_space_given_time(size_t max_time, float tolerance, std::vector<K> 
     auto time = std::accumulate(all_stats.cbegin(), all_stats.cend(), 0ul,
                                 [](size_t result, const IndexStats &s) { return result + s.construction_time; });
     printf("%zu iterations for a total construction time of %.0f s\n", all_stats.size(), time * 1.e-9);
-    printf("Set the error to %zu for an index of %zu bytes\n", best->error, best->size_in_bytes);
+    printf("Set epsilon to %zu for an index of %zu bytes\n", best->epsilon, best->size_in_bytes);
 }
 
 template<typename K>
 void minimize_time_given_space(size_t max_space, float tolerance, std::vector<K> &data,
-                               size_t lo_error, size_t hi_error, bool verbose) {
-    const auto guess_steps_threshold = size_t(2 * std::log2(std::log2(hi_error - lo_error)));
+                               size_t lo_eps, size_t hi_eps, bool verbose) {
+    const auto guess_steps_threshold = size_t(2 * std::log2(std::log2(hi_eps - lo_eps)));
     size_t guess_steps = 0;
     std::vector<IndexStats> all_index_stats;
 
@@ -338,7 +350,7 @@ void minimize_time_given_space(size_t max_space, float tolerance, std::vector<K>
 
     do {
         size_t guess = 0;
-        size_t mid = (lo_error + hi_error) / 2;
+        size_t mid = (lo_eps + hi_eps) / 2;
 
         if (all_index_stats.size() >= 4 && guess_steps < guess_steps_threshold) {
             auto[c_fit, fit_report] = fit_segments_count_model(all_index_stats, c_starting_point);
@@ -349,8 +361,8 @@ void minimize_time_given_space(size_t max_space, float tolerance, std::vector<K>
         if (guess_steps < guess_steps_threshold) {
             auto constants = sizeof(K) + 2 * sizeof(double);
 
-            guess = size_t(guess_error_space(100, c_space[0], c_space[1], max_space, constants));
-            guess = std::clamp(guess, lo_error + 1, hi_error - 1);
+            guess = size_t(guess_epsilon_space(100, c_space[0], c_space[1], max_space, constants));
+            guess = std::clamp(guess, lo_eps + 1, hi_eps - 1);
 
             auto bias_weight = guess_steps <= 1 ? 0 : float(guess_steps) / guess_steps_threshold;
             auto biased_guess = mid * bias_weight + guess * (1 - bias_weight);
@@ -365,22 +377,22 @@ void minimize_time_given_space(size_t max_space, float tolerance, std::vector<K>
         auto query_time = std::to_string(stats.lookup_time) + "±" + std::to_string(stats.lookup_time_std);
         printf("%-19zu %-19.1f %-19.2f %-19s", mid, stats.construction_time * 1.e-9, kib, query_time.c_str());
         if (verbose) {
-            auto bounds = ("(" + std::to_string(lo_error) + ", " + std::to_string(hi_error) + ")").c_str();
+            auto bounds = ("(" + std::to_string(lo_eps) + ", " + std::to_string(hi_eps) + ")").c_str();
             printf("\t↝ search space=%-15s \ts(ε)=%.0fε^-%.2f \tε guess=%zu", bounds, c_space[0], c_space[1], guess);
         }
         printf("\n");
         fflush(stdout);
 
         if (stats.size_in_bytes <= max_space)
-            hi_error = mid;
+            hi_eps = mid;
         else
-            lo_error = mid + 1;
-    } while (lo_error < hi_error
+            lo_eps = mid + 1;
+    } while (lo_eps < hi_eps
         && std::fabs(all_index_stats.back().size_in_bytes - max_space) > max_space * tolerance);
 
     printf("%s\n", std::string(80, '-').c_str());
     auto time = std::accumulate(all_index_stats.cbegin(), all_index_stats.cend(), 0ul,
                                 [](size_t result, const IndexStats &s) { return result + s.construction_time; });
     printf("Total construction time %.0f s\n", time * 1.e-9);
-    printf("Set the error to %zu\n", lo_error);
+    printf("Set epsilon to %zu\n", lo_eps);
 }

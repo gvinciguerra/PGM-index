@@ -97,8 +97,8 @@ int main(int argc, char **argv) {
     }
 
     std::sort(data.begin(), data.end());
-    const size_t lo_error = 2 * x86_cache_line() / sizeof(int64_t);
-    const size_t hi_error = data.size() / 2;
+    const size_t lo_eps = 2 * x86_cache_line() / sizeof(int64_t);
+    const size_t hi_eps = data.size() / 2;
     bool minimize_space = time;
 
     printf("Dataset: %zu entries\n", data.size());
@@ -108,11 +108,11 @@ int main(int argc, char **argv) {
         printf("Max space: %zu±%.0f KiB\n", space.Get() / (1ul << 10ul), space.Get() * tol.Get() / (1ul << 10ul));
 
     printf("%s\n", std::string(80, '-').c_str());
-    printf("%-19s %-19s %-19s %-19s\n", "Error", "Construction (s)", "Space (KiB)", "Query (ns)");
+    printf("%-19s %-19s %-19s %-19s\n", "Epsilon", "Construction (s)", "Space (KiB)", "Query (ns)");
     printf("%s\n", std::string(80, '-').c_str());
 
     if (minimize_space)
-        minimize_space_given_time(time.Get(), tol.Get(), data, lo_error, hi_error, verbose.Get());
+        minimize_space_given_time(time.Get(), tol.Get(), data, lo_eps, hi_eps, verbose.Get());
     else
-        minimize_time_given_space(space.Get(), tol.Get(), data, lo_error, hi_error, verbose.Get());
+        minimize_time_given_space(space.Get(), tol.Get(), data, lo_eps, hi_eps, verbose.Get());
 }

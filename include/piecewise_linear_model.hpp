@@ -79,13 +79,13 @@ private:
 
     template<bool Upper>
     struct Hull : private std::vector<StoredPoint> {
-        const SY error;
+        const SY epsilon;
 
-        explicit Hull(SY error) : std::vector<StoredPoint>(), error(Upper ? error : -error) {}
+        explicit Hull(SY epsilon) : std::vector<StoredPoint>(), epsilon(Upper ? epsilon : -epsilon) {}
 
         Point operator[](size_t i) const {
             auto &p = std::vector<StoredPoint>::operator[](i);
-            return {p.x, SY(p.y) + error};
+            return {p.x, SY(p.y) + epsilon};
         }
 
         void clear() { std::vector<StoredPoint>::clear(); }
@@ -95,7 +95,7 @@ private:
         void push(X x, Y y) { std::vector<StoredPoint>::emplace_back(StoredPoint{x, y}); };
     };
 
-    const Y error;
+    const Y epsilon;
     Hull<false> lower;
     Hull<true> upper;
     X first_x = 0;
@@ -115,9 +115,9 @@ public:
 
     class CanonicalSegment;
 
-    explicit OptimalPiecewiseLinearModel(Y error) : error(error), lower(error), upper(error) {
-        if (error < 0)
-            throw std::invalid_argument("error cannot be negative");
+    explicit OptimalPiecewiseLinearModel(Y epsilon) : epsilon(epsilon), lower(epsilon), upper(epsilon) {
+        if (epsilon < 0)
+            throw std::invalid_argument("epsilon cannot be negative");
 
         upper.reserve(1u << 16);
         lower.reserve(1u << 16);
@@ -128,8 +128,8 @@ public:
             throw std::logic_error("Points must be increasing by x.");
 
         last_x = x;
-        Point p1{x, SY(y) + error};
-        Point p2{x, SY(y) - error};
+        Point p1{x, SY(y) + epsilon};
+        Point p2{x, SY(y) - epsilon};
 
         if (points_in_hull == 0) {
             first_x = x;
@@ -298,7 +298,7 @@ public:
 };
 
 template<typename Fin, typename Fout>
-size_t make_segmentation(size_t n, size_t error, Fin in, Fout out) {
+size_t make_segmentation(size_t n, size_t epsilon, Fin in, Fout out) {
     if (n == 0)
         return 0;
 
@@ -308,7 +308,7 @@ size_t make_segmentation(size_t n, size_t error, Fin in, Fout out) {
     size_t start = 0;
     auto p = in(0);
 
-    OptimalPiecewiseLinearModel<X, Y> opt(error);
+    OptimalPiecewiseLinearModel<X, Y> opt(epsilon);
     opt.add_point(p.first, p.second);
 
     for (size_t i = 1; i < n; ++i) {
@@ -329,13 +329,13 @@ size_t make_segmentation(size_t n, size_t error, Fin in, Fout out) {
 }
 
 template<typename Fin, typename Fout>
-size_t make_segmentation_par(size_t n, size_t error, Fin in, Fout out) {
+size_t make_segmentation_par(size_t n, size_t epsilon, Fin in, Fout out) {
     auto parallelism = std::min<size_t>(omp_get_max_threads(), 20);
     auto chunk_size = n / parallelism;
     auto c = 0ull;
 
     if (parallelism == 1 || n < 1ull << 15)
-        return make_segmentation(n, error, in, out);
+        return make_segmentation(n, epsilon, in, out);
 
     using X = typename std::invoke_result_t<Fin, size_t>::first_type;
     using Y = typename std::invoke_result_t<Fin, size_t>::second_type;
@@ -357,8 +357,8 @@ size_t make_segmentation_par(size_t n, size_t error, Fin in, Fout out) {
 
         auto in_fun = [in, first](auto j) { return in(first + j); };
         auto out_fun = [&results, i, first](auto, auto end, auto cs) { results[i].emplace_back(cs, first + end); };
-        results[i].reserve(chunk_size / (error > 0 ? error * error : 16));
-        c += make_segmentation(last - first, error, in_fun, out_fun);
+        results[i].reserve(chunk_size / (epsilon > 0 ? epsilon * epsilon : 16));
+        c += make_segmentation(last - first, epsilon, in_fun, out_fun);
     }
 
     size_t start = 0;
@@ -373,18 +373,18 @@ size_t make_segmentation_par(size_t n, size_t error, Fin in, Fout out) {
 }
 
 template<typename RandomIt>
-auto make_segmentation(RandomIt first, RandomIt last, size_t error) {
+auto make_segmentation(RandomIt first, RandomIt last, size_t epsilon) {
     using key_type = typename RandomIt::value_type;
     using canonical_segment = typename OptimalPiecewiseLinearModel<key_type, size_t>::CanonicalSegment;
     using pair_type = typename std::pair<key_type, size_t>;
 
     size_t n = std::distance(first, last);
     std::vector<canonical_segment> out;
-    out.reserve(error > 0 ? n / (error * error) : n / 16);
+    out.reserve(epsilon > 0 ? n / (epsilon * epsilon) : n / 16);
 
     auto in_fun = [first](auto i) { return pair_type(first[i], i); };
     auto out_fun = [&out](auto, auto, auto cs) { out.push_back(cs); };
-    make_segmentation(n, error, in_fun, out_fun);
+    make_segmentation(n, epsilon, in_fun, out_fun);
 
     return out;
 }

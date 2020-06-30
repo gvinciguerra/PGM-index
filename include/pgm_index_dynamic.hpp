@@ -48,7 +48,7 @@ class DynamicPGMIndex {
 
     static_assert(min_level < MinIndexedLevel);
     static_assert(max_fully_allocated_level > min_level);
-    static_assert(2 * PGMType::error_value < 1ul << MinIndexedLevel);
+    static_assert(2 * PGMType::epsilon_value < 1ul << MinIndexedLevel);
 
     using LevelType = std::vector<Item, DefaultInitAllocator<Item>>;
     using BaseItem = std::conditional_t<std::is_pointer_v<V>, BaseItemA, BaseItemB>;

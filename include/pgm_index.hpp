@@ -23,8 +23,8 @@
 #include <algorithm>
 #include "piecewise_linear_model.hpp"
 
-#define ADD_ERR(x, error, size) ((x) + (error) >= (size) ? (size) : (x) + (error))
-#define SUB_ERR(x, error) ((x) <= (error) ? 0 : ((x) - (error)))
+#define ADD_ERR(x, epsilon, size) ((x) + (epsilon) >= (size) ? (size) : (x) + (epsilon))
+#define SUB_ERR(x, epsilon) ((x) <= (epsilon) ? 0 : ((x) - (epsilon)))
 
 /**
  * A struct that stores the result of a query to a @ref PGMIndex, that is, a range [@ref lo, @ref hi)
@@ -37,27 +37,28 @@ struct ApproxPos {
 };
 
 /**
- * A space-efficient index that finds the position of a key within a radius of @p Error.
+ * A space-efficient index that finds the position of a key within a radius of @p Epsilon.
  *
  * The index is constructed on a sorted sequence of keys. A query returns a struct @ref ApproxPos containing an
- * approximate position of the sought key and the bounds of the range of size 2*Error where the sought key is guaranteed
- * to be found if present. In the case of repeated keys, the index finds the position of the first occurrence of a key.
+ * approximate position of the sought key and the bounds of the range of size 2*Epsilon where the sought key is
+ * guaranteed to be found if present. In the case of repeated keys, the index finds the position of the first occurrence
+ * of a key.
  *
- * The @p Error template parameter should be set according to the desired space-time trade-off. A smaller error value
+ * The @p Epsilon template parameter should be set according to the desired space-time trade-off. A smaller value
  * makes the estimation more precise and the range smaller but at the cost of increased space usage.
  *
  * Internally the index uses a succinct piecewise linear mapping from keys to their position in the sorted order.
- * This mapping is represented as a sequence of linear models (segments) which, if @p RecursiveError is not zero, are
+ * This mapping is represented as a sequence of linear models (segments) which, if @p EpsilonRecursive is not zero, are
  * themselves recursively indexed by other piecewise linear mappings.
  *
  * @tparam K the type of the indexed elements
- * @tparam Error the maximum error allowed in the last level of the index
- * @tparam RecursiveError the maximum error allowed in the upper levels of the index
+ * @tparam Epsilon the maximum error allowed in the last level of the index
+ * @tparam EpsilonRecursive the maximum error allowed in the upper levels of the index
  * @tparam Floating the floating-point type to use for slopes
  */
-template<typename K, size_t Error = 64, size_t RecursiveError = 4, typename Floating = double>
+template<typename K, size_t Epsilon = 64, size_t EpsilonRecursive = 4, typename Floating = double>
 class PGMIndex {
-    static_assert(Error > 0);
+    static_assert(Epsilon > 0);
     struct Segment;
 
     size_t n;                           ///< The number of elements this index was built on.
@@ -72,7 +73,7 @@ class PGMIndex {
      * @return an iterator to the segment responsible for the given key
      */
     auto segment_for_key(const K &key) const {
-        if constexpr (RecursiveError == 0) {
+        if constexpr (EpsilonRecursive == 0) {
             auto it = std::upper_bound(segments.begin(), segments.begin() + levels_sizes[0], key);
             return it == segments.begin() ? it : std::prev(it);
         }
@@ -82,15 +83,15 @@ class PGMIndex {
         for (auto l = int(height()) - 2; l >= 0; --l) {
             auto level_begin = segments.begin() + levels_offsets[l];
             auto pos = std::min<size_t>((*it)(key), std::next(it)->intercept);
-            auto lo = level_begin + SUB_ERR(pos, RecursiveError + 1);
+            auto lo = level_begin + SUB_ERR(pos, EpsilonRecursive + 1);
 
             static constexpr size_t linear_search_threshold = 8 * 64 / sizeof(Segment);
-            if constexpr (RecursiveError <= linear_search_threshold) {
+            if constexpr (EpsilonRecursive <= linear_search_threshold) {
                 for (; std::next(lo)->key <= key; ++lo);
                 it = lo;
             } else {
                 auto level_size = levels_sizes[l];
-                auto hi = level_begin + ADD_ERR(pos, RecursiveError + 2, level_size);
+                auto hi = level_begin + ADD_ERR(pos, EpsilonRecursive + 2, level_size);
                 it = std::upper_bound(lo, hi, key);
                 it = it == level_begin ? it : std::prev(it);
             }
@@ -100,7 +101,7 @@ class PGMIndex {
 
 public:
 
-    static constexpr size_t error_value = Error;
+    static constexpr size_t epsilon_value = Epsilon;
 
     /**
      * Constructs an empty index.
@@ -129,7 +130,7 @@ public:
             return;
 
         levels_offsets.push_back(0);
-        segments.reserve(n / (Error * Error));
+        segments.reserve(n / (Epsilon * Epsilon));
 
         auto ignore_last = *std::prev(last) == std::numeric_limits<K>::max(); // max is reserved for padding
         auto last_n = n - ignore_last;
@@ -153,15 +154,15 @@ public:
             return std::pair<K, size_t>(x, i);
         };
         auto out_fun = [this](auto, auto, auto cs) { segments.emplace_back(cs); };
-        last_n = back_check(make_segmentation_par(last_n, Error, in_fun, out_fun), last_n);
+        last_n = back_check(make_segmentation_par(last_n, Epsilon, in_fun, out_fun), last_n);
         levels_offsets.push_back(levels_offsets.back() + last_n + 1);
         levels_sizes.push_back(last_n);
 
         // Build upper levels
-        while (RecursiveError && last_n > 1) {
+        while (EpsilonRecursive && last_n > 1) {
             auto offset = levels_offsets[levels_offsets.size() - 2];
             auto in_fun_rec = [this, offset](auto i) { return std::pair<K, size_t>(segments[offset + i].key, i); };
-            last_n = back_check(make_segmentation(last_n, RecursiveError, in_fun_rec, out_fun), last_n);
+            last_n = back_check(make_segmentation(last_n, EpsilonRecursive, in_fun_rec, out_fun), last_n);
             levels_offsets.push_back(levels_offsets.back() + last_n + 1);
             levels_sizes.push_back(last_n);
         }
@@ -178,8 +179,8 @@ public:
         auto k = std::max(first_key, key);
         auto it = segment_for_key(k);
         auto pos = std::min<size_t>((*it)(k), std::next(it)->intercept);
-        auto lo = SUB_ERR(pos, Error);
-        auto hi = ADD_ERR(pos, Error + 1, n);
+        auto lo = SUB_ERR(pos, Epsilon);
+        auto hi = ADD_ERR(pos, Epsilon + 1, n);
         return {pos, lo, hi};
     }
 
@@ -210,8 +211,8 @@ public:
 
 #pragma pack(push, 1)
 
-template<typename K, size_t Error, size_t RecursiveError, typename Floating>
-struct PGMIndex<K, Error, RecursiveError, Floating>::Segment {
+template<typename K, size_t Epsilon, size_t EpsilonRecursive, typename Floating>
+struct PGMIndex<K, Epsilon, EpsilonRecursive, Floating>::Segment {
     K key;             ///< The first key that the segment indexes.
     Floating slope;    ///< The slope of the segment.
     int32_t intercept; ///< The intercept of the segment.
@@ -259,12 +260,12 @@ struct PGMIndex<K, Error, RecursiveError, Floating>::Segment {
 #pragma pack(pop)
 
 /**
- * A space-efficient index that finds the position of a sought key within a radius of @p Error. This variant uses a
+ * A space-efficient index that finds the position of a sought key within a radius of @p Epsilon. This variant uses a
  * binary search in the last level, and it should only be used when BinarySearchBasedPGMIndex::size_in_bytes() is low
  * (for example, less than the last level cache size).
  * @tparam K the type of the indexed elements
- * @tparam Error the maximum allowed error in the last level of the index
+ * @tparam Epsilon the maximum error allowed in the last level of the index
  * @tparam Floating the floating-point type to use for slopes
  */
-template<typename K, size_t Error, typename Floating = double>
-using BinarySearchBasedPGMIndex = PGMIndex<K, Error, 0, Floating>;
+template<typename K, size_t Epsilon, typename Floating = double>
+using BinarySearchBasedPGMIndex = PGMIndex<K, Epsilon, 0, Floating>;

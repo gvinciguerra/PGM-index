@@ -23,7 +23,7 @@
 #include <type_traits>
 
 TEMPLATE_TEST_CASE("Segmentation algorithm", "", float, double, uint32_t, uint64_t) {
-    const auto error = GENERATE(32, 64, 128);
+    const auto epsilon = GENERATE(32, 64, 128);
     std::vector<TestType> data(1000000);
     std::mt19937 engine(42);
     using RandomFunction = std::function<TestType()>;
@@ -43,7 +43,7 @@ TEMPLATE_TEST_CASE("Segmentation algorithm", "", float, double, uint32_t, uint64
     }
 
     std::sort(data.begin(), data.end());
-    auto segments = make_segmentation(data.begin(), data.end(), error);
+    auto segments = make_segmentation(data.begin(), data.end(), epsilon);
     auto it = segments.begin();
     auto [slope, intercept] = it->get_floating_point_segment(it->get_first_x());
 
@@ -57,7 +57,7 @@ TEMPLATE_TEST_CASE("Segmentation algorithm", "", float, double, uint32_t, uint64
 
         auto pos = (data[i] - it->get_first_x()) * slope + intercept;
         auto e = std::fabs(i - pos);
-        REQUIRE(e <= error + 1);
+        REQUIRE(e <= epsilon + 1);
     }
 }
 
