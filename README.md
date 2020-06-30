@@ -2,7 +2,7 @@
   <img src="https://gvinciguerra.github.io/PGM-index/images/logo.svg" alt="The PGM-index" style="width: 565px">
 </p>
 
-<p align="center">The Piecewise Geometric Model index (PGM-index) is a data structure that enables fast point and range searches in arrays of billions of items using orders of magnitude less space than traditional indexes.</p>
+<p align="center">The Piecewise Geometric Model index (PGM-index) is a data structure that enables fast lookup, predecessor, range searches and updates in arrays of billions of items using orders of magnitude less space than traditional indexes while providing the same worst-case query time guarantees.</p>
 
 <p align="center">
     <a href="https://pgm.di.unipi.it/">Website</a>
@@ -25,7 +25,6 @@ To download and build the library use the following commands:
 ```bash
 git clone https://github.com/gvinciguerra/PGM-index.git
 cd PGM-index
-git submodule update --init --recursive
 cmake . -DCMAKE_BUILD_TYPE=Release
 make -j8
 ```
@@ -53,14 +52,14 @@ int main(int argc, char **argv) {
     std::sort(dataset.begin(), dataset.end());
 
     // Construct the PGM-index
-    const int error = 128;
-    PGMIndex<int, error> index(dataset);
+    const int epsilon = 128; // space-time trade-off parameter
+    PGMIndex<int, epsilon> index(dataset);
 
     // Query the PGM-index
     auto q = 42;
     auto approx_range = index.find_approximate_position(q);
-    auto lo = dataset.cbegin() + approx_range.lo;
-    auto hi = dataset.cbegin() + approx_range.hi;
+    auto lo = dataset.begin() + approx_range.lo;
+    auto hi = dataset.begin() + approx_range.hi;
     std::cout << *std::lower_bound(lo, hi, q);
 
     return 0;
