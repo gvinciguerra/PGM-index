@@ -16,16 +16,19 @@
 
 #pragma once
 
-#ifndef _OPENMP
-    #error Compile with -fopenmp
-#endif
-
-#include <omp.h>
 #include <cmath>
 #include <limits>
 #include <vector>
 #include <stdexcept>
 #include <type_traits>
+
+#ifdef _OPENMP
+#include <omp.h>
+#else
+#warning Compilation with -fopenmp is recommended
+typedef int omp_int_t;
+inline omp_int_t omp_get_max_threads() { return 1; }
+#endif
 
 template<typename T>
 using LargeSigned = typename std::conditional_t<std::is_floating_point_v<T>,
