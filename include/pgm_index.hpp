@@ -70,10 +70,11 @@ protected:
 
     template<typename RandomIt>
     void build(RandomIt first, RandomIt last, size_t epsilon, size_t epsilon_recursive) {
-        assert(std::is_sorted(first, last));
         if (n == 0)
             return;
 
+        assert(std::is_sorted(first, last));
+        first_key = *first;
         levels_offsets.push_back(0);
         segments.reserve(n / (epsilon * epsilon));
 
@@ -169,7 +170,7 @@ public:
     template<typename RandomIt>
     PGMIndex(RandomIt first, RandomIt last)
         : n(std::distance(first, last)),
-          first_key(*first),
+          first_key(),
           segments(),
           levels_sizes(),
           levels_offsets() {
