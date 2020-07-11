@@ -7,7 +7,8 @@
 <p align="center">
     <a href="https://pgm.di.unipi.it/">Website</a>
     | <a href="https://pgm.di.unipi.it/docs">Documentation</a>
-    | <a href="https://dl.acm.org/doi/pdf/10.14778/3389133.3389135">Paper</a>
+    | <a href="http://www.vldb.org/pvldb/vol13/p1162-ferragina.pdf">Paper</a>
+    | <a href="https://github.com/gvinciguerra/PyGM">Python wrapper</a>
     | <a href="http://acube.di.unipi.it">A³ Lab</a>
 </p>
 
