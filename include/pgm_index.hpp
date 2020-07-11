@@ -59,6 +59,9 @@ struct ApproxPos {
 template<typename K, size_t Epsilon = 64, size_t EpsilonRecursive = 4, typename Floating = double>
 class PGMIndex {
 protected:
+    template<typename, size_t, size_t, typename>
+    friend class InMemoryPGMIndex;
+
     static_assert(Epsilon > 0);
     struct Segment;
 
