@@ -18,6 +18,9 @@
     \brief int_vector.hpp contains the sdsl::int_vector class.
     \author Simon Gog
 */
+
+#pragma once
+
 #ifndef INCLUDED_SDSL_INT_VECTOR
 #define INCLUDED_SDSL_INT_VECTOR
 
