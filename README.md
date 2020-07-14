@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
 
 ## License
 
-This project is licensed under the terms of the GNU General Public License v3.0.
+This project is licensed under the terms of the Apache License 2.0.
 
 If you use the library please put a link to the [website](https://pgm.di.unipi.it) and cite the following paper:
 
