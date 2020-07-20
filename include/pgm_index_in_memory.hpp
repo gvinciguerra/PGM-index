@@ -48,7 +48,7 @@ protected:
     static_assert(Epsilon > 0);
     static_assert(TopLevelBitSize == 0 || (TopLevelBitSize & (TopLevelBitSize - 1)) == 0);
 
-    using Segment = typename PGMIndex<K, Epsilon, 0, double>::Segment;
+    using Segment = typename PGMIndex<K, Epsilon, 0, Floating>::Segment;
 
     size_t n;                                     ///< The number of elements this index was built on.
     K first_key;                                  ///< The smallest element.
