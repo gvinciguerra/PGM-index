@@ -103,7 +103,7 @@ protected:
         }
 
         step = (size_t) CEIL_UINT_DIV(*std::prev(last), top_level_size);
-        for (auto i = 0ull, k = 0ull; i < top_level_size - 1; ++i) {
+        for (auto i = 0ull, k = 1ull; i < top_level_size - 1; ++i) {
             while (k < segments.size() && segments[k].key < (i + 1) * step)
                 ++k;
             top_level[i] = k;
@@ -117,10 +117,9 @@ protected:
      */
     auto segment_for_key(const K &key) const {
         auto j = std::min<size_t>(key / step, top_level.size() - 1);
-        auto first = segments.begin() + (key < step ? 0 : top_level[j - 1]);
+        auto first = segments.begin() + (key < step ? 1 : top_level[j - 1]);
         auto last = segments.begin() + top_level[j];
-        auto it = std::upper_bound(first, last, key);
-        return it == segments.begin() ? it : std::prev(it);
+        return std::prev(std::upper_bound(first, last, key));
     }
 
 public:
