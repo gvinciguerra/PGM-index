@@ -64,7 +64,6 @@ public:
      */
     template<typename Iterator>
     CompressedPGMIndex(Iterator first, Iterator last) : n(std::distance(first, last)) {
-        assert(std::is_sorted(first, last));
         if (n == 0)
             return;
 

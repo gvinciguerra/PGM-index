@@ -17,7 +17,6 @@
 
 #include <limits>
 #include <vector>
-#include <cassert>
 #include <utility>
 #include <algorithm>
 #include "piecewise_linear_model.hpp"
@@ -75,7 +74,6 @@ protected:
         if (n == 0)
             return;
 
-        assert(std::is_sorted(first, last));
         first_key = *first;
         levels_offsets.push_back(0);
         segments.reserve(n / (epsilon * epsilon));

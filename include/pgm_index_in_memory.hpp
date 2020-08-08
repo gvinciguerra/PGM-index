@@ -58,7 +58,6 @@ protected:
 
     template<typename RandomIt>
     void build_segments(RandomIt first, RandomIt last, size_t epsilon) {
-        assert(std::is_sorted(first, last));
         if (n == 0)
             return;
 
