@@ -167,7 +167,8 @@ public:
 
             // Hull update
             auto end = upper.size();
-            for (; end >= upper_start + 2 && cross(upper[end - 2], upper[end - 1], p1) <= 0; --end);
+            for (; end >= upper_start + 2 && cross(upper[end - 2], upper[end - 1], p1) <= 0; --end)
+                continue;
             upper.resize(end);
             upper.push(x, y);
         }
@@ -190,7 +191,8 @@ public:
 
             // Hull update
             auto end = lower.size();
-            for (; end >= lower_start + 2 && cross(lower[end - 2], lower[end - 1], p2) >= 0; --end);
+            for (; end >= lower_start + 2 && cross(lower[end - 2], lower[end - 1], p2) >= 0; --end)
+                continue;
             lower.resize(end);
             lower.push(x, y);
         }

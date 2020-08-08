@@ -136,7 +136,8 @@ protected:
 
             static constexpr size_t linear_search_threshold = 8 * 64 / sizeof(Segment);
             if constexpr (EpsilonRecursive <= linear_search_threshold) {
-                for (; std::next(lo)->key <= key; ++lo);
+                for (; std::next(lo)->key <= key; ++lo)
+                    continue;
                 it = lo;
             } else {
                 auto level_size = levels_sizes[l];

@@ -97,7 +97,8 @@ public:
             auto lo = SUB_ERR(approx_pos, epsilon);
             auto hi = ADD_ERR(approx_pos, epsilon + 1, layer_size);
 
-            for (; lo <= hi && it->segments_keys[lo] <= key; ++lo);
+            for (; lo <= hi && it->segments_keys[lo] <= key; ++lo)
+                continue;
             pos = lo - 1;
 
             node_key = it->segments_keys[pos];

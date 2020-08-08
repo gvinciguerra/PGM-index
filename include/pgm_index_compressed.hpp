@@ -155,7 +155,8 @@ public:
 
             static constexpr size_t linear_search_threshold = 8 * 64 / sizeof(K);
             if constexpr (EpsilonRecursive <= linear_search_threshold) {
-                for (; *std::next(lo) <= key; ++lo);
+                for (; *std::next(lo) <= key; ++lo)
+                    continue;
             } else {
                 auto hi = level.keys.begin() + ADD_ERR(pos, EpsilonRecursive + 2, level.size());
                 auto it = std::upper_bound(lo, hi, k);
