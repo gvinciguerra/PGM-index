@@ -82,7 +82,7 @@ public:
                 return std::pair<K, size_t>(x + 1, i);
             return std::pair<K, size_t>(x, i);
         };
-        auto out_fun = [&, this](auto, auto, auto cs) { segments.emplace_back(cs); };
+        auto out_fun = [&, this](auto cs) { segments.emplace_back(cs); };
         last_n = make_segmentation_par(last_n, Epsilon, in_fun, out_fun);
         levels_offsets.push_back(levels_offsets.back() + last_n);
 

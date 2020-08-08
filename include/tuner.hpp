@@ -73,7 +73,7 @@ public:
                     return std::pair<K, size_t>(x + 1, i);
                 return std::pair<K, size_t>(x, i);
             };
-            auto out_fun = [this, &segments](auto, auto, auto cs) { segments.emplace_back(cs); };
+            auto out_fun = [this, &segments](auto cs) { segments.emplace_back(cs); };
             make_segmentation_par(data.size(), epsilon, in_fun, out_fun);
             tmp.emplace_front(segments);
         }

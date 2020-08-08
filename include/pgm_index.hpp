@@ -99,7 +99,7 @@ protected:
                 return std::pair<K, size_t>(x + 1, i);
             return std::pair<K, size_t>(x, i);
         };
-        auto out_fun = [this](auto, auto, auto cs) { segments.emplace_back(cs); };
+        auto out_fun = [this](auto cs) { segments.emplace_back(cs); };
         last_n = back_check(make_segmentation_par(last_n, epsilon, in_fun, out_fun), last_n);
         levels_offsets.push_back(levels_offsets.back() + last_n + 1);
         levels_sizes.push_back(last_n);
@@ -228,12 +228,6 @@ struct PGMIndex<K, Epsilon, EpsilonRecursive, Floating>::Segment {
 
     Segment(size_t n) : key(std::numeric_limits<K>::max()), slope(), intercept(n) {};
 
-    /**
-     * Constructs a new segment.
-     * @param key the first key that the segment indexes
-     * @param slope the slope of the segment
-     * @param intercept the intercept of the segment
-     */
     Segment(K key, Floating slope, Floating intercept) : key(key), slope(slope), intercept(intercept) {};
 
     explicit Segment(const typename OptimalPiecewiseLinearModel<K, size_t>::CanonicalSegment &cs)
@@ -245,13 +239,8 @@ struct PGMIndex<K, Epsilon, EpsilonRecursive, Floating>::Segment {
         intercept = std::round(cs_intercept);
     }
 
-    friend inline bool operator<(const Segment &s, const K &k) {
-        return s.key < k;
-    }
-
-    friend inline bool operator<(const K &k, const Segment &s) {
-        return k < s.key;
-    }
+    friend inline bool operator<(const Segment &s, const K &k) { return s.key < k; }
+    friend inline bool operator<(const K &k, const Segment &s) { return k < s.key; }
 
     /**
      * Returns the approximate position of the specified key.
