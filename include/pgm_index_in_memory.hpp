@@ -37,8 +37,8 @@
  * It can be set either to a power of two or to 0. If set to 0, the bit-size of the cells will be determined dynamically
  * so that the table is bit-compressed.
  *
- * @tparam K the type of the indexed elements
- * @tparam Epsilon the maximum error allowed in the last level of the index
+ * @tparam K the type of the indexed keys
+ * @tparam Epsilon controls the size of the returned search range
  * @tparam TopLevelBitSize the bit-size of the cells in the top-level table, must be either 0 or a power of two
  * @tparam Floating the floating-point type to use for slopes
  */
@@ -131,7 +131,7 @@ public:
     InMemoryPGMIndex() = default;
 
     /**
-     * Constructs the index on the given sorted data, with the specified top level size.
+     * Constructs the index on the given sorted vector, with the specified top level size.
      * @param data the vector of keys, must be sorted
      * @param top_level_size the number of cells allocated for the top-level table
      */
@@ -139,8 +139,8 @@ public:
         : InMemoryPGMIndex(data.begin(), data.end(), top_level_size) {}
 
     /**
-     * Constructs the index on the sorted data in the range [first, last), with the specified top level size.
-     * @param first, last the range containing the sorted elements to be indexed
+     * Constructs the index on the sorted keys in the range [first, last), with the specified top level size.
+     * @param first, last the range containing the sorted keys to be indexed
      * @param top_level_size the number of cells allocated for the top-level table
      */
     template<typename RandomIt>
@@ -150,9 +150,9 @@ public:
     }
 
     /**
-     * Returns the approximate position of a key.
+     * Returns the approximate position and the range where @p key can be found.
      * @param key the value of the element to search for
-     * @return a struct with the approximate position
+     * @return a struct with the approximate position and bounds of the range
      */
     ApproxPos search(const K &key) const {
         auto k = std::max(first_key, key);
@@ -172,8 +172,8 @@ public:
     }
 
     /**
-     * Returns the number of levels in the index.
-     * @return the number of levels in the index
+     * Returns the number of levels of the index.
+     * @return the number of levels of the index
      */
     size_t height() const {
         return 1;

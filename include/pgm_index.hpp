@@ -30,8 +30,8 @@
  */
 struct ApproxPos {
     size_t pos; ///< The approximate position of the key.
-    size_t lo;  ///< The lower bound of the range where the key can be found.
-    size_t hi;  ///< The upper bound of the range where the key can be found.
+    size_t lo;  ///< The lower bound of the range.
+    size_t hi;  ///< The upper bound of the range.
 };
 
 /**
@@ -50,9 +50,9 @@ struct ApproxPos {
  * This mapping is represented as a sequence of linear models (segments) which, if @p EpsilonRecursive is not zero, are
  * themselves recursively indexed by other piecewise linear mappings.
  *
- * @tparam K the type of the indexed elements
- * @tparam Epsilon the maximum error allowed in the last level of the index
- * @tparam EpsilonRecursive the maximum error allowed in the upper levels of the index
+ * @tparam K the type of the indexed keys
+ * @tparam Epsilon controls the size of the returned search range
+ * @tparam EpsilonRecursive controls the size of the search range in the internal structure
  * @tparam Floating the floating-point type to use for slopes
  */
 template<typename K, size_t Epsilon = 64, size_t EpsilonRecursive = 4, typename Floating = double>
@@ -160,14 +160,14 @@ public:
     PGMIndex() = default;
 
     /**
-     * Constructs the index on the given sorted data.
-     * @param data the vector of keys, must be sorted
+     * Constructs the index on the given sorted vector.
+     * @param data the vector of keys to be indexed, must be sorted
      */
     explicit PGMIndex(const std::vector<K> &data) : PGMIndex(data.begin(), data.end()) {}
 
     /**
-     * Constructs the index on the sorted data in the range [first, last).
-     * @param first, last the range containing the sorted elements to be indexed
+     * Constructs the index on the sorted keys in the range [first, last).
+     * @param first, last the range containing the sorted keys to be indexed
      */
     template<typename RandomIt>
     PGMIndex(RandomIt first, RandomIt last)
@@ -180,9 +180,9 @@ public:
     }
 
     /**
-     * Returns the approximate position of a key.
+     * Returns the approximate position and the range where @p key can be found.
      * @param key the value of the element to search for
-     * @return a struct with the approximate position
+     * @return a struct with the approximate position and bounds of the range
      */
     ApproxPos search(const K &key) const {
         auto k = std::max(first_key, key);
@@ -202,8 +202,8 @@ public:
     }
 
     /**
-     * Returns the number of levels in the index.
-     * @return the number of levels in the index
+     * Returns the number of levels of the index.
+     * @return the number of levels of the index
      */
     size_t height() const {
         return levels_sizes.size();
@@ -258,11 +258,12 @@ struct PGMIndex<K, Epsilon, EpsilonRecursive, Floating>::Segment {
 #pragma pack(pop)
 
 /**
- * A space-efficient index that finds the position of a sought key within a radius of @p Epsilon. This variant uses a
- * binary search in the last level, and it should only be used when BinarySearchBasedPGMIndex::size_in_bytes() is low
- * (for example, less than the last level cache size).
- * @tparam K the type of the indexed elements
- * @tparam Epsilon the maximum error allowed in the last level of the index
+ * A space-efficient index that enables fast search operations on a sorted sequence of numbers. This variant of
+ * @ref PGMIndex uses a binary search in the last level, and it should only be used when the space usage, returned by
+ * @ref PGMIndex::size_in_bytes(), is low (for example, less than the last level cache size).
+ *
+ * @tparam K the type of the indexed keys
+ * @tparam Epsilon controls the size of the search range
  * @tparam Floating the floating-point type to use for slopes
  */
 template<typename K, size_t Epsilon, typename Floating = double>

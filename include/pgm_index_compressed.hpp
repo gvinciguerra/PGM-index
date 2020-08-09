@@ -19,13 +19,13 @@
 #include "pgm_index.hpp"
 
 /**
- * A space-efficient and compressed index that finds the position of a sought key within a radius of @p Epsilon.
+ * A space-efficient and compressed index that enables fast search operations on a sorted sequence of numbers.
  *
  * This is a variant of the @ref PGMIndex that internally uses compression to reduce the space of the index.
  *
- * @tparam K the type of the indexed elements
- * @tparam Epsilon the maximum error allowed in the last level of the index
- * @tparam EpsilonRecursive the maximum error allowed in the upper levels of the index
+ * @tparam K the type of the indexed keys
+ * @tparam Epsilon controls the size of the returned search range
+ * @tparam EpsilonRecursive controls the size of the search range in the internal structure
  * @tparam Floating the floating-point type to use for slopes
  */
 template<typename K, size_t Epsilon, size_t EpsilonRecursive = 4, typename Floating = double>
@@ -53,13 +53,13 @@ public:
     CompressedPGMIndex() = default;
 
     /**
-     * Constructs the compressed index on the given sorted data.
-     * @param data the vector of keys, must be sorted
+     * Constructs the compressed index on the given sorted vector.
+     * @param data the vector of elements to be indexed, must be sorted
      */
     explicit CompressedPGMIndex(const std::vector<K> &data) : CompressedPGMIndex(data.begin(), data.end()) {}
 
     /**
-     * Constructs the compressed index on the sorted data in the range [first, last).
+     * Constructs the compressed index on the sorted elements in the range [first, last).
      * @param first, last the range containing the sorted elements to be indexed
      */
     template<typename Iterator>
@@ -129,9 +129,9 @@ public:
     }
 
     /**
-     * Returns the approximate position of a key.
+     * Returns the approximate position and the range where @p key can be found.
      * @param key the value of the element to search for
-     * @return a struct with the approximate position
+     * @return a struct with the approximate position and bounds of the range
      */
     ApproxPos search(const K &key) const {
         auto k = std::max(first_key, key);
@@ -181,8 +181,8 @@ public:
     }
 
     /**
-     * Returns the number of levels in the index.
-     * @return the number of levels in the index
+     * Returns the number of levels of the index.
+     * @return the number of levels of the index
      */
     size_t height() const {
         return levels.size() + 1;
