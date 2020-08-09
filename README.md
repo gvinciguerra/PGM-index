@@ -17,6 +17,7 @@
     <a href="https://github.com/gvinciguerra/PGM-index/blob/master/LICENSE"><img src="https://img.shields.io/github/license/gvinciguerra/PGM-index" alt="License"></a>
     <a href="https://github.com/gvinciguerra/PGM-index/stargazers"><img src="https://img.shields.io/github/stars/gvinciguerra/PGM-index" alt="GitHub stars"></a>
     <a href="https://github.com/gvinciguerra/PGM-index/network/members"><img alt="GitHub forks" src="https://img.shields.io/github/forks/gvinciguerra/PGM-index"></a>
+    <a href="https://repl.it/github/gvinciguerra/PGM-index#example.cpp"><img alt="Run on Repl.it" src="https://img.shields.io/badge/run-example.cpp-667881?logo=repl.it&logoColor=white"></a>
 </p>
 
 ## Building the code
@@ -45,27 +46,29 @@ Now you can run the unit tests via:
 #include <algorithm>
 #include "pgm_index.hpp"
 
-int main(int argc, char **argv) {
+int main() {
     // Generate some random data
-    std::vector<int> dataset(1000000);
-    std::generate(dataset.begin(), dataset.end(), std::rand);
-    dataset.push_back(42);
-    std::sort(dataset.begin(), dataset.end());
+    std::vector<int> data(1000000);
+    std::generate(data.begin(), data.end(), std::rand);
+    data.push_back(42);
+    std::sort(data.begin(), data.end());
 
     // Construct the PGM-index
     const int epsilon = 128; // space-time trade-off parameter
-    PGMIndex<int, epsilon> index(dataset);
+    PGMIndex<int, epsilon> index(data);
 
     // Query the PGM-index
     auto q = 42;
     auto range = index.search(q);
-    auto lo = dataset.begin() + range.lo;
-    auto hi = dataset.begin() + range.hi;
+    auto lo = data.begin() + range.lo;
+    auto hi = data.begin() + range.hi;
     std::cout << *std::lower_bound(lo, hi, q);
 
     return 0;
 }
 ```
+
+Have a look also at [example.cpp](https://github.com/gvinciguerra/PGM-index/blob/master/example.cpp) ([try it on Repl.it](https://repl.it/github/gvinciguerra/PGM-index#example.cpp)), showing how to use the `PGMIndex` class to implement classical query operations.
 
 ## License
 
