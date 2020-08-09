@@ -58,9 +58,9 @@ int main(int argc, char **argv) {
 
     // Query the PGM-index
     auto q = 42;
-    auto approx_range = index.find_approximate_position(q);
-    auto lo = dataset.begin() + approx_range.lo;
-    auto hi = dataset.begin() + approx_range.hi;
+    auto range = index.search(q);
+    auto lo = dataset.begin() + range.lo;
+    auto hi = dataset.begin() + range.hi;
     std::cout << *std::lower_bound(lo, hi, q);
 
     return 0;

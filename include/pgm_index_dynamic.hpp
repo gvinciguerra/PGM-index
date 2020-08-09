@@ -356,8 +356,8 @@ public:
             if (level.empty())
                 continue;
 
-            auto approx_pos = get_pgm(i).find_approximate_position(key);
-            auto it = std::lower_bound(level.begin() + approx_pos.lo, level.begin() + approx_pos.hi, key);
+            auto range = get_pgm(i).search(key);
+            auto it = std::lower_bound(level.begin() + range.lo, level.begin() + range.hi, key);
             if (it != level.end() && it->key() == key)
                 return it->deleted() ? end() : iterator(this, it, i);
         }
@@ -397,8 +397,8 @@ public:
             if (level.empty())
                 continue;
 
-            auto approx_pos = get_pgm(i).find_approximate_position(key);
-            auto it = std::lower_bound(level.begin() + approx_pos.lo, level.begin() + approx_pos.hi, key);
+            auto range = get_pgm(i).search(key);
+            auto it = std::lower_bound(level.begin() + range.lo, level.begin() + range.hi, key);
             while (it != level.end() && it->deleted())
                 ++it;
 
@@ -539,9 +539,9 @@ class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::DynamicPGMIndexIterator {
             size_t lo = 0;
             size_t hi = level_data.size();
             if (i >= MinIndexedLevel) {
-                auto approx_pos = super->get_pgm(i).find_approximate_position(it->key());
-                lo = approx_pos.lo;
-                hi = approx_pos.hi;
+                auto range = super->get_pgm(i).search(it->key());
+                lo = range.lo;
+                hi = range.hi;
             }
 
             auto pos = std::upper_bound(level_data.begin() + lo, level_data.begin() + hi, *it);

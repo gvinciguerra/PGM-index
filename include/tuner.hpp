@@ -94,8 +94,8 @@ public:
 
         for (auto it = layers.cbegin() + 1; it < layers.cend(); ++it) {
             auto layer_size = it->size();
-            auto lo = SUB_ERR(approx_pos, epsilon);
-            auto hi = ADD_ERR(approx_pos, epsilon + 1, layer_size);
+            auto lo = PGM_SUB_EPS(approx_pos, epsilon);
+            auto hi = PGM_ADD_EPS(approx_pos, epsilon, layer_size);
 
             for (; lo <= hi && it->segments_keys[lo] <= key; ++lo)
                 continue;
@@ -110,8 +110,8 @@ public:
         auto slope = layers.back().segments_data[pos].slope;
         auto intercept = layers.back().segments_data[pos].intercept;
         auto p = (size_t) std::fmax(0., slope * (key - node_key) + intercept);
-        auto lo = SUB_ERR(p, epsilon);
-        auto hi = ADD_ERR(p, epsilon, data_size);
+        auto lo = PGM_SUB_EPS(p, epsilon);
+        auto hi = PGM_ADD_EPS(p, epsilon, data_size);
 
         return *std::lower_bound(data.cbegin() + lo, data.cbegin() + hi + 1, key);
     }

@@ -154,12 +154,12 @@ public:
      * @param key the value of the element to search for
      * @return a struct with the approximate position
      */
-    ApproxPos find_approximate_position(const K &key) const {
+    ApproxPos search(const K &key) const {
         auto k = std::max(first_key, key);
         auto it = segment_for_key(k);
         auto pos = std::min<size_t>((*it)(k), std::next(it)->intercept);
-        auto lo = SUB_ERR(pos, Epsilon);
-        auto hi = ADD_ERR(pos, Epsilon + 1, n);
+        auto lo = PGM_SUB_EPS(pos, Epsilon);
+        auto hi = PGM_ADD_EPS(pos, Epsilon, n);
         return {pos, lo, hi};
     }
 

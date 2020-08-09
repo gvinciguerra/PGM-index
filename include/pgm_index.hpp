@@ -21,8 +21,8 @@
 #include <algorithm>
 #include "piecewise_linear_model.hpp"
 
-#define ADD_ERR(x, epsilon, size) ((x) + (epsilon) >= (size) ? (size) : (x) + (epsilon))
-#define SUB_ERR(x, epsilon) ((x) <= (epsilon) ? 0 : ((x) - (epsilon)))
+#define PGM_SUB_EPS(x, epsilon) ((x) <= (epsilon) ? 0 : ((x) - (epsilon)))
+#define PGM_ADD_EPS(x, epsilon, size) ((x) + (epsilon) + 2 >= (size) ? (size) : (x) + (epsilon) + 2)
 
 /**
  * A struct that stores the result of a query to a @ref PGMIndex, that is, a range [@ref lo, @ref hi)
@@ -35,12 +35,13 @@ struct ApproxPos {
 };
 
 /**
- * A space-efficient index that finds the position of a key within a radius of @p Epsilon.
+ * A space-efficient index that enables fast search operations on a sorted sequence of @c n numbers.
  *
- * The index is constructed on a sorted sequence of keys. A query returns a struct @ref ApproxPos containing an
- * approximate position of the sought key and the bounds of the range of size 2*Epsilon where the sought key is
- * guaranteed to be found if present. In the case of repeated keys, the index finds the position of the first occurrence
- * of a key.
+ * A search returns a struct @ref ApproxPos containing an approximate position of the sought key in the sequence and
+ * the bounds of a range of size 2*Epsilon+1 where the sought key is guaranteed to be found if present.
+ * If the key is not present, the range is guaranteed to contain a key that is not less than (i.e. greater or equal to)
+ * the sought key, or @c n if no such key is found.
+ * In the case of repeated keys, the index finds the position of the first occurrence of a key.
  *
  * The @p Epsilon template parameter should be set according to the desired space-time trade-off. A smaller value
  * makes the estimation more precise and the range smaller but at the cost of increased space usage.
@@ -132,7 +133,7 @@ protected:
         for (auto l = int(height()) - 2; l >= 0; --l) {
             auto level_begin = segments.begin() + levels_offsets[l];
             auto pos = std::min<size_t>((*it)(key), std::next(it)->intercept);
-            auto lo = level_begin + SUB_ERR(pos, EpsilonRecursive + 1);
+            auto lo = level_begin + PGM_SUB_EPS(pos, EpsilonRecursive + 1);
 
             static constexpr size_t linear_search_threshold = 8 * 64 / sizeof(Segment);
             if constexpr (EpsilonRecursive <= linear_search_threshold) {
@@ -141,7 +142,7 @@ protected:
                 it = lo;
             } else {
                 auto level_size = levels_sizes[l];
-                auto hi = level_begin + ADD_ERR(pos, EpsilonRecursive + 2, level_size);
+                auto hi = level_begin + PGM_ADD_EPS(pos, EpsilonRecursive, level_size);
                 it = std::upper_bound(lo, hi, key);
                 it = it == level_begin ? it : std::prev(it);
             }
@@ -183,12 +184,12 @@ public:
      * @param key the value of the element to search for
      * @return a struct with the approximate position
      */
-    ApproxPos find_approximate_position(const K &key) const {
+    ApproxPos search(const K &key) const {
         auto k = std::max(first_key, key);
         auto it = segment_for_key(k);
         auto pos = std::min<size_t>((*it)(k), std::next(it)->intercept);
-        auto lo = SUB_ERR(pos, Epsilon);
-        auto hi = ADD_ERR(pos, Epsilon + 1, n);
+        auto lo = PGM_SUB_EPS(pos, Epsilon);
+        auto hi = PGM_ADD_EPS(pos, Epsilon, n);
         return {pos, lo, hi};
     }
 

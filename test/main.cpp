@@ -81,24 +81,24 @@ TEMPLATE_TEST_CASE_SIG("PGM-index", "",
 
     for (auto i = 1; i <= 10000; ++i) {
         auto q = data[std::rand() % data.size()];
-        auto approx_range = pgm_index.find_approximate_position(q);
-        auto lo = data.begin() + approx_range.lo;
-        auto hi = data.begin() + approx_range.hi;
+        auto range = pgm_index.search(q);
+        auto lo = data.begin() + range.lo;
+        auto hi = data.begin() + range.hi;
         auto k = std::lower_bound(lo, hi, q);
         REQUIRE(*k == q);
     }
 
     // Test elements outside range
     auto q = data.back() + 42;
-    auto approx_range = pgm_index.find_approximate_position(q);
-    auto lo = data.begin() + approx_range.lo;
-    auto hi = data.begin() + approx_range.hi;
+    auto range = pgm_index.search(q);
+    auto lo = data.begin() + range.lo;
+    auto hi = data.begin() + range.hi;
     REQUIRE(std::lower_bound(lo, hi, q) == data.end());
 
     q = 0;
-    approx_range = pgm_index.find_approximate_position(q);
-    lo = data.begin() + approx_range.lo;
-    hi = data.begin() + approx_range.hi;
+    range = pgm_index.search(q);
+    lo = data.begin() + range.lo;
+    hi = data.begin() + range.hi;
     REQUIRE(std::lower_bound(lo, hi, q) == data.begin());
 }
 
@@ -111,9 +111,9 @@ TEST_CASE("Compressed PGM-index") {
 
     for (auto i = 1; i <= 1000; ++i) {
         auto q = data[std::rand() % data.size()];
-        auto approx_range = compressed_pgm_index.find_approximate_position(q);
-        auto lo = data.cbegin() + approx_range.lo;
-        auto hi = data.cbegin() + approx_range.hi;
+        auto range = compressed_pgm_index.search(q);
+        auto lo = data.begin() + range.lo;
+        auto hi = data.begin() + range.hi;
         auto k = std::lower_bound(lo, hi, q);
         REQUIRE(*k == q);
     }

@@ -133,7 +133,7 @@ public:
      * @param key the value of the element to search for
      * @return a struct with the approximate position
      */
-    ApproxPos find_approximate_position(K key) const {
+    ApproxPos search(const K &key) const {
         auto k = std::max(first_key, key);
 
         if constexpr (EpsilonRecursive == 0) {
@@ -142,8 +142,8 @@ public:
             auto i = std::distance(level.keys.begin(), it);
             i = i == 0 ? 0 : i - 1;
             auto pos = std::min<size_t>(level(slopes_table, i, k), level.get_intercept(i + 1));
-            auto lo = SUB_ERR(pos, Epsilon);
-            auto hi = ADD_ERR(pos, Epsilon + 1, n);
+            auto lo = PGM_SUB_EPS(pos, Epsilon);
+            auto hi = PGM_ADD_EPS(pos, Epsilon, n);
             return {pos, lo, hi};
         }
 
@@ -151,14 +151,14 @@ public:
         auto pos = std::min<size_t>(p > 0 ? size_t(p) : 0ull, levels.front().size());
 
         for (auto &level : levels) {
-            auto lo = level.keys.begin() + SUB_ERR(pos, EpsilonRecursive + 1);
+            auto lo = level.keys.begin() + PGM_SUB_EPS(pos, EpsilonRecursive + 1);
 
             static constexpr size_t linear_search_threshold = 8 * 64 / sizeof(K);
             if constexpr (EpsilonRecursive <= linear_search_threshold) {
                 for (; *std::next(lo) <= key; ++lo)
                     continue;
             } else {
-                auto hi = level.keys.begin() + ADD_ERR(pos, EpsilonRecursive + 2, level.size());
+                auto hi = level.keys.begin() + PGM_ADD_EPS(pos, EpsilonRecursive, level.size());
                 auto it = std::upper_bound(lo, hi, k);
                 lo == level.keys.begin() ? it : std::prev(it);
             }
@@ -167,8 +167,8 @@ public:
             pos = std::min<size_t>(level(slopes_table, i, k), level.get_intercept(i + 1));
         }
 
-        auto lo = SUB_ERR(pos, Epsilon);
-        auto hi = ADD_ERR(pos, Epsilon + 1, n);
+        auto lo = PGM_SUB_EPS(pos, Epsilon);
+        auto hi = PGM_ADD_EPS(pos, Epsilon, n);
         return {pos, lo, hi};
     }
 
