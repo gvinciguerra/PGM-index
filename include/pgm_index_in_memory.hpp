@@ -42,11 +42,11 @@
  * @tparam TopLevelBitSize the bit-size of the cells in the top-level table, must be either 0 or a power of two
  * @tparam Floating the floating-point type to use for slopes
  */
-template<typename K, size_t Epsilon = 64, size_t TopLevelBitSize = 32, typename Floating = double>
+template<typename K, size_t Epsilon = 64, uint8_t TopLevelBitSize = 32, typename Floating = double>
 class InMemoryPGMIndex {
 protected:
     static_assert(Epsilon > 0);
-    static_assert(TopLevelBitSize == 0 || (TopLevelBitSize & (TopLevelBitSize - 1)) == 0);
+    static_assert(TopLevelBitSize == 0 || (TopLevelBitSize & (TopLevelBitSize - 1u)) == 0);
 
     using Segment = typename PGMIndex<K, Epsilon, 0, Floating>::Segment;
 

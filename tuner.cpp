@@ -96,9 +96,9 @@ int main(int argc, char **argv) {
     }
 
     std::sort(data.begin(), data.end());
-    const size_t lo_eps = 2 * x86_cache_line() / sizeof(int64_t);
-    const size_t hi_eps = data.size() / 2;
-    bool minimize_space = time;
+    auto lo_eps = 2 * x86_cache_line() / sizeof(int64_t);
+    auto hi_eps = data.size() / 2;
+    auto minimize_space = time.Matched();
 
     printf("Dataset: %zu entries\n", data.size());
     if (minimize_space)

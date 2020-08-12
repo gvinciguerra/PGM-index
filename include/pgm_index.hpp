@@ -228,9 +228,9 @@ struct PGMIndex<K, Epsilon, EpsilonRecursive, Floating>::Segment {
 
     Segment() = default;
 
-    Segment(size_t n) : key(std::numeric_limits<K>::max()), slope(), intercept(n) {};
-
     Segment(K key, Floating slope, Floating intercept) : key(key), slope(slope), intercept(intercept) {};
+
+    explicit Segment(size_t n) : key(std::numeric_limits<K>::max()), slope(), intercept(n) {};
 
     explicit Segment(const typename OptimalPiecewiseLinearModel<K, size_t>::CanonicalSegment &cs)
         : key(cs.get_first_x()) {

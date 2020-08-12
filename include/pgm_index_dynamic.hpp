@@ -88,17 +88,14 @@ class DynamicPGMIndex {
     void min_heap_merge(const Item &new_item, uint8_t up_to_level, size_t size_hint) {
         const auto target_level = up_to_level + 1;
         auto &target_level_data = get_level(target_level);
-        size_t actual_size = 1ull << (1 + min_level);
-        assert((1ull << target_level) - target_level_data.size() >= actual_size);
+        assert((1ull << target_level) - target_level_data.size() >= 1ull << (1 + min_level));
         LevelType out(size_hint + target_level_data.size()); // eventually, out will replace target_level_data
 
         // For each level to be merged, push a pair <begin iter, level number> into a priority queue
         LevelType fake_level{new_item};
         int16_t fake_level_number = -1;
         using queue_pair = std::pair<typename LevelType::iterator, int16_t>;
-        auto queue_cmp = [](const queue_pair &e1, const queue_pair &e2) {
-            return *e1.first > *e2.first || (*e1.first == *e2.first && e1.second > e2.second);
-        };
+        auto queue_cmp = iterator::queue_cmp;
 
         std::vector<queue_pair> init{};
         init.reserve(up_to_level + 1);
@@ -192,7 +189,8 @@ class DynamicPGMIndex {
 
         auto it = std::move(data[0].begin(), insertion_point, mod ? tmp1 : tmp2);
         *it = new_item;
-        std::move(insertion_point, data[0].end(), ++it);
+        ++it;
+        std::move(insertion_point, data[0].end(), it);
 
         // Merge subsequent levels
         uint8_t limit = target_level_data.empty() ? up_to_level : up_to_level + 1;
