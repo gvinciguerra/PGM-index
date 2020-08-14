@@ -15,11 +15,12 @@
 
 #define CATCH_CONFIG_MAIN
 
+#include <map>
+#include <type_traits>
 #include "catch.hpp"
 #include "pgm_index.hpp"
 #include "pgm_index_dynamic.hpp"
 #include "pgm_index_compressed.hpp"
-#include <type_traits>
 
 TEMPLATE_TEST_CASE("Segmentation algorithm", "", float, double, uint32_t, uint64_t) {
     const auto epsilon = GENERATE(32, 64, 128);
@@ -130,8 +131,9 @@ TEMPLATE_TEST_CASE_SIG("Dynamic PGM-index", "",
     std::generate(bulk.begin(), bulk.end(), gen);
     std::sort(bulk.begin(), bulk.end());
 
-    using PGMType = PGMIndex<uint32_t, 64, 16>;
+    using PGMType = PGMIndex<uint32_t>;
     DynamicPGMIndex<uint32_t, V, PGMType, MinIndexedLevel> pgm_index(bulk.begin(), bulk.end());
+    std::map<uint32_t, V> test_map(bulk.begin(), bulk.end());
 
     for (auto i = 1; i <= 1000; ++i) {
         auto q = bulk[std::rand() % bulk.size()];
@@ -142,13 +144,16 @@ TEMPLATE_TEST_CASE_SIG("Dynamic PGM-index", "",
     }
 
     // Overwrite some elements
-    for (auto i = 1; i <= 10000; ++i)
+    for (auto i = 1; i <= 10000; ++i) {
         pgm_index.insert(bulk[i].first, ++time);
+        test_map.insert_or_assign(bulk[i].first, time);
+    }
 
     // Insert new elements
     for (auto i = 1; i <= 10000; ++i) {
         auto[k, v] = gen();
         pgm_index.insert(k, v);
+        test_map.insert_or_assign(k, v);
     }
 
     // Test for most recent values
@@ -157,16 +162,27 @@ TEMPLATE_TEST_CASE_SIG("Dynamic PGM-index", "",
         auto it = pgm_index.lower_bound(q.first);
         REQUIRE(it->key() == q.first);
         REQUIRE(it->value() > q.second);
+        REQUIRE(it->value() == test_map.lower_bound(q.first)->second);
     }
 
     // Delete some elements
-    for (auto i = 10000; i <= 10500; ++i)
+    for (auto i = 10000; i <= 10500; ++i) {
         pgm_index.erase(bulk[i].first);
+        test_map.erase(bulk[i].first);
+    }
 
     // Check if elements are deleted
     auto end = pgm_index.end();
     for (auto i = 10000; i <= 10500; ++i) {
         auto it = pgm_index.find(bulk[i].first);
         REQUIRE(it == end);
+    }
+
+    // Test iterator
+    auto it = pgm_index.begin();
+    for (auto[k, v] : test_map) {
+        REQUIRE(it->key() == k);
+        REQUIRE(it->value() == v);
+        ++it;
     }
 }
