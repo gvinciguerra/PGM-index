@@ -31,7 +31,7 @@
  * @tparam PGMType the type of @ref PGMIndex to use in the container
  * @tparam MinIndexedLevel the minimum level (of size 2^MinIndexedLevel) on which a @p PGMType index is constructed
  */
-template<typename K, typename V, typename PGMType = PGMIndex<K, 64, 16>, uint8_t MinIndexedLevel = 18>
+template<typename K, typename V, typename PGMType = PGMIndex<K>, uint8_t MinIndexedLevel = 18>
 class DynamicPGMIndex {
     class Item;
     class BaseItemA;
@@ -83,93 +83,6 @@ class DynamicPGMIndex {
             }
         }
         return std::copy(first2, last2, std::copy(first1, last1, result));
-    }
-
-    void min_heap_merge(const Item &new_item, uint8_t up_to_level, size_t size_hint) {
-        const auto target_level = up_to_level + 1;
-        auto &target_level_data = get_level(target_level);
-        assert((1ull << target_level) - target_level_data.size() >= 1ull << (1 + min_level));
-        LevelType out(size_hint + target_level_data.size()); // eventually, out will replace target_level_data
-
-        // For each level to be merged, push a pair <begin iter, level number> into a priority queue
-        LevelType fake_level{new_item};
-        int16_t fake_level_number = -1;
-        using queue_pair = std::pair<typename LevelType::iterator, int16_t>;
-        auto queue_cmp = iterator::queue_cmp;
-
-        std::vector<queue_pair> init{};
-        init.reserve(up_to_level + 1);
-        init.emplace_back(fake_level.begin(), fake_level_number);
-
-        for (uint8_t i = min_level; i <= target_level; ++i) {
-            auto &level_data = get_level(i);
-            if (level_data.size() > 0)
-                init.emplace_back(level_data.begin(), decltype(fake_level_number)(i));
-        }
-
-        std::priority_queue<queue_pair, decltype(init), decltype(queue_cmp)> queue(queue_cmp, std::move(init));
-
-        auto advance_merge = [&queue, fake_level_number, this]() -> Item {
-            auto[it, from_level] = queue.top();
-            queue.pop();
-            auto new_it = std::next(it);
-            if (from_level != fake_level_number && new_it != get_level(from_level).end())
-                queue.emplace(new_it, from_level);
-            return *it;
-        };
-
-        // Merge
-        auto out_it = out.begin();
-        Item item = advance_merge();
-
-        bool can_delete_permanently = target_level == used_levels - 1;
-        if (can_delete_permanently) {
-            do {
-                auto tmp = advance_merge();
-                if (tmp != item) {
-                    if (!item.deleted()) {
-                        *out_it = item;
-                        ++out_it;
-                    }
-                    item = tmp;
-                }
-            } while (queue.size() >= 1);
-        } else {
-            do {
-                auto tmp = advance_merge();
-                if (tmp != item) {
-                    *out_it = item;
-                    ++out_it;
-                    item = tmp;
-                }
-            } while (queue.size() >= 1);
-        }
-
-        *out_it = item;
-        ++out_it;
-        if (queue.size() == 1) {
-            auto[it, from_level] = queue.top();
-            out_it = std::move(it, get_level(from_level).end(), out_it);
-        }
-
-        out.resize(std::distance(out.begin(), out_it));
-
-        // Delete merged levels and corresponding indexes
-        for (uint8_t i = min_level; i <= up_to_level; ++i) {
-            auto &level_data = get_level(i);
-            level_data.clear();
-            if (i > max_fully_allocated_level)
-                level_data.shrink_to_fit();
-            if (i >= MinIndexedLevel)
-                get_pgm(i) = PGMType();
-        }
-
-        // Add new level and rebuild index, if needed
-        data[target_level - min_level] = std::move(out);
-        auto &new_target_data = get_level(target_level);
-        if (target_level >= MinIndexedLevel)
-            get_pgm(target_level) = PGMType(new_target_data.begin(), new_target_data.end());
-        assert(std::is_sorted(new_target_data.begin(), new_target_data.end()));
     }
 
     void pairwise_logarithmic_merge(const Item &new_item, uint8_t up_to_level,
@@ -224,7 +137,6 @@ class DynamicPGMIndex {
         // Rebuild index, if needed
         if (target_level >= MinIndexedLevel)
             get_pgm(target_level) = PGMType(new_target_data.begin(), new_target_data.end());
-        assert(std::is_sorted(new_target_data.begin(), new_target_data.end()));
     }
 
     void insert(const Item &new_item) {
@@ -259,9 +171,6 @@ class DynamicPGMIndex {
                 pgm.emplace_back();
         }
 
-//        if (i - min_level >= 15)
-//            min_heap_merge(new_item, i - 1, slots_required);
-//        else
         pairwise_logarithmic_merge(new_item, i - 1, slots_required, insertion_point);
     }
 
@@ -346,7 +255,7 @@ public:
 
             auto it = std::lower_bound(level.begin(), level.end(), key);
             if (it != level.end() && it->key() == key)
-                return it->deleted() ? end() : iterator(this, it, i);
+                return it->deleted() ? end() : iterator(this, it);
         }
 
         for (; i < used_levels; ++i) {
@@ -357,7 +266,7 @@ public:
             auto range = get_pgm(i).search(key);
             auto it = std::lower_bound(level.begin() + range.lo, level.begin() + range.hi, key);
             if (it != level.end() && it->key() == key)
-                return it->deleted() ? end() : iterator(this, it, i);
+                return it->deleted() ? end() : iterator(this, it);
         }
 
         return end();
@@ -369,9 +278,8 @@ public:
      * @return an iterator to an element with key not less than @p key. If no such element is found, end() is returned
      */
     iterator lower_bound(const K &key) const {
-        bool lo_is_set = false;
         typename LevelType::const_iterator lo;
-        uint8_t lo_level;
+        bool lo_is_set = false;
 
         uint8_t i = min_level;
         for (; i < std::min(MinIndexedLevel, used_levels); ++i) {
@@ -385,7 +293,6 @@ public:
 
             if (it != level.end() && (it->key() >= key && (!lo_is_set || it->key() < lo->key()))) {
                 lo = it;
-                lo_level = i;
                 lo_is_set = true;
             }
         }
@@ -402,13 +309,12 @@ public:
 
             if (it != level.end() && (it->key() >= key && (!lo_is_set || it->key() < lo->key()))) {
                 lo = it;
-                lo_level = i;
                 lo_is_set = true;
             }
         }
 
         if (lo_is_set)
-            return iterator(this, lo, lo_level);
+            return iterator(this, lo);
 
         return end();
     }
@@ -425,25 +331,13 @@ public:
      * Returns an iterator to the beginning.
      * @return an iterator to the beginning
      */
-    iterator begin() const {
-        uint8_t i;
-        for (i = min_level; i < used_levels && get_level(i).empty(); ++i);
-        if (i == used_levels)
-            return end();
-        for (; i < used_levels; ++i) {
-            auto &level = get_level(i);
-            for (auto it = level.begin(); it != level.end(); ++it)
-                if (!it->deleted())
-                    return iterator(this, it, i);
-        }
-        return end();
-    }
+    iterator begin() const { return lower_bound(std::numeric_limits<K>::min()); }
 
     /**
      * Returns an iterator to the end.
      * @return an iterator to the end
      */
-    iterator end() const { return iterator(this, data.back().end(), 0); }
+    iterator end() const { return iterator(this, data.back().end()); }
 
     /**
      * Returns the number of elements with key that compares equal to the specified argument key, which is either 1
@@ -510,67 +404,76 @@ class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::DynamicPGMIndexIterator {
     using queue_pair = std::pair<internal_iterator, int16_t>;
     using dynamic_pgm_type = DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>;
 
-    const dynamic_pgm_type *super;
-    internal_iterator it;
-    uint8_t level{};
-
     static bool queue_cmp(const queue_pair &e1, const queue_pair &e2) {
         return *e1.first > *e2.first || (*e1.first == *e2.first && e1.second > e2.second);
     }
 
+    const dynamic_pgm_type *super;
+    internal_iterator it;
+    bool initialized;
     std::priority_queue<queue_pair, std::vector<queue_pair>, decltype(&queue_cmp)> queue;
 
     void lazy_initialize_queue() {
-        bool initialized = level == std::numeric_limits<decltype(level)>::max();
         if (initialized)
             return;
 
         std::vector<queue_pair> initial_pairs{};
-        initial_pairs.reserve(super->used_levels - level);
+        initial_pairs.reserve(super->used_levels - super->min_level);
 
         // For each level create and position an iterator to the first key > it->key()
-        for (uint8_t i = level; i < super->used_levels; ++i) {
-            auto &level_data = super->get_level(i);
-            if (level_data.empty())
+        for (uint8_t i = super->min_level; i < super->used_levels; ++i) {
+            auto &level = super->get_level(i);
+            if (level.empty())
                 continue;
 
             size_t lo = 0;
-            size_t hi = level_data.size();
+            size_t hi = level.size();
             if (i >= MinIndexedLevel) {
                 auto range = super->get_pgm(i).search(it->key());
                 lo = range.lo;
                 hi = range.hi;
             }
 
-            auto pos = std::upper_bound(level_data.begin() + lo, level_data.begin() + hi, *it);
-            if (pos != level_data.end())
+            auto pos = std::upper_bound(level.begin() + lo, level.begin() + hi, *it);
+            if (pos != level.end())
                 initial_pairs.emplace_back(pos, i);
         }
 
         queue = decltype(queue)(&queue_cmp, initial_pairs);
-        level = std::numeric_limits<decltype(level)>::max();
+        initialized = true;
     }
 
-    void advance_queue() {
+    void advance() {
         if (queue.empty()) {
             *this = super->end();
             return;
         }
 
-        auto[tmp_it, from_level] = queue.top();
-        queue.pop();
+        auto queue_step = [&] {
+            auto[level_it, level_idx] = queue.top();
+            queue.pop();
+            if (std::next(level_it) != super->get_level(level_idx).end())
+                queue.emplace(std::next(level_it), level_idx);
+            return level_it;
+        };
 
-        auto new_it = std::next(tmp_it);
-        if (new_it != super->get_level(from_level).end())
-            queue.emplace(new_it, from_level);
+        internal_iterator tmp_it;
+        do {
+            tmp_it = queue_step();
+            while (!queue.empty() && queue.top().first->key() == tmp_it->key())
+                queue_step();
+        } while (!queue.empty() && tmp_it->deleted());
 
-        it = tmp_it;
+        if (tmp_it->deleted())
+            *this = super->end();
+        else
+            it = tmp_it;
     }
 
     DynamicPGMIndexIterator() = default;
 
-    DynamicPGMIndexIterator(const dynamic_pgm_type *super, const internal_iterator it, uint8_t level)
-        : super(super), it(it), level(level), queue() {};
+    DynamicPGMIndexIterator(const dynamic_pgm_type *super, const internal_iterator it)
+        : super(super), it(it), initialized(), queue() {};
 
 public:
 
@@ -581,7 +484,7 @@ public:
 
     DynamicPGMIndexIterator &operator++() {
         lazy_initialize_queue();
-        advance_queue();
+        advance();
         return *this;
     }
 
@@ -606,7 +509,7 @@ protected:
     V second;
 
     BaseItemA() = default;
-    explicit BaseItemA(const V &value) noexcept : second(value) {}
+    explicit BaseItemA(const V &value) noexcept: second(value) {}
 
     bool deleted() const { return second == tombstone; }
     void set_deleted() { second = tombstone; }
@@ -622,7 +525,7 @@ protected:
     bool flag;
 
     BaseItemB() = default;
-    explicit BaseItemB(const V &value) noexcept : second(value), flag(false) {}
+    explicit BaseItemB(const V &value) noexcept: second(value), flag(false) {}
 
     bool deleted() const { return flag; }
     void set_deleted() { flag = true; }
@@ -634,10 +537,10 @@ class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::Item : private BaseItem {
     K first;
 
     Item() noexcept = default;
-    explicit Item(const K &key) noexcept : BaseItem(), first(key) { BaseItem::set_deleted(); };
+    explicit Item(const K &key) noexcept: BaseItem(), first(key) { BaseItem::set_deleted(); };
 
-    Item(const K &key, const V &value) noexcept : BaseItem(value), first(key) {}
-    explicit Item(const std::pair<K, V> &p) noexcept : BaseItem(p.second), first(p.first) {}
+    Item(const K &key, const V &value) noexcept: BaseItem(value), first(key) {}
+    explicit Item(const std::pair<K, V> &p) noexcept: BaseItem(p.second), first(p.first) {}
 
     bool deleted() const { return BaseItem::deleted(); }
     void set_deleted() { BaseItem::set_deleted(); }
