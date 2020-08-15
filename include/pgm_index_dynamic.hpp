@@ -201,7 +201,7 @@ public:
         assert(std::is_sorted(first, last));
         size_t n = std::distance(first, last);
         used_levels = std::ceil(std::log2(n)) + 1;
-        data = decltype(data)(used_levels - min_level);
+        data = decltype(data)(std::max(used_levels, max_fully_allocated_level) - min_level + 1);
 
         get_level(min_level).reserve((1ull << (min_level + 1)) - 1);
         for (uint8_t i = min_level + 1; i <= max_fully_allocated_level; ++i)
@@ -211,14 +211,14 @@ public:
         auto &target = get_level(used_levels - 1);
         target.resize(n);
         auto out = target.begin();
-        target[0] = Item(*first);
+        *out++ = Item(*first);
         while (++first != last)
-            if (first->first != out->first)
-                *++out = Item(*first);
+            if (first->first != std::prev(out)->first)
+                *out++ = Item(*first);
         target.resize(std::distance(target.begin(), out));
 
         if (used_levels - 1 >= MinIndexedLevel) {
-            pgm = std::vector<PGMType>(used_levels - MinIndexedLevel);
+            pgm = decltype(pgm)(used_levels - MinIndexedLevel);
             get_pgm(used_levels - 1) = PGMType(target.begin(), target.end());
         }
     }

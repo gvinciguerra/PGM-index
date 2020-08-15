@@ -135,6 +135,15 @@ TEMPLATE_TEST_CASE_SIG("Dynamic PGM-index", "",
     DynamicPGMIndex<uint32_t, V, PGMType, MinIndexedLevel> pgm_index(bulk.begin(), bulk.end());
     std::map<uint32_t, V> test_map(bulk.begin(), bulk.end());
 
+    // Test initial state
+    auto it1 = pgm_index.begin();
+    for (auto[k, v] : test_map) {
+        REQUIRE(it1->key() == k);
+        REQUIRE(it1->value() == v);
+        ++it1;
+    }
+
+    // Test lower bound
     for (auto i = 1; i <= 1000; ++i) {
         auto q = bulk[std::rand() % bulk.size()];
         auto c = pgm_index.count(q.first);
