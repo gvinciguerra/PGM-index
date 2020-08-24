@@ -22,6 +22,8 @@
 #include <numeric>
 #include <cassert>
 #include <iterator>
+#include <algorithm>
+#include <unordered_set>
 #include "pgm_index.hpp"
 
 /**
@@ -277,44 +279,36 @@ public:
      * @return an iterator to an element with key not less than @p key. If no such element is found, end() is returned
      */
     iterator lower_bound(const K &key) const {
-        typename LevelType::const_iterator lo;
-        bool lo_is_set = false;
+        typename LevelType::const_iterator lb;
+        auto lb_set = false;
+        std::unordered_set<K> deleted;
 
-        uint8_t i = min_level;
-        for (; i < std::min(MinIndexedLevel, used_levels); ++i) {
+        for (auto i = min_level; i < used_levels; ++i) {
             auto &level = get_level(i);
             if (level.empty())
                 continue;
 
-            auto it = std::lower_bound(level.begin(), level.end(), key);
-            while (it != level.end() && it->deleted())
-                ++it;
+            auto first = level.begin();
+            auto last = level.end();
+            if (i >= MinIndexedLevel) {
+                auto range = get_pgm(i).search(key);
+                first = level.begin() + range.lo;
+                last = level.begin() + range.hi;
+            }
+            auto it = std::lower_bound(first, last, key);
 
-            if (it != level.end() && (it->key() >= key && (!lo_is_set || it->key() < lo->key()))) {
-                lo = it;
-                lo_is_set = true;
+            for (; it != level.end() && it->deleted(); ++it)
+                deleted.emplace(it->key());
+
+            if (it != level.end() && it->key() >= key && (!lb_set || it->key() < lb->key())
+                && deleted.find(it->key()) == deleted.end()) {
+                lb = it;
+                lb_set = true;
             }
         }
 
-        for (; i < used_levels; ++i) {
-            auto &level = get_level(i);
-            if (level.empty())
-                continue;
-
-            auto range = get_pgm(i).search(key);
-            auto it = std::lower_bound(level.begin() + range.lo, level.begin() + range.hi, key);
-            while (it != level.end() && it->deleted())
-                ++it;
-
-            if (it != level.end() && (it->key() >= key && (!lo_is_set || it->key() < lo->key()))) {
-                lo = it;
-                lo_is_set = true;
-            }
-        }
-
-        if (lo_is_set)
-            return iterator(this, lo);
-
+        if (lb_set)
+            return iterator(this, lb);
         return end();
     }
 
