@@ -16,6 +16,8 @@
 #define CATCH_CONFIG_MAIN
 
 #include <map>
+#include <random>
+#include <functional>
 #include <type_traits>
 #include "catch.hpp"
 #include "pgm_index.hpp"
@@ -132,68 +134,68 @@ TEMPLATE_TEST_CASE_SIG("Dynamic PGM-index", "",
     std::sort(bulk.begin(), bulk.end());
 
     using PGMType = PGMIndex<uint32_t>;
-    DynamicPGMIndex<uint32_t, V, PGMType, MinIndexedLevel> pgm_index(bulk.begin(), bulk.end());
-    std::map<uint32_t, V> test_map(bulk.begin(), bulk.end());
+    DynamicPGMIndex<uint32_t, V, PGMType, MinIndexedLevel> pgm(bulk.begin(), bulk.end());
+    std::map<uint32_t, V> map(bulk.begin(), bulk.end());
 
     // Test initial state
-    auto it1 = pgm_index.begin();
-    for (auto[k, v] : test_map) {
-        REQUIRE(it1->key() == k);
-        REQUIRE(it1->value() == v);
+    auto it1 = pgm.begin();
+    for (auto[k, v] : map) {
+        REQUIRE(it1->first == k);
+        REQUIRE(it1->second == v);
         ++it1;
     }
 
     // Test lower bound
     for (auto i = 1; i <= 1000; ++i) {
         auto q = bulk[std::rand() % bulk.size()];
-        auto c = pgm_index.count(q.first);
-        auto it = pgm_index.lower_bound(q.first);
+        auto c = pgm.count(q.first);
+        auto it = pgm.lower_bound(q.first);
         REQUIRE(c == 1);
-        REQUIRE(it->key() == q.first);
+        REQUIRE(it->first == q.first);
     }
 
     // Overwrite some elements
-    for (auto i = 1; i <= 10000; ++i) {
-        pgm_index.insert(bulk[i].first, ++time);
-        test_map.insert_or_assign(bulk[i].first, time);
+    for (auto i = 1; i <= 10000; ++i, ++time) {
+        pgm.insert_or_assign(bulk[i].first, time);
+        map.insert_or_assign(bulk[i].first, time);
     }
 
     // Insert new elements
     for (auto i = 1; i <= 10000; ++i) {
         auto[k, v] = gen();
-        pgm_index.insert(k, v);
-        test_map.insert_or_assign(k, v);
+        pgm.insert_or_assign(k, v);
+        map.insert_or_assign(k, v);
     }
-    REQUIRE(pgm_index.size() == test_map.size());
+    REQUIRE(pgm.size() == map.size());
 
     // Test for most recent values
     for (auto i = 1; i <= 10000; ++i) {
         auto q = bulk[i];
-        auto it = pgm_index.lower_bound(q.first);
-        REQUIRE(it->key() == q.first);
-        REQUIRE(it->value() > q.second);
-        REQUIRE(it->value() == test_map.lower_bound(q.first)->second);
+        auto it = pgm.lower_bound(q.first);
+        REQUIRE(it->first == q.first);
+        REQUIRE(it->second > q.second);
+        REQUIRE(it->second == map.lower_bound(q.first)->second);
     }
 
     // Delete some elements
     for (auto i = 10000; i <= 10500; ++i) {
-        pgm_index.erase(bulk[i].first);
-        test_map.erase(bulk[i].first);
+        pgm.erase(bulk[i].first);
+        map.erase(bulk[i].first);
     }
 
     // Check if elements are deleted
-    auto end = pgm_index.end();
+    auto end = pgm.end();
     for (auto i = 10000; i <= 10500; ++i) {
-        auto it = pgm_index.find(bulk[i].first);
+        auto it = pgm.find(bulk[i].first);
         REQUIRE(it == end);
     }
-    REQUIRE(pgm_index.size() == test_map.size());
+    REQUIRE(pgm.size() == map.size());
 
     // Test iterator
-    auto it = pgm_index.begin();
-    for (auto[k, v] : test_map) {
-        REQUIRE(it->key() == k);
-        REQUIRE(it->value() == v);
+    auto it = pgm.begin();
+    for (auto[k, v] : map) {
+        REQUIRE(it->first == k);
+        REQUIRE(it->second == v);
         ++it;
     }
 }

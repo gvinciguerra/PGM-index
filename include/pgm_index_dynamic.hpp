@@ -35,9 +35,8 @@
  */
 template<typename K, typename V, typename PGMType = PGMIndex<K>, uint8_t MinIndexedLevel = 18>
 class DynamicPGMIndex {
-    class Item;
-    class BaseItemA;
-    class BaseItemB;
+    class ItemA;
+    class ItemB;
     class Iterator;
 
     template<typename T, typename A=std::allocator<T>>
@@ -51,8 +50,8 @@ class DynamicPGMIndex {
     static_assert(max_fully_allocated_level > min_level);
     static_assert(2 * PGMType::epsilon_value < 1ul << MinIndexedLevel);
 
+    using Item = std::conditional_t<std::is_pointer_v<V>, ItemA, ItemB>;
     using LevelType = std::vector<Item, DefaultInitAllocator<Item>>;
-    using BaseItem = std::conditional_t<std::is_pointer_v<V>, BaseItemA, BaseItemB>;
 
     uint8_t used_levels;         ///< Equal to 1 + last level whose size is greater than 0, or = min_level if no data.
     std::vector<LevelType> data; ///< (i-min_level)th element is the data array on the ith level.
@@ -212,10 +211,10 @@ public:
         auto &target = get_level(used_levels - 1);
         target.resize(n);
         auto out = target.begin();
-        *out++ = Item(*first);
+        *out++ = Item(first->first, first->second);
         while (++first != last)
             if (first->first != std::prev(out)->first)
-                *out++ = Item(*first);
+                *out++ = Item(first->first, first->second);
         target.resize(std::distance(target.begin(), out));
 
         if (used_levels - 1 >= MinIndexedLevel) {
@@ -225,12 +224,12 @@ public:
     }
 
     /**
-     * Inserts an element into the container. If the container already contain an element with an equivalent key its
-     * value is updated with @p value.
+     * Inserts an element into the container if @p key does not exists in the container. If @p key already exists, the
+     * corresponding value is updated with @p value.
      * @param key element key to insert or update
      * @param value element value to insert
      */
-    void insert(const K &key, const V &value) { insert(Item(key, value)); }
+    void insert_or_assign(const K &key, const V &value) { insert(Item(key, value)); }
 
     /**
      * Removes the specified element from the container.
@@ -251,7 +250,7 @@ public:
                 continue;
 
             auto it = std::lower_bound(level.begin(), level.end(), key);
-            if (it != level.end() && it->key() == key)
+            if (it != level.end() && it->first == key)
                 return it->deleted() ? end() : iterator(this, it);
         }
 
@@ -262,7 +261,7 @@ public:
 
             auto range = get_pgm(i).search(key);
             auto it = std::lower_bound(level.begin() + range.lo, level.begin() + range.hi, key);
-            if (it != level.end() && it->key() == key)
+            if (it != level.end() && it->first == key)
                 return it->deleted() ? end() : iterator(this, it);
         }
 
@@ -294,10 +293,10 @@ public:
             auto it = std::lower_bound(first, last, key);
 
             for (; it != level.end() && it->deleted(); ++it)
-                deleted.emplace(it->key());
+                deleted.emplace(it->first);
 
-            if (it != level.end() && it->key() >= key && (!lb_set || it->key() < lb->key())
-                && deleted.find(it->key()) == deleted.end()) {
+            if (it != level.end() && it->first >= key && (!lb_set || it->first < lb->first)
+                && deleted.find(it->first) == deleted.end()) {
                 lb = it;
                 lb_set = true;
             }
@@ -416,7 +415,7 @@ class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::Iterator {
         std::vector<queue_pair> initial_pairs{};
         initial_pairs.reserve(super->used_levels - super->min_level);
 
-        // For each level create and position an iterator to the first key > it->key()
+        // For each level create and position an iterator to the first key > it->first
         for (uint8_t i = super->min_level; i < super->used_levels; ++i) {
             auto &level = super->get_level(i);
             if (level.empty())
@@ -425,7 +424,7 @@ class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::Iterator {
             size_t lo = 0;
             size_t hi = level.size();
             if (i >= MinIndexedLevel) {
-                auto range = super->get_pgm(i).search(it->key());
+                auto range = super->get_pgm(i).search(it->first);
                 lo = range.lo;
                 hi = range.hi;
             }
@@ -456,7 +455,7 @@ class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::Iterator {
         internal_iterator tmp_it;
         do {
             tmp_it = queue_step();
-            while (!queue.empty() && queue.top().first->key() == tmp_it->key())
+            while (!queue.empty() && queue.top().first->first == tmp_it->first)
                 queue_step();
         } while (!queue.empty() && tmp_it->deleted());
 
@@ -500,52 +499,41 @@ public:
 #pragma pack(push, 1)
 
 template<typename K, typename V, typename PGMType, uint8_t MinIndexedLevel>
-class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::BaseItemA {
-protected:
-    static V tombstone;
-    V second;
-
-    BaseItemA() = default;
-    explicit BaseItemA(const V &value) noexcept: second(value) {}
-
-    bool deleted() const { return second == tombstone; }
-    void set_deleted() { second = tombstone; }
-};
-
-template<typename K, typename V, typename PGMType, uint8_t MinIndexedLevel>
-V DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::BaseItemA::tombstone = new std::remove_pointer_t<V>();
-
-template<typename K, typename V, typename PGMType, uint8_t MinIndexedLevel>
-class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::BaseItemB {
-protected:
-    V second;
-    bool flag;
-
-    BaseItemB() = default;
-    explicit BaseItemB(const V &value) noexcept: second(value), flag(false) {}
-
-    bool deleted() const { return flag; }
-    void set_deleted() { flag = true; }
-};
-
-template<typename K, typename V, typename PGMType, uint8_t MinIndexedLevel>
-class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::Item : private BaseItem {
+class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::ItemA {
     friend class DynamicPGMIndex;
-    K first;
+    static V tombstone;
 
-    Item() noexcept = default;
-    explicit Item(const K &key) noexcept: BaseItem(), first(key) { BaseItem::set_deleted(); };
+    ItemA() = default;
+    explicit ItemA(const K &key) : first(key), second(tombstone) {}
+    explicit ItemA(const K &key, const V &value) : first(key), second(value) {}
 
-    Item(const K &key, const V &value) noexcept: BaseItem(value), first(key) {}
-    explicit Item(const std::pair<K, V> &p) noexcept: BaseItem(p.second), first(p.first) {}
-
-    bool deleted() const { return BaseItem::deleted(); }
-    void set_deleted() { BaseItem::set_deleted(); }
+    bool deleted() const { return this->second == tombstone; }
 
 public:
+    K first;
+    V second;
 
-    const K &key() const { return first; }
-    const V &value() const { return BaseItem::second; }
+    operator K() const { return first; }
+};
+
+template<typename K, typename V, typename PGMType, uint8_t MinIndexedLevel>
+V DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::ItemA::tombstone = new std::remove_pointer_t<V>();
+
+template<typename K, typename V, typename PGMType, uint8_t MinIndexedLevel>
+class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::ItemB {
+    friend class DynamicPGMIndex;
+    bool flag;
+
+    ItemB() = default;
+    explicit ItemB(const K &key) : flag(true), first(key), second() {}
+    explicit ItemB(const K &key, const V &value) : flag(false), first(key), second(value) {}
+
+    bool deleted() const { return flag; }
+
+public:
+    K first;
+    V second;
+
     operator K() const { return first; }
 };
 
