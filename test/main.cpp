@@ -164,6 +164,7 @@ TEMPLATE_TEST_CASE_SIG("Dynamic PGM-index", "",
         pgm_index.insert(k, v);
         test_map.insert_or_assign(k, v);
     }
+    REQUIRE(pgm_index.size() == test_map.size());
 
     // Test for most recent values
     for (auto i = 1; i <= 10000; ++i) {
@@ -186,6 +187,7 @@ TEMPLATE_TEST_CASE_SIG("Dynamic PGM-index", "",
         auto it = pgm_index.find(bulk[i].first);
         REQUIRE(it == end);
     }
+    REQUIRE(pgm_index.size() == test_map.size());
 
     // Test iterator
     auto it = pgm_index.begin();

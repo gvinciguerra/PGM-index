@@ -38,7 +38,7 @@ class DynamicPGMIndex {
     class Item;
     class BaseItemA;
     class BaseItemB;
-    class DynamicPGMIndexIterator;
+    class Iterator;
 
     template<typename T, typename A=std::allocator<T>>
     class DefaultInitAllocator;
@@ -181,7 +181,7 @@ public:
     using mapped_type = V;
     using value_type = Item;
     using size_type = size_t;
-    using iterator = DynamicPGMIndexIterator;
+    using iterator = Iterator;
 
     /**
      * Constructs an empty container.
@@ -230,17 +230,13 @@ public:
      * @param key element key to insert or update
      * @param value element value to insert
      */
-    void insert(const K &key, const V &value) {
-        insert(Item(key, value));
-    }
+    void insert(const K &key, const V &value) { insert(Item(key, value)); }
 
     /**
      * Removes the specified element from the container.
      * @param key key value of the element to remove
      */
-    void erase(const K &key) {
-        insert(Item(key));
-    }
+    void erase(const K &key) { insert(Item(key)); }
 
     /**
      * Finds an element with key equivalent to @p key.
@@ -316,9 +312,7 @@ public:
      * Checks if the container has no elements, i.e. whether begin() == end().
      * @return true if the container is empty, false otherwise
      */
-    bool empty() const {
-        return begin() == end();
-    }
+    bool empty() const { return begin() == end(); }
 
     /**
      * Returns an iterator to the beginning.
@@ -339,6 +333,15 @@ public:
      * @return number of elements with the given key, which is either 1 or 0.
      */
     size_t count(const K &key) const { return find(key) == end() ? 0 : 1; }
+
+    /**
+     * Returns the number of elements in the container.
+     * @return the number of elements in the container
+     */
+    size_t size() const {
+        // TODO: scanning the levels and using a hash table for the encountered keys could be more time efficient
+        return std::distance(begin(), end());
+    }
 
     /**
      * Returns the size of the container in bytes.
@@ -390,7 +393,7 @@ private:
 };
 
 template<typename K, typename V, typename PGMType, uint8_t MinIndexedLevel>
-class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::DynamicPGMIndexIterator {
+class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::Iterator {
     friend class DynamicPGMIndex;
 
     using internal_iterator = typename LevelType::const_iterator;
@@ -463,34 +466,35 @@ class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::DynamicPGMIndexIterator {
             it = tmp_it;
     }
 
-    DynamicPGMIndexIterator() = default;
+    Iterator() = default;
 
-    DynamicPGMIndexIterator(const dynamic_pgm_type *super, const internal_iterator it)
+    Iterator(const dynamic_pgm_type *super, const internal_iterator it)
         : super(super), it(it), initialized(), queue() {};
 
 public:
 
-    using iterator_category = std::forward_iterator_tag;
+    using difference_type = ssize_t;
     using value_type = const Item;
     using pointer = const Item *;
     using reference = const Item &;
+    using iterator_category = std::forward_iterator_tag;
 
-    DynamicPGMIndexIterator &operator++() {
+    Iterator &operator++() {
         lazy_initialize_queue();
         advance();
         return *this;
     }
 
-    DynamicPGMIndexIterator operator++(int) {
-        DynamicPGMIndexIterator i(it);
+    Iterator operator++(int) {
+        Iterator i(it);
         ++i;
         return i;
     }
 
     reference operator*() const { return *it; }
     pointer operator->() const { return &*it; };
-    bool operator==(const DynamicPGMIndexIterator &rhs) const { return it == rhs.it; }
-    bool operator!=(const DynamicPGMIndexIterator &rhs) const { return it != rhs.it; }
+    bool operator==(const Iterator &rhs) const { return it == rhs.it; }
+    bool operator!=(const Iterator &rhs) const { return it != rhs.it; }
 };
 
 #pragma pack(push, 1)
