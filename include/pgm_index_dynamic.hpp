@@ -41,9 +41,9 @@ class DynamicPGMIndex {
     template<typename T, typename A=std::allocator<T>>
     class DefaultInitAllocator;
 
-    constexpr static uint8_t min_level = 6;    ///< 2^min_level-1 is the size of the sorted buffer for new items.
-    constexpr static uint8_t init_levels = 15; ///< Number of levels to allocate when not bulk loaded.
+    constexpr static uint8_t min_level = 6; ///< 2^min_level-1 is the size of the sorted buffer for new items.
     constexpr static uint8_t max_fully_allocated_level = std::max(15, min_level + 1);
+    constexpr static size_t buffer_max_size = (1ull << (min_level + 1)) - 1;
 
     static_assert(min_level < MinIndexedLevel);
     static_assert(max_fully_allocated_level > min_level);
@@ -146,15 +146,13 @@ class DynamicPGMIndex {
             return;
         }
 
-        size_t first_level_max_size = (1ull << (min_level + 1)) - 1;
-        bool first_level_has_slots_left = data[0].size() < first_level_max_size;
-        if (first_level_has_slots_left) {
+        if (data[0].size() < buffer_max_size) {
             data[0].insert(insertion_point, new_item);
             used_levels = used_levels == min_level ? min_level + 1 : used_levels;
             return;
         }
 
-        size_t slots_required = first_level_max_size + 1;
+        size_t slots_required = buffer_max_size + 1;
         uint8_t i;
         for (i = min_level + 1; i < used_levels; ++i) {
             size_t slots_left_in_level = (1ull << i) - get_level(i).size();
@@ -163,7 +161,8 @@ class DynamicPGMIndex {
             slots_required += get_level(i).size();
         }
 
-        bool need_new_level = i == used_levels;
+        auto insertion_idx = std::distance(data[0].begin(), insertion_point);
+        auto need_new_level = i == used_levels;
         if (need_new_level) {
             ++used_levels;
             data.emplace_back();
@@ -171,7 +170,7 @@ class DynamicPGMIndex {
                 pgm.emplace_back();
         }
 
-        pairwise_logarithmic_merge(new_item, i - 1, slots_required, insertion_point);
+        pairwise_logarithmic_merge(new_item, i - 1, slots_required, data[0].begin() + insertion_idx);
     }
 
 public:
@@ -185,8 +184,8 @@ public:
     /**
      * Constructs an empty container.
      */
-    DynamicPGMIndex() : used_levels(min_level), data(init_levels - min_level), pgm() {
-        get_level(min_level).reserve((1ull << (min_level + 1)) - 1);
+    DynamicPGMIndex() : used_levels(min_level), data(32 - min_level), pgm() {
+        get_level(min_level).reserve(buffer_max_size);
         for (uint8_t i = min_level + 1; i <= max_fully_allocated_level; ++i)
             get_level(i).reserve(1ull << i);
     }
@@ -201,9 +200,9 @@ public:
         assert(std::is_sorted(first, last));
         size_t n = std::distance(first, last);
         used_levels = std::ceil(std::log2(n)) + 1;
-        data = decltype(data)(std::max(used_levels, max_fully_allocated_level) - min_level + 1);
+        data = decltype(data)(std::max<uint8_t>(used_levels, 32) - min_level + 1);
 
-        get_level(min_level).reserve((1ull << (min_level + 1)) - 1);
+        get_level(min_level).reserve(buffer_max_size);
         for (uint8_t i = min_level + 1; i <= max_fully_allocated_level; ++i)
             get_level(i).reserve(1ull << i);
 
