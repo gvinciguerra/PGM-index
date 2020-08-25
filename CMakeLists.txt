@@ -28,17 +28,15 @@ if (OPENMP_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif ()
 
-include_directories(include lib)
+include_directories(include)
 
 # PGM-index library
 add_library(pgmindexlib INTERFACE)
-target_include_directories(pgmindexlib INTERFACE include/ lib/)
+target_include_directories(pgmindexlib INTERFACE include/)
 
 # tuner
 if (${BUILD_PGM_TUNER})
-    add_subdirectory(lib/alglib)
-    add_executable(tuner tuner.cpp lib/args.hxx)
-    target_link_libraries(tuner alglib)
+    add_subdirectory(tuner)
 endif ()
 
 enable_testing()

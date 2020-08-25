@@ -14,6 +14,7 @@
 // limitations under the License.
 
 #define CATCH_CONFIG_MAIN
+#define CATCH_CONFIG_FAST_COMPILE
 
 #include <map>
 #include <random>

@@ -1,2 +1,2 @@
-add_executable(tests ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../lib/catch.hpp)
+add_executable(tests tests.cpp)
 target_link_libraries(tests pgmindexlib)
