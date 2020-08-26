@@ -24,10 +24,12 @@
 #ifdef _OPENMP
 #include <omp.h>
 #else
-#warning Compilation with -fopenmp is recommended
+#pragma message ("Compilation with -fopenmp is optional but recommended")
 typedef int omp_int_t;
 inline omp_int_t omp_get_max_threads() { return 1; }
 #endif
+
+namespace pgm::internal {
 
 template<typename T>
 using LargeSigned = typename std::conditional_t<std::is_floating_point_v<T>,
@@ -362,4 +364,6 @@ auto make_segmentation(RandomIt first, RandomIt last, size_t epsilon) {
     make_segmentation(n, epsilon, in_fun, out_fun);
 
     return out;
+}
+
 }

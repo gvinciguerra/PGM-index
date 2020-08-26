@@ -21,9 +21,9 @@
 #include <functional>
 #include <type_traits>
 #include "catch.hpp"
-#include "pgm_index.hpp"
-#include "pgm_index_dynamic.hpp"
-#include "pgm_index_compressed.hpp"
+#include "pgm/pgm_index.hpp"
+#include "pgm/pgm_index_dynamic.hpp"
+#include "pgm/pgm_index_compressed.hpp"
 
 TEMPLATE_TEST_CASE("Segmentation algorithm", "", float, double, uint32_t, uint64_t) {
     const auto epsilon = GENERATE(32, 64, 128);
@@ -46,7 +46,7 @@ TEMPLATE_TEST_CASE("Segmentation algorithm", "", float, double, uint32_t, uint64
     }
 
     std::sort(data.begin(), data.end());
-    auto segments = make_segmentation(data.begin(), data.end(), epsilon);
+    auto segments = pgm::internal::make_segmentation(data.begin(), data.end(), epsilon);
     auto it = segments.begin();
     auto [slope, intercept] = it->get_floating_point_segment(it->get_first_x());
 
@@ -81,7 +81,7 @@ TEMPLATE_TEST_CASE_SIG("PGM-index", "",
 
     std::generate(data.begin(), data.end(), rand);
     std::sort(data.begin(), data.end());
-    PGMIndex<T, E1, E2> pgm_index(data);
+    pgm::PGMIndex<T, E1, E2> pgm_index(data);
 
     for (auto i = 1; i <= 10000; ++i) {
         auto q = data[std::rand() % data.size()];
@@ -111,7 +111,7 @@ TEST_CASE("Compressed PGM-index") {
     std::vector<uint32_t> data(1000000);
     std::generate(data.begin(), data.end(), [] { return std::rand() % 10000; });
     std::sort(data.begin(), data.end());
-    CompressedPGMIndex<uint32_t, 32, 32> compressed_pgm_index(data);
+    pgm::CompressedPGMIndex<uint32_t, 32, 32> compressed_pgm_index(data);
 
     for (auto i = 1; i <= 1000; ++i) {
         auto q = data[std::rand() % data.size()];
@@ -134,8 +134,8 @@ TEMPLATE_TEST_CASE_SIG("Dynamic PGM-index", "",
     std::generate(bulk.begin(), bulk.end(), gen);
     std::sort(bulk.begin(), bulk.end());
 
-    using PGMType = PGMIndex<uint32_t>;
-    DynamicPGMIndex<uint32_t, V, PGMType, MinIndexedLevel> pgm(bulk.begin(), bulk.end());
+    using PGMType = pgm::PGMIndex<uint32_t>;
+    pgm::DynamicPGMIndex<uint32_t, V, PGMType, MinIndexedLevel> pgm(bulk.begin(), bulk.end());
     std::map<uint32_t, V> map(bulk.begin(), bulk.end());
 
     // Test initial state

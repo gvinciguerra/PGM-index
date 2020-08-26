@@ -15,19 +15,19 @@
 
 #pragma once
 
-#include "pgm_index.hpp"
+#include "pgm/pgm_index.hpp"
 #include "interpolation.h"
 
 #define PGM_IGNORED_PARAMETER 1
 #define PGM_EPSILON_RECURSIVE 4
 
 template<typename K>
-class MockPGMIndex : public PGMIndex<K, PGM_IGNORED_PARAMETER, PGM_EPSILON_RECURSIVE, double> {
+class MockPGMIndex : public pgm::PGMIndex<K, PGM_IGNORED_PARAMETER, PGM_EPSILON_RECURSIVE, double> {
     size_t epsilon;
 
 public:
 
-    using segment_type = typename PGMIndex<K, PGM_IGNORED_PARAMETER, PGM_EPSILON_RECURSIVE, double>::Segment;
+    using segment_type = typename pgm::PGMIndex<K, PGM_IGNORED_PARAMETER, PGM_EPSILON_RECURSIVE, double>::Segment;
 
     MockPGMIndex() = default;
 
@@ -36,7 +36,7 @@ public:
         this->build(data.begin(), data.end(), epsilon, PGM_EPSILON_RECURSIVE);
     }
 
-    ApproxPos search(const K &key) const {
+    pgm::ApproxPos search(const K &key) const {
         auto k = std::max(this->first_key, key);
         auto it = this->segment_for_key(k);
         auto pos = std::min<size_t>((*it)(k), std::next(it)->intercept);

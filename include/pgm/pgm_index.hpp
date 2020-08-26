@@ -21,6 +21,8 @@
 #include <algorithm>
 #include "piecewise_linear_model.hpp"
 
+namespace pgm {
+
 #define PGM_SUB_EPS(x, epsilon) ((x) <= (epsilon) ? 0 : ((x) - (epsilon)))
 #define PGM_ADD_EPS(x, epsilon, size) ((x) + (epsilon) + 2 >= (size) ? (size) : (x) + (epsilon) + 2)
 
@@ -101,7 +103,7 @@ protected:
             return std::pair<K, size_t>(x, i);
         };
         auto out_fun = [this](auto cs) { segments.emplace_back(cs); };
-        last_n = back_check(make_segmentation_par(last_n, epsilon, in_fun, out_fun), last_n);
+        last_n = back_check(internal::make_segmentation_par(last_n, epsilon, in_fun, out_fun), last_n);
         levels_offsets.push_back(levels_offsets.back() + last_n + 1);
         levels_sizes.push_back(last_n);
 
@@ -109,7 +111,7 @@ protected:
         while (epsilon_recursive && last_n > 1) {
             auto offset = levels_offsets[levels_offsets.size() - 2];
             auto in_fun_rec = [this, offset](auto i) { return std::pair<K, size_t>(segments[offset + i].key, i); };
-            last_n = back_check(make_segmentation(last_n, epsilon_recursive, in_fun_rec, out_fun), last_n);
+            last_n = back_check(internal::make_segmentation(last_n, epsilon_recursive, in_fun_rec, out_fun), last_n);
             levels_offsets.push_back(levels_offsets.back() + last_n + 1);
             levels_sizes.push_back(last_n);
         }
@@ -232,7 +234,7 @@ struct PGMIndex<K, Epsilon, EpsilonRecursive, Floating>::Segment {
 
     explicit Segment(size_t n) : key(std::numeric_limits<K>::max()), slope(), intercept(n) {};
 
-    explicit Segment(const typename OptimalPiecewiseLinearModel<K, size_t>::CanonicalSegment &cs)
+    explicit Segment(const typename internal::OptimalPiecewiseLinearModel<K, size_t>::CanonicalSegment &cs)
         : key(cs.get_first_x()) {
         auto[cs_slope, cs_intercept] = cs.get_floating_point_segment(key);
         if (cs_intercept > std::numeric_limits<decltype(intercept)>::max())
@@ -268,3 +270,5 @@ struct PGMIndex<K, Epsilon, EpsilonRecursive, Floating>::Segment {
  */
 template<typename K, size_t Epsilon, typename Floating = double>
 using BinarySearchBasedPGMIndex = PGMIndex<K, Epsilon, 0, Floating>;
+
+}

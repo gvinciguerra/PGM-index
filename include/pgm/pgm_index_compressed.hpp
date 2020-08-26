@@ -18,6 +18,8 @@
 #include "sdsl.hpp"
 #include "pgm_index.hpp"
 
+namespace pgm {
+
 /**
  * A space-efficient and compressed index that enables fast search operations on a sorted sequence of numbers.
  *
@@ -41,7 +43,7 @@ class CompressedPGMIndex {
     std::vector<CompressedLevel> levels;  ///< The levels composing the compressed index.
 
     using floating_pair = std::pair<Floating, Floating>;
-    using canonical_segment = typename OptimalPiecewiseLinearModel<K, size_t>::CanonicalSegment;
+    using canonical_segment = typename internal::OptimalPiecewiseLinearModel<K, size_t>::CanonicalSegment;
 
 public:
 
@@ -83,14 +85,14 @@ public:
             return std::pair<K, size_t>(x, i);
         };
         auto out_fun = [&, this](auto cs) { segments.emplace_back(cs); };
-        last_n = make_segmentation_par(last_n, Epsilon, in_fun, out_fun);
+        last_n = internal::make_segmentation_par(last_n, Epsilon, in_fun, out_fun);
         levels_offsets.push_back(levels_offsets.back() + last_n);
 
         // Build upper levels
         while (EpsilonRecursive && last_n > 1) {
             auto offset = levels_offsets[levels_offsets.size() - 2];
             auto in_fun_rec = [&, this](auto i) { return std::pair<K, size_t>(segments[offset + i].get_first_x(), i); };
-            last_n = make_segmentation(last_n, EpsilonRecursive, in_fun_rec, out_fun);
+            last_n = internal::make_segmentation(last_n, EpsilonRecursive, in_fun_rec, out_fun);
             levels_offsets.push_back(levels_offsets.back() + last_n);
         }
 
@@ -315,3 +317,5 @@ struct CompressedPGMIndex<K, Epsilon, EpsilonRecursive, Floating>::CompressedLev
         return keys.size() * sizeof(K) + slopes_map.bit_size() / 8 + sdsl::size_in_bytes(compressed_intercepts);
     }
 };
+
+}

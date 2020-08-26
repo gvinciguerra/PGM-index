@@ -26,6 +26,8 @@
 #include <unordered_set>
 #include "pgm_index.hpp"
 
+namespace pgm {
+
 /**
  * A sorted associative container that contains key-value pairs with unique keys.
  * @tparam K the type of a key
@@ -538,3 +540,5 @@ public:
 };
 
 #pragma pack(pop)
+
+}

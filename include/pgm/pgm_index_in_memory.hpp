@@ -20,6 +20,8 @@
 #include "sdsl.hpp"
 #include "pgm_index.hpp"
 
+namespace pgm {
+
 /** Computes the smallest integral value not less than x / y, where x and y must be positive integers. */
 #define CEIL_UINT_DIV(x, y) ((x) / (y) + ((x) % (y) != 0))
 
@@ -86,7 +88,7 @@ protected:
             return std::pair<K, size_t>(x, i);
         };
         auto out_fun = [this](auto cs) { segments.emplace_back(cs); };
-        back_check(make_segmentation_par(last_n, epsilon, in_fun, out_fun), last_n);
+        back_check(internal::make_segmentation_par(last_n, epsilon, in_fun, out_fun), last_n);
     }
 
     template<typename RandomIt>
@@ -187,3 +189,5 @@ public:
         return segments.size() * sizeof(Segment) + top_level.size() * top_level.width();
     }
 };
+
+}

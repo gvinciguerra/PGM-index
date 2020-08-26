@@ -1,9 +1,9 @@
 /*
  * This example shows how to use the PGM-index to implement classical query operations on a sorted multiset.
  * Compile with:
- *   g++ -std=c++17 -I./include example.cpp -o example
+ *   g++ multiset.cpp -std=c++17 -I../include -o multiset
  * Run with:
- *   ./example
+ *   ./multiset
  */
 
 #include <vector>
@@ -11,12 +11,12 @@
 #include <iostream>
 #include <iterator>
 #include <algorithm>
-#include "pgm_index.hpp"
+#include "pgm/pgm_index.hpp"
 
 template<typename K>
 class PGMMultiset {
     std::vector<K> data;
-    PGMIndex<K, 32, 4, float> pgm;
+    pgm::PGMIndex<K, 32, 4, float> pgm;
 
 public:
 
