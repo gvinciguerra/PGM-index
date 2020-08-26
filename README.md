@@ -17,34 +17,28 @@
     <a href="https://github.com/gvinciguerra/PGM-index/blob/master/LICENSE"><img src="https://img.shields.io/github/license/gvinciguerra/PGM-index" alt="License"></a>
     <a href="https://github.com/gvinciguerra/PGM-index/stargazers"><img src="https://img.shields.io/github/stars/gvinciguerra/PGM-index" alt="GitHub stars"></a>
     <a href="https://github.com/gvinciguerra/PGM-index/network/members"><img alt="GitHub forks" src="https://img.shields.io/github/forks/gvinciguerra/PGM-index"></a>
-    <a href="https://repl.it/github/gvinciguerra/PGM-index#example.cpp"><img alt="Run on Repl.it" src="https://img.shields.io/badge/run-example.cpp-667881?logo=repl.it&logoColor=white"></a>
+    <a href="https://repl.it/github/gvinciguerra/PGM-index"><img alt="Run on Repl.it" src="https://img.shields.io/badge/run-examples-667881?logo=repl.it&logoColor=white"></a>
 </p>
 
-## Building the code
+## Quickstart
 
-To download and build the library use the following commands:
+This is a header-only library. It does not need to be installed. Just clone the repo with
 
 ```bash
 git clone https://github.com/gvinciguerra/PGM-index.git
 cd PGM-index
-cmake . -DCMAKE_BUILD_TYPE=Release
-make -j8
 ```
 
-Now you can run the unit tests via:
-
-```
-./test/tests
-```
-
-## Minimal example
+and copy the `include/pgm` directory to your system's or project's include path.
+                                                                          
+The `examples/simple.cpp` file shows how to index and query a vector of random integers with the PGM-index: 
 
 ```cpp
 #include <vector>
 #include <cstdlib>
 #include <iostream>
 #include <algorithm>
-#include "pgm_index.hpp"
+#include "pgm/pgm_index.hpp"
 
 int main() {
     // Generate some random data
@@ -55,7 +49,7 @@ int main() {
 
     // Construct the PGM-index
     const int epsilon = 128; // space-time trade-off parameter
-    PGMIndex<int, epsilon> index(data);
+    pgm::PGMIndex<int, epsilon> index(data);
 
     // Query the PGM-index
     auto q = 42;
@@ -68,7 +62,23 @@ int main() {
 }
 ```
 
-Have a look also at [example.cpp](https://github.com/gvinciguerra/PGM-index/blob/master/example.cpp) ([try it on Repl.it](https://repl.it/github/gvinciguerra/PGM-index#example.cpp)), showing how to use the `PGMIndex` class to implement classical query operations.
+[Run and edit this and other examples on Repl.it](https://repl.it/github/gvinciguerra/PGM-index). Or run it locally via:
+
+```bash
+g++ examples/simple.cpp -std=c++17 -I./include -o simple
+./simple
+```
+
+## Compile the tests and the tuner
+
+After cloning the repository, build the project with
+
+```bash
+cmake . -DCMAKE_BUILD_TYPE=Release
+make -j8
+```
+
+The test runner will be placed in `test/`. The [tuner](https://pgm.di.unipi.it/docs/tuner/) executable will be placed in `tuner/`.
 
 ## License
 

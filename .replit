@@ -1,2 +1,2 @@
 language = "cpp"
-run = "g++ -std=c++17 -fopenmp -I./include example.cpp -o example && ./example"
+run = "bash -c 'PS3=\"Choose an example to run: \"; select path in examples/*.cpp; do g++ $path -fopenmp -std=c++17 -I include -o out && ./out; break; done'"
