@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-    <a href="https://travis-ci.org/gvinciguerra/PGM-index"><img src="https://img.shields.io/travis/gvinciguerra/PGM-index" alt="Travis (.org)"></a>
+    <a href="https://github.com/gvinciguerra/PGM-index/actions?query=workflow%3Abuild"><img src="https://img.shields.io/github/workflow/status/gvinciguerra/PGM-index/build" alt="GitHub Workflow Status"></a>
     <a href="https://github.com/gvinciguerra/PGM-index/blob/master/LICENSE"><img src="https://img.shields.io/github/license/gvinciguerra/PGM-index" alt="License"></a>
     <a href="https://github.com/gvinciguerra/PGM-index/stargazers"><img src="https://img.shields.io/github/stars/gvinciguerra/PGM-index" alt="GitHub stars"></a>
     <a href="https://github.com/gvinciguerra/PGM-index/network/members"><img alt="GitHub forks" src="https://img.shields.io/github/forks/gvinciguerra/PGM-index"></a>
