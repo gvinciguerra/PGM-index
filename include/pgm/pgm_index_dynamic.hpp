@@ -45,24 +45,24 @@ class DynamicPGMIndex {
     class DefaultInitAllocator;
 
     constexpr static uint8_t min_level = 6; ///< 2^min_level-1 is the size of the sorted buffer for new items.
-    constexpr static uint8_t max_fully_allocated_level = std::max(15, min_level + 1);
+    constexpr static uint8_t fully_allocated_levels = std::max(15, min_level + 1);
     constexpr static size_t buffer_max_size = (1ull << (min_level + 1)) - 1;
 
     static_assert(min_level < MinIndexedLevel);
-    static_assert(max_fully_allocated_level > min_level);
+    static_assert(fully_allocated_levels > min_level);
     static_assert(2 * PGMType::epsilon_value < 1ul << MinIndexedLevel);
 
     using Item = std::conditional_t<std::is_pointer_v<V>, ItemA, ItemB>;
-    using LevelType = std::vector<Item, DefaultInitAllocator<Item>>;
+    using Level = std::vector<Item, DefaultInitAllocator<Item>>;
 
-    uint8_t used_levels;         ///< Equal to 1 + last level whose size is greater than 0, or = min_level if no data.
-    std::vector<LevelType> data; ///< (i-min_level)th element is the data array on the ith level.
-    std::vector<PGMType> pgm;    ///< (i-MinIndexedLevel)th element is the index on the ith level.
+    uint8_t used_levels;       ///< Equal to 1 + last level whose size is greater than 0, or = min_level if no data.
+    std::vector<Level> levels; ///< (i-min_level)th element is the data array on the ith level.
+    std::vector<PGMType> pgms; ///< (i-MinIndexedLevel)th element is the index on the ith level.
 
-    const LevelType &get_level(uint8_t level) const { return data[level - min_level]; }
-    const PGMType &get_pgm(uint8_t level) const { return pgm[level - MinIndexedLevel]; }
-    LevelType &get_level(uint8_t level) { return data[level - min_level]; }
-    PGMType &get_pgm(uint8_t level) { return pgm[level - MinIndexedLevel]; }
+    const Level &level(uint8_t level) const { return levels[level - min_level]; }
+    const PGMType &pgm(uint8_t level) const { return pgms[level - MinIndexedLevel]; }
+    Level &level(uint8_t level) { return levels[level - min_level]; }
+    PGMType &pgm(uint8_t level) { return pgms[level - MinIndexedLevel]; }
     static uint8_t ceil_log2(size_t n) { return n <= 1 ? 0 : sizeof(unsigned long long) * 8 - __builtin_clzll(n - 1); }
 
     template<bool SkipDeleted, typename In1, typename In2, typename OutIterator>
@@ -89,69 +89,69 @@ class DynamicPGMIndex {
         return std::copy(first2, last2, std::copy(first1, last1, result));
     }
 
-    void pairwise_logarithmic_merge(const Item &new_item, uint8_t up_to_level,
-                                    size_t size_hint, typename LevelType::iterator insertion_point) {
-        auto target_level = up_to_level + 1;
-        auto &target_level_data = get_level(target_level);
-        size_t actual_size = 1ull << (1 + min_level);
-        assert((1ull << target_level) - target_level_data.size() >= actual_size);
+    void pairwise_merge(const Item &new_item,
+                        uint8_t up_to_level,
+                        size_t size_hint,
+                        typename Level::iterator insertion_point) {
+        auto target = up_to_level + 1;
+        auto actual_size = size_t(1) << (1 + min_level);
+        assert((1ull << target) - level(target).size() >= actual_size);
 
-        LevelType tmp_a(size_hint);
-        LevelType tmp_b(size_hint + target_level_data.size()); // eventually tmp_b will replace target_level_data
+        Level tmp_a(size_hint);
+        Level tmp_b(size_hint + level(target).size());
 
-        // Insert new item in sorted order in the first level
+        // Insert new_item in sorted order in the first level
         const auto tmp1 = tmp_a.begin();
         const auto tmp2 = tmp_b.begin();
         const auto mod = (up_to_level - min_level) % 2;
 
-        auto it = std::move(data[0].begin(), insertion_point, mod ? tmp1 : tmp2);
+        auto it = std::move(levels[0].begin(), insertion_point, mod ? tmp1 : tmp2);
         *it = new_item;
         ++it;
-        std::move(insertion_point, data[0].end(), it);
+        std::move(insertion_point, levels[0].end(), it);
 
         // Merge subsequent levels
-        uint8_t limit = target_level_data.empty() ? up_to_level : up_to_level + 1;
+        uint8_t limit = level(target).empty() ? up_to_level : up_to_level + 1;
         for (uint8_t i = 1 + min_level; i <= limit; ++i) {
             bool alternate = (i - min_level) % 2 == mod;
-            auto &level_data = get_level(i);
             auto tmp_it = alternate ? tmp1 : tmp2;
             auto out_it = alternate ? tmp2 : tmp1;
             decltype(out_it) out_end;
 
             bool can_delete_permanently = i == used_levels - 1;
             if (can_delete_permanently)
-                out_end = merge<true>(tmp_it, tmp_it + actual_size, level_data.begin(), level_data.end(), out_it);
+                out_end = merge<true>(tmp_it, tmp_it + actual_size, level(i).begin(), level(i).end(), out_it);
             else
-                out_end = merge<false>(tmp_it, tmp_it + actual_size, level_data.begin(), level_data.end(), out_it);
+                out_end = merge<false>(tmp_it, tmp_it + actual_size, level(i).begin(), level(i).end(), out_it);
             actual_size = std::distance(out_it, out_end);
 
             // Empty this level and the corresponding index
-            level_data.clear();
-            if (i > max_fully_allocated_level)
-                level_data.shrink_to_fit();
+            level(i).clear();
+            if (i >= fully_allocated_levels)
+                level(i).shrink_to_fit();
             if (i >= MinIndexedLevel)
-                get_pgm(i) = PGMType();
+                pgm(i) = PGMType();
         }
 
         tmp_b.resize(actual_size);
-        target_level = std::max<uint8_t>(ceil_log2(actual_size), min_level + 1);
-        data[0].resize(0);
-        data[target_level - min_level] = std::move(tmp_b);
+        target = std::max<uint8_t>(ceil_log2(actual_size), min_level + 1);
+        levels[0].resize(0);
+        levels[target - min_level] = std::move(tmp_b);
 
         // Rebuild index, if needed
-        if (target_level >= MinIndexedLevel)
-            get_pgm(target_level) = PGMType(get_level(target_level).begin(), get_level(target_level).end());
+        if (target >= MinIndexedLevel)
+            pgm(target) = PGMType(level(target).begin(), level(target).end());
     }
 
     void insert(const Item &new_item) {
-        auto insertion_point = std::lower_bound(data[0].begin(), data[0].end(), new_item);
-        if (insertion_point != data[0].end() && *insertion_point == new_item) {
+        auto insertion_point = std::lower_bound(levels[0].begin(), levels[0].end(), new_item);
+        if (insertion_point != levels[0].end() && *insertion_point == new_item) {
             *insertion_point = new_item;
             return;
         }
 
-        if (data[0].size() < buffer_max_size) {
-            data[0].insert(insertion_point, new_item);
+        if (levels[0].size() < buffer_max_size) {
+            levels[0].insert(insertion_point, new_item);
             used_levels = used_levels == min_level ? min_level + 1 : used_levels;
             return;
         }
@@ -159,22 +159,22 @@ class DynamicPGMIndex {
         size_t slots_required = buffer_max_size + 1;
         uint8_t i;
         for (i = min_level + 1; i < used_levels; ++i) {
-            size_t slots_left_in_level = (1ull << i) - get_level(i).size();
+            size_t slots_left_in_level = (1ull << i) - level(i).size();
             if (slots_required <= slots_left_in_level)
                 break;
-            slots_required += get_level(i).size();
+            slots_required += level(i).size();
         }
 
-        auto insertion_idx = std::distance(data[0].begin(), insertion_point);
+        auto insertion_idx = std::distance(levels[0].begin(), insertion_point);
         auto need_new_level = i == used_levels;
         if (need_new_level) {
             ++used_levels;
-            data.emplace_back();
-            if (i - MinIndexedLevel >= int(pgm.size()))
-                pgm.emplace_back();
+            levels.emplace_back();
+            if (i - MinIndexedLevel >= int(pgms.size()))
+                pgms.emplace_back();
         }
 
-        pairwise_logarithmic_merge(new_item, i - 1, slots_required, data[0].begin() + insertion_idx);
+        pairwise_merge(new_item, i - 1, slots_required, levels[0].begin() + insertion_idx);
     }
 
 public:
@@ -188,10 +188,10 @@ public:
     /**
      * Constructs an empty container.
      */
-    DynamicPGMIndex() : used_levels(min_level), data(32 - min_level), pgm() {
-        get_level(min_level).reserve(buffer_max_size);
-        for (uint8_t i = min_level + 1; i <= max_fully_allocated_level; ++i)
-            get_level(i).reserve(1ull << i);
+    DynamicPGMIndex() : used_levels(min_level), levels(32 - min_level), pgms() {
+        level(min_level).reserve(buffer_max_size);
+        for (uint8_t i = min_level + 1; i < fully_allocated_levels; ++i)
+            level(i).reserve(1ull << i);
     }
 
     /**
@@ -203,11 +203,11 @@ public:
     DynamicPGMIndex(Iterator first, Iterator last) {
         size_t n = std::distance(first, last);
         used_levels = std::max<uint8_t>(ceil_log2(n), min_level) + 1;
-        data = decltype(data)(std::max<uint8_t>(used_levels, 32) - min_level + 1);
+        levels = decltype(levels)(std::max<uint8_t>(used_levels, 32) - min_level + 1);
 
-        get_level(min_level).reserve(buffer_max_size);
-        for (uint8_t i = min_level + 1; i <= max_fully_allocated_level; ++i)
-            get_level(i).reserve(1ull << i);
+        level(min_level).reserve(buffer_max_size);
+        for (uint8_t i = min_level + 1; i < fully_allocated_levels; ++i)
+            level(i).reserve(1ull << i);
 
         if (n == 0) {
             used_levels = min_level;
@@ -215,7 +215,7 @@ public:
         }
 
         // Copy only the first of each group of pairs with same key value
-        auto &target = get_level(used_levels - 1);
+        auto &target = level(used_levels - 1);
         target.resize(n);
         auto out = target.begin();
         *out++ = Item(first->first, first->second);
@@ -228,8 +228,8 @@ public:
         target.resize(std::distance(target.begin(), out));
 
         if (used_levels - 1 >= MinIndexedLevel) {
-            pgm = decltype(pgm)(used_levels - MinIndexedLevel);
-            get_pgm(used_levels - 1) = PGMType(target.begin(), target.end());
+            pgms = decltype(pgms)(used_levels - MinIndexedLevel);
+            pgm(used_levels - 1) = PGMType(target.begin(), target.end());
         }
     }
 
@@ -253,25 +253,20 @@ public:
      * @return an iterator to an element with key equivalent to @p key. If no such element is found, end() is returned
      */
     iterator find(const K &key) const {
-        uint8_t i = min_level;
-        for (; i < std::min(MinIndexedLevel, used_levels); ++i) {
-            auto &level = get_level(i);
-            if (level.empty())
+        for (auto i = min_level; i < used_levels; ++i) {
+            if (level(i).empty())
                 continue;
 
-            auto it = std::lower_bound(level.begin(), level.end(), key);
-            if (it != level.end() && it->first == key)
-                return it->deleted() ? end() : iterator(this, it);
-        }
+            auto first = level(i).begin();
+            auto last = level(i).end();
+            if (i >= MinIndexedLevel) {
+                auto range = pgm(i).search(key);
+                first = level(i).begin() + range.lo;
+                last = level(i).begin() + range.hi;
+            }
 
-        for (; i < used_levels; ++i) {
-            auto &level = get_level(i);
-            if (level.empty())
-                continue;
-
-            auto range = get_pgm(i).search(key);
-            auto it = std::lower_bound(level.begin() + range.lo, level.begin() + range.hi, key);
-            if (it != level.end() && it->first == key)
+            auto it = std::lower_bound(first, last, key);
+            if (it != level(i).end() && it->first == key)
                 return it->deleted() ? end() : iterator(this, it);
         }
 
@@ -284,28 +279,27 @@ public:
      * @return an iterator to an element with key not less than @p key. If no such element is found, end() is returned
      */
     iterator lower_bound(const K &key) const {
-        typename LevelType::const_iterator lb;
+        typename Level::const_iterator lb;
         auto lb_set = false;
         std::unordered_set<K> deleted;
 
         for (auto i = min_level; i < used_levels; ++i) {
-            auto &level = get_level(i);
-            if (level.empty())
+            if (level(i).empty())
                 continue;
 
-            auto first = level.begin();
-            auto last = level.end();
+            auto first = level(i).begin();
+            auto last = level(i).end();
             if (i >= MinIndexedLevel) {
-                auto range = get_pgm(i).search(key);
-                first = level.begin() + range.lo;
-                last = level.begin() + range.hi;
+                auto range = pgm(i).search(key);
+                first = level(i).begin() + range.lo;
+                last = level(i).begin() + range.hi;
             }
-            auto it = std::lower_bound(first, last, key);
 
-            for (; it != level.end() && it->deleted(); ++it)
+            auto it = std::lower_bound(first, last, key);
+            for (; it != level(i).end() && it->deleted(); ++it)
                 deleted.emplace(it->first);
 
-            if (it != level.end() && it->first >= key && (!lb_set || it->first < lb->first)
+            if (it != level(i).end() && it->first >= key && (!lb_set || it->first < lb->first)
                 && deleted.find(it->first) == deleted.end()) {
                 lb = it;
                 lb_set = true;
@@ -333,7 +327,7 @@ public:
      * Returns an iterator to the end.
      * @return an iterator to the end
      */
-    iterator end() const { return iterator(this, data.back().end()); }
+    iterator end() const { return iterator(this, levels.back().end()); }
 
     /**
      * Returns the number of elements with key that compares equal to the specified argument key, which is either 1
@@ -357,9 +351,9 @@ public:
      * @return the size of the container in bytes
      */
     size_t size_in_bytes() const {
-        size_t bytes = data.size() * sizeof(LevelType);
-        for (auto &level_data: data)
-            bytes += level_data.size() * sizeof(Item);
+        size_t bytes = levels.size() * sizeof(Level);
+        for (auto &l: levels)
+            bytes += l.size() * sizeof(Item);
         return index_size_in_bytes() + bytes;
     }
 
@@ -368,10 +362,10 @@ public:
      * @return the size of the index used in this container in bytes
      */
     size_t index_size_in_bytes() const {
-        size_t index_size = 0;
-        for (auto &p: pgm)
-            index_size += p.size_in_bytes();
-        return index_size;
+        size_t bytes = 0;
+        for (auto &p: pgms)
+            bytes += p.size_in_bytes();
+        return bytes;
     }
 
 private:
@@ -405,7 +399,7 @@ template<typename K, typename V, typename PGMType, uint8_t MinIndexedLevel>
 class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::Iterator {
     friend class DynamicPGMIndex;
 
-    using internal_iterator = typename LevelType::const_iterator;
+    using internal_iterator = typename Level::const_iterator;
     using queue_pair = std::pair<internal_iterator, int16_t>;
     using dynamic_pgm_type = DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>;
 
@@ -427,14 +421,14 @@ class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::Iterator {
 
         // For each level create and position an iterator to the first key > it->first
         for (uint8_t i = super->min_level; i < super->used_levels; ++i) {
-            auto &level = super->get_level(i);
+            auto &level = super->level(i);
             if (level.empty())
                 continue;
 
             size_t lo = 0;
             size_t hi = level.size();
             if (i >= MinIndexedLevel) {
-                auto range = super->get_pgm(i).search(it->first);
+                auto range = super->pgm(i).search(it->first);
                 lo = range.lo;
                 hi = range.hi;
             }
@@ -457,7 +451,7 @@ class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::Iterator {
         auto queue_step = [&] {
             auto[level_it, level_idx] = queue.top();
             queue.pop();
-            if (std::next(level_it) != super->get_level(level_idx).end())
+            if (std::next(level_it) != super->level(level_idx).end())
                 queue.emplace(std::next(level_it), level_idx);
             return level_it;
         };
@@ -476,9 +470,7 @@ class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::Iterator {
     }
 
     Iterator() = default;
-
-    Iterator(const dynamic_pgm_type *super, const internal_iterator it)
-        : super(super), it(it), initialized(), queue() {};
+    Iterator(const dynamic_pgm_type *p, const internal_iterator it) : super(p), it(it), initialized(), queue() {};
 
 public:
 
