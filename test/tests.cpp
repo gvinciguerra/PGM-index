@@ -130,7 +130,7 @@ TEMPLATE_TEST_CASE_SIG("Dynamic PGM-index", "",
     std::srand(42);
     auto gen = [&time] { return std::pair<uint32_t, V>{std::rand() % 1000000000, ++time}; };
 
-    std::vector<std::pair<uint32_t, V>> bulk(1000000);
+    std::vector<std::pair<uint32_t, V>> bulk(GENERATE(0, 10, 1000, 1000000));
     std::generate(bulk.begin(), bulk.end(), gen);
     std::sort(bulk.begin(), bulk.end());
 
@@ -147,7 +147,7 @@ TEMPLATE_TEST_CASE_SIG("Dynamic PGM-index", "",
     }
 
     // Test lower bound
-    for (auto i = 1; i <= 1000; ++i) {
+    for (size_t i = 0; i < std::min<size_t>(1000, bulk.size()); ++i) {
         auto q = bulk[std::rand() % bulk.size()];
         auto c = pgm.count(q.first);
         auto it = pgm.lower_bound(q.first);
@@ -156,13 +156,14 @@ TEMPLATE_TEST_CASE_SIG("Dynamic PGM-index", "",
     }
 
     // Overwrite some elements
-    for (auto i = 1; i <= 10000; ++i, ++time) {
+    ++time;
+    for (size_t i = 0; i < std::min<size_t>(10000, bulk.size()); ++i, ++time) {
         pgm.insert_or_assign(bulk[i].first, time);
         map.insert_or_assign(bulk[i].first, time);
     }
 
     // Insert new elements
-    for (auto i = 1; i <= 10000; ++i) {
+    for (size_t i = 0; i < 10000; ++i) {
         auto[k, v] = gen();
         pgm.insert_or_assign(k, v);
         map.insert_or_assign(k, v);
@@ -170,7 +171,7 @@ TEMPLATE_TEST_CASE_SIG("Dynamic PGM-index", "",
     REQUIRE(pgm.size() == map.size());
 
     // Test for most recent values
-    for (auto i = 1; i <= 10000; ++i) {
+    for (size_t i = 0; i < std::min<size_t>(10000, bulk.size()); ++i) {
         auto q = bulk[i];
         auto it = pgm.lower_bound(q.first);
         REQUIRE(it->first == q.first);
@@ -179,14 +180,14 @@ TEMPLATE_TEST_CASE_SIG("Dynamic PGM-index", "",
     }
 
     // Delete some elements
-    for (auto i = 10000; i <= 10500; ++i) {
+    for (size_t i = 10; i < std::min<size_t>(500, bulk.size()); ++i) {
         pgm.erase(bulk[i].first);
         map.erase(bulk[i].first);
     }
 
     // Check if elements are deleted
     auto end = pgm.end();
-    for (auto i = 10000; i <= 10500; ++i) {
+    for (size_t i = 10; i < std::min<size_t>(500, bulk.size()); ++i) {
         auto it = pgm.find(bulk[i].first);
         REQUIRE(it == end);
     }

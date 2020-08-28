@@ -63,6 +63,7 @@ class DynamicPGMIndex {
     const PGMType &get_pgm(uint8_t level) const { return pgm[level - MinIndexedLevel]; }
     LevelType &get_level(uint8_t level) { return data[level - min_level]; }
     PGMType &get_pgm(uint8_t level) { return pgm[level - MinIndexedLevel]; }
+    static uint8_t ceil_log2(size_t n) { return n <= 1 ? 0 : sizeof(unsigned long long) * 8 - __builtin_clzll(n - 1); }
 
     template<bool SkipDeleted, typename In1, typename In2, typename OutIterator>
     static OutIterator merge(In1 first1, In1 last1, In2 first2, In2 last2, OutIterator result) {
@@ -90,7 +91,7 @@ class DynamicPGMIndex {
 
     void pairwise_logarithmic_merge(const Item &new_item, uint8_t up_to_level,
                                     size_t size_hint, typename LevelType::iterator insertion_point) {
-        const auto target_level = up_to_level + 1;
+        auto target_level = up_to_level + 1;
         auto &target_level_data = get_level(target_level);
         size_t actual_size = 1ull << (1 + min_level);
         assert((1ull << target_level) - target_level_data.size() >= actual_size);
@@ -133,13 +134,13 @@ class DynamicPGMIndex {
         }
 
         tmp_b.resize(actual_size);
+        target_level = std::max<uint8_t>(ceil_log2(actual_size), min_level + 1);
         data[0].resize(0);
         data[target_level - min_level] = std::move(tmp_b);
-        auto &new_target_data = get_level(target_level);
 
         // Rebuild index, if needed
         if (target_level >= MinIndexedLevel)
-            get_pgm(target_level) = PGMType(new_target_data.begin(), new_target_data.end());
+            get_pgm(target_level) = PGMType(get_level(target_level).begin(), get_level(target_level).end());
     }
 
     void insert(const Item &new_item) {
@@ -200,23 +201,30 @@ public:
      */
     template<typename Iterator>
     DynamicPGMIndex(Iterator first, Iterator last) {
-        assert(std::is_sorted(first, last));
         size_t n = std::distance(first, last);
-        used_levels = std::ceil(std::log2(n)) + 1;
+        used_levels = std::max<uint8_t>(ceil_log2(n), min_level) + 1;
         data = decltype(data)(std::max<uint8_t>(used_levels, 32) - min_level + 1);
 
         get_level(min_level).reserve(buffer_max_size);
         for (uint8_t i = min_level + 1; i <= max_fully_allocated_level; ++i)
             get_level(i).reserve(1ull << i);
 
+        if (n == 0) {
+            used_levels = min_level;
+            return;
+        }
+
         // Copy only the first of each group of pairs with same key value
         auto &target = get_level(used_levels - 1);
         target.resize(n);
         auto out = target.begin();
         *out++ = Item(first->first, first->second);
-        while (++first != last)
+        while (++first != last) {
+            if (first->first < std::prev(out)->first)
+                throw std::invalid_argument("Range is not sorted");
             if (first->first != std::prev(out)->first)
                 *out++ = Item(first->first, first->second);
+        }
         target.resize(std::distance(target.begin(), out));
 
         if (used_levels - 1 >= MinIndexedLevel) {
