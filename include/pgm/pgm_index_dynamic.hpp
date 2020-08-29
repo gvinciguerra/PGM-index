@@ -395,31 +395,133 @@ private:
     };
 };
 
+namespace internal {
+
+/* LoserTree implementation adapted from Timo Bingmann's https://tlx.github.io and http://stxxl.org, and from
+ * Johannes Singler's http://algo2.iti.uni-karlsruhe.de/singler/mcstl. These three libraries are distributed under the
+ * Boost Software License 1.0. */
+template<typename T, typename Compare = std::less<T>>
+class LoserTree {
+    using Source = uint8_t;
+
+    struct Loser {
+        T key;         ///< Copy of the current key in the sequence.
+        bool sup;      ///< true iff this is a supremum sentinel.
+        Source source; ///< Index of the sequence.
+    };
+
+    Source ik;                 ///< Number of nodes.
+    Source k;                  ///< Smallest power of 2 greater than ik.
+    Compare cmp;               ///< The comparator object.
+    bool first_insert;         ///< true iff still have to construct keys.
+    std::vector<Loser> losers; ///< Vector of size 2k containing loser tree nodes.
+
+    static uint64_t next_pow2(uint64_t x) {
+        return x == 1 ? 1 : uint64_t(1) << (sizeof(unsigned long long) * 8 - __builtin_clzll(x - 1));
+    }
+
+    /** Called recursively to build the initial tree. */
+    Source init_winner(const Source &root) {
+        if (root >= k)
+            return root;
+
+        auto left = init_winner(2 * root);
+        auto right = init_winner(2 * root + 1);
+        if (losers[right].sup || (!losers[left].sup && !cmp(losers[right].key, losers[left].key))) {
+            losers[root] = losers[right];
+            return left;
+        } else {
+            losers[root] = losers[left];
+            return right;
+        }
+    }
+
+public:
+
+    LoserTree() = default;
+
+    explicit LoserTree(const Source &ik, const Compare &cmp = Compare())
+        : ik(ik),
+          k(next_pow2(ik)),
+          cmp(cmp),
+          first_insert(true),
+          losers(2 * k) {
+        for (Source i = ik - 1; i < k; ++i) {
+            losers[i + k].sup = true;
+            losers[i + k].source = std::numeric_limits<Source>::max();
+        }
+    }
+
+    /** Returns the index of the sequence with the smallest element. */
+    Source min_source() const { return losers[0].source; }
+
+    /** Inserts the initial element of the sequence source. If sup is true, a supremum sentinel is inserted. */
+    void insert_start(const T *key_ptr, const Source &source, bool sup) {
+        Source pos = k + source;
+        assert(pos < losers.size());
+        assert(sup == (key_ptr == nullptr));
+
+        losers[pos].sup = sup;
+        losers[pos].source = source;
+
+        if (first_insert) {
+            for (Source i = 0; i < 2 * k; ++i)
+                losers[i].key = key_ptr ? *key_ptr : T();
+            first_insert = false;
+        } else
+            losers[pos].key = key_ptr ? *key_ptr : T();
+    }
+
+    /** Deletes the smallest element and insert a new element in its place. */
+    void delete_min_insert(const T *key_ptr, bool sup) {
+        assert(sup == (key_ptr == nullptr));
+        auto source = losers[0].source;
+        auto key = key_ptr ? *key_ptr : T();
+        auto pos = (k + source) / 2;
+
+        while (pos > 0) {
+            if ((sup && (!losers[pos].sup || losers[pos].source < source))
+                || (!sup && !losers[pos].sup && (cmp(losers[pos].key, key)
+                    || (!cmp(key, losers[pos].key) && losers[pos].source < source)))) {
+                std::swap(losers[pos].sup, sup);
+                std::swap(losers[pos].source, source);
+                std::swap(losers[pos].key, key);
+            }
+            pos /= 2;
+        }
+
+        losers[0].sup = sup;
+        losers[0].source = source;
+        losers[0].key = key;
+    }
+
+    /** Initializes the tree. */
+    void init() { losers[0] = losers[init_winner(1)]; }
+};
+
+} // namespace internal
+
 template<typename K, typename V, typename PGMType, uint8_t MinIndexedLevel>
 class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::Iterator {
     friend class DynamicPGMIndex;
 
     using internal_iterator = typename Level::const_iterator;
-    using queue_pair = std::pair<internal_iterator, int16_t>;
+    using it_pair = std::pair<internal_iterator, internal_iterator>;
     using dynamic_pgm_type = DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>;
 
-    static bool queue_cmp(const queue_pair &e1, const queue_pair &e2) {
-        return *e1.first > *e2.first || (*e1.first == *e2.first && e1.second > e2.second);
-    }
+    const dynamic_pgm_type *super;  ///< Pointer to the container that is being iterated.
+    internal_iterator it;           ///< Iterator to the current element.
+    bool initialized;               ///< true iff the members tree and iterators have been initialized.
+    uint8_t unconsumed_count;       ///< Number of iterators that have not yet reached the end.
+    internal::LoserTree<K> tree;    ///< Tournament tree with one leaf for each iterator.
+    std::vector<it_pair> iterators; ///< Vector with pairs (current, end) iterators.
 
-    const dynamic_pgm_type *super;
-    internal_iterator it;
-    bool initialized;
-    std::priority_queue<queue_pair, std::vector<queue_pair>, decltype(&queue_cmp)> queue;
-
-    void lazy_initialize_queue() {
+    void lazy_initialize() {
         if (initialized)
             return;
 
-        std::vector<queue_pair> initial_pairs{};
-        initial_pairs.reserve(super->used_levels - super->min_level);
-
         // For each level create and position an iterator to the first key > it->first
+        iterators.reserve(super->used_levels - super->min_level);
         for (uint8_t i = super->min_level; i < super->used_levels; ++i) {
             auto &level = super->level(i);
             if (level.empty())
@@ -435,33 +537,42 @@ class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::Iterator {
 
             auto pos = std::upper_bound(level.begin() + lo, level.begin() + hi, *it);
             if (pos != level.end())
-                initial_pairs.emplace_back(pos, i);
+                iterators.emplace_back(pos, level.end());
         }
 
-        queue = decltype(queue)(&queue_cmp, initial_pairs);
+        tree = decltype(tree)(iterators.size());
+        for (size_t i = 0; i < iterators.size(); ++i)
+            tree.insert_start(&iterators[i].first->first, i, false);
+        tree.init();
+
         initialized = true;
+        unconsumed_count = iterators.size();
     }
 
     void advance() {
-        if (queue.empty()) {
+        if (unconsumed_count == 0) {
             *this = super->end();
             return;
         }
 
-        auto queue_step = [&] {
-            auto[level_it, level_idx] = queue.top();
-            queue.pop();
-            if (std::next(level_it) != super->level(level_idx).end())
-                queue.emplace(std::next(level_it), level_idx);
-            return level_it;
+        auto step = [&] {
+            auto &it_min = iterators[tree.min_source()];
+            auto result = it_min.first;
+            ++it_min.first;
+            if (it_min.first == it_min.second) {
+                tree.delete_min_insert(nullptr, true);
+                --unconsumed_count;
+            } else
+                tree.delete_min_insert(&it_min.first->first, false);
+            return result;
         };
 
         internal_iterator tmp_it;
         do {
-            tmp_it = queue_step();
-            while (!queue.empty() && queue.top().first->first == tmp_it->first)
-                queue_step();
-        } while (!queue.empty() && tmp_it->deleted());
+            tmp_it = step();
+            while (unconsumed_count > 0 && iterators[tree.min_source()].first->first == tmp_it->first)
+                step();
+        } while (unconsumed_count > 0 && tmp_it->deleted());
 
         if (tmp_it->deleted())
             *this = super->end();
@@ -470,7 +581,8 @@ class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::Iterator {
     }
 
     Iterator() = default;
-    Iterator(const dynamic_pgm_type *p, const internal_iterator it) : super(p), it(it), initialized(), queue() {};
+    Iterator(const dynamic_pgm_type *p, const internal_iterator it)
+        : super(p), it(it), initialized(), unconsumed_count(), tree(), iterators() {};
 
 public:
 
@@ -481,7 +593,7 @@ public:
     using iterator_category = std::forward_iterator_tag;
 
     Iterator &operator++() {
-        lazy_initialize_queue();
+        lazy_initialize();
         advance();
         return *this;
     }
