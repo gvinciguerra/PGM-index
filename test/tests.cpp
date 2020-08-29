@@ -13,9 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#define CATCH_CONFIG_MAIN
-#define CATCH_CONFIG_FAST_COMPILE
-
 #include <map>
 #include <random>
 #include <functional>
