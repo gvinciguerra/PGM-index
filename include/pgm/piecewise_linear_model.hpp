@@ -337,7 +337,7 @@ size_t make_segmentation_par(size_t n, size_t epsilon, Fin in, Fout out) {
         }
 
         auto in_fun = [in, first](auto j) { return in(first + j); };
-        auto out_fun = [&results, i](auto cs) { results[i].emplace_back(cs); };
+        auto out_fun = [&results, i](const auto &cs) { results[i].emplace_back(cs); };
         results[i].reserve(chunk_size / (epsilon > 0 ? epsilon * epsilon : 16));
         c += make_segmentation(last - first, epsilon, in_fun, out_fun);
     }
@@ -360,7 +360,7 @@ auto make_segmentation(RandomIt first, RandomIt last, size_t epsilon) {
     out.reserve(epsilon > 0 ? n / (epsilon * epsilon) : n / 16);
 
     auto in_fun = [first](auto i) { return pair_type(first[i], i); };
-    auto out_fun = [&out](auto cs) { out.push_back(cs); };
+    auto out_fun = [&out](const auto &cs) { out.push_back(cs); };
     make_segmentation(n, epsilon, in_fun, out_fun);
 
     return out;
