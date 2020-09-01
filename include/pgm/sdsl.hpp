@@ -3605,6 +3605,10 @@ public:
     int_vector_reference(value_type* word, uint8_t offset, uint8_t len):
         m_word(word),m_offset(offset),m_len(len) {};
 
+    int_vector_reference() = delete;
+    int_vector_reference(const int_vector_reference &) noexcept = default;
+    int_vector_reference(int_vector_reference &&) noexcept = default;
+
     //! Assignment operator for the proxy class
     /*!
         The integer x is assign to the referenced
@@ -4312,8 +4316,8 @@ inline void int_vector<t_width>::set_int(size_type idx, value_type x, const uint
 template<uint8_t t_width>
 inline auto int_vector<t_width>::operator[](const size_type& idx) -> reference {
     assert(idx < this->size());
-    size_type i = idx * m_width;
-    return reference(this->m_data + (i>>6), i&0x3F, m_width);
+    size_type j = idx * m_width;
+    return reference(this->m_data + (j>>6), j&0x3F, m_width);
 }
 
 // specialized [] operator for 64 bit access.

@@ -15,6 +15,7 @@
 
 #pragma once
 
+#include <cmath>
 #include "pgm/pgm_index.hpp"
 #include "interpolation.h"
 
@@ -187,7 +188,7 @@ void minimize_time_logging(const IndexStats &stats, bool verbose, size_t lo_eps,
 }
 
 template<typename K>
-void minimize_space_given_time(size_t max_time, float tolerance, std::vector<K> &data,
+void minimize_space_given_time(size_t max_time, double tolerance, std::vector<K> &data,
                                size_t lo_eps, size_t hi_eps, bool verbose) {
     auto latency = 82.1;
     auto cache_line = x86_cache_line();
@@ -250,7 +251,7 @@ void minimize_space_given_time(size_t max_time, float tolerance, std::vector<K> 
 }
 
 template<typename K>
-void minimize_time_given_space(size_t max_space, float tolerance, std::vector<K> &data,
+void minimize_time_given_space(size_t max_space, double tolerance, std::vector<K> &data,
                                size_t lo_eps, size_t hi_eps, bool verbose) {
     const auto guess_steps_threshold = size_t(2 * std::log2(std::log2(hi_eps - lo_eps)));
     size_t guess_steps = 0;
@@ -280,7 +281,7 @@ void minimize_time_given_space(size_t max_space, float tolerance, std::vector<K>
             guess = size_t(guess_epsilon_space(100, c_space[0], c_space[1], max_space, constants));
             guess = std::clamp(guess, lo + 1, hi - 1);
 
-            auto bias_weight = guess_steps <= 1 ? 0 : float(guess_steps) / guess_steps_threshold;
+            auto bias_weight = guess_steps <= 1 ? 0 : double(guess_steps) / guess_steps_threshold;
             auto biased_guess = mid * bias_weight + guess * (1 - bias_weight);
 
             mid = size_t(biased_guess);
@@ -303,7 +304,7 @@ void minimize_time_given_space(size_t max_space, float tolerance, std::vector<K>
             hi = mid;
         else
             lo = mid + 1;
-    } while (lo < hi && std::fabs(all_stats.back().bytes - max_space) > max_space * tolerance);
+    } while (lo < hi && std::abs(all_stats.back().bytes - (double) max_space) > max_space * tolerance);
 
     auto time = std::accumulate(all_stats.cbegin(), all_stats.cend(), 0ull,
                                 [](size_t r, const IndexStats &s) { return r + s.construction_ns; });

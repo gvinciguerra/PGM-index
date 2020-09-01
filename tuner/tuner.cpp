@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
     Group g(p, "Operation modes:", args::Group::Validators::Xor, args::Options::Required);
     ValueFlag<size_t> time(g, "ns", "Specify a time to minimise the space", {'t', "time"});
     ValueFlag<size_t> space(g, "bytes", "Specify a space to minimise the time", {'s', "space"});
-    ValueFlag<float> tol(p, "float", "Tolerance between 0-1 on the target resource (default 0.01)", {'o', "tol"}, 0.01);
+    ValueFlag<double> tol(p, "float", "Tolerance between 0 and 1 on the constraint (default 0.01)", {'o', "tol"}, 0.01);
     Flag verbose(p, "verbose", "Show additional logging info", {'v', "verbose"});
     Group t(p, "File type:", args::Group::Validators::Xor, args::Options::Required);
     Flag bin(t, "binary", "The input file is a binary file containing 32-bit integers", {'b', "binary"});

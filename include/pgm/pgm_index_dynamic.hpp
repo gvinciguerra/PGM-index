@@ -446,7 +446,7 @@ public:
           cmp(cmp),
           first_insert(true),
           losers(2 * k) {
-        for (Source i = ik - 1; i < k; ++i) {
+        for (auto i = ik - 1u; i < k; ++i) {
             losers[i + k].sup = true;
             losers[i + k].source = std::numeric_limits<Source>::max();
         }
@@ -465,7 +465,7 @@ public:
         losers[pos].source = source;
 
         if (first_insert) {
-            for (Source i = 0; i < 2 * k; ++i)
+            for (auto i = 0u; i < k + k; ++i)
                 losers[i].key = key_ptr ? *key_ptr : T();
             first_insert = false;
         } else
