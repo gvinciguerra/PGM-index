@@ -3745,6 +3745,10 @@ public:
     int_vector_reference(uint64_t* word, uint8_t offset, uint8_t):
         m_word(word),m_mask(1ULL<<offset) {};
 
+    int_vector_reference() = delete;
+    int_vector_reference(const int_vector_reference &) noexcept = default;
+    int_vector_reference(int_vector_reference &&) noexcept = default;
+
     //! Assignment operator for the proxy class
     int_vector_reference& operator=(bool x)
     {
