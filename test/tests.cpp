@@ -20,29 +20,62 @@
 #include "catch.hpp"
 #include "pgm/pgm_index.hpp"
 #include "pgm/pgm_index_dynamic.hpp"
+#include "pgm/pgm_index_in_memory.hpp"
 #include "pgm/pgm_index_compressed.hpp"
 
-TEMPLATE_TEST_CASE("Segmentation algorithm", "", float, double, uint32_t, uint64_t) {
-    const auto epsilon = GENERATE(32, 64, 128);
-    std::vector<TestType> data(1000000);
+template <typename T>
+std::vector<T> generate_data(size_t n) {
+    std::vector<T> data(n);
     std::mt19937 engine(42);
-    using RandomFunction = std::function<TestType()>;
 
-    if constexpr (std::is_floating_point<TestType>()) {
-        RandomFunction lognormal = std::bind(std::lognormal_distribution<TestType>(0, 0.5), engine);
-        RandomFunction exponential = std::bind(std::exponential_distribution<TestType>(1.2), engine);
+    using RandomFunction = std::function<T()>;
+    if constexpr (std::is_floating_point<T>()) {
+        RandomFunction lognormal = std::bind(std::lognormal_distribution<T>(0, 0.5), engine);
+        RandomFunction exponential = std::bind(std::exponential_distribution<T>(1.2), engine);
         auto rand = GENERATE_COPY(as<RandomFunction>{}, lognormal, exponential);
         std::generate(data.begin(), data.end(), rand);
     } else {
-        RandomFunction uniform_dense = std::bind(std::uniform_int_distribution<TestType>(0, 10000), engine);
-        RandomFunction uniform_sparse = std::bind(std::uniform_int_distribution<TestType>(0, 10000000), engine);
-        RandomFunction binomial = std::bind(std::binomial_distribution<TestType>(50000), engine);
-        RandomFunction geometric = std::bind(std::geometric_distribution<TestType>(0.8), engine);
+        RandomFunction uniform_dense = std::bind(std::uniform_int_distribution<T>(0, 10000), engine);
+        RandomFunction uniform_sparse = std::bind(std::uniform_int_distribution<T>(0, 10000000), engine);
+        RandomFunction binomial = std::bind(std::binomial_distribution<T>(50000), engine);
+        RandomFunction geometric = std::bind(std::geometric_distribution<T>(0.8), engine);
         auto rand = GENERATE_COPY(as<RandomFunction>{}, uniform_dense, uniform_sparse, binomial, geometric);
         std::generate(data.begin(), data.end(), rand);
     }
 
     std::sort(data.begin(), data.end());
+    return data;
+}
+
+template <typename Index, typename Data>
+void test_index(const Index &index, const Data &data) {
+    for (auto i = 1; i <= 10000; ++i) {
+        auto q = data[std::rand() % data.size()];
+        auto range = index.search(q);
+        auto lo = data.begin() + range.lo;
+        auto hi = data.begin() + range.hi;
+        auto k = std::lower_bound(lo, hi, q);
+        REQUIRE(*k == q);
+    }
+
+    // Test elements outside range
+    auto q = data.back() + 42;
+    auto range = index.search(q);
+    auto lo = data.begin() + range.lo;
+    auto hi = data.begin() + range.hi;
+    REQUIRE(std::lower_bound(lo, hi, q) == data.end());
+
+    q = 0;
+    range = index.search(q);
+    lo = data.begin() + range.lo;
+    hi = data.begin() + range.hi;
+    REQUIRE(std::lower_bound(lo, hi, q) == data.begin());
+
+}
+
+TEMPLATE_TEST_CASE("Segmentation algorithm", "", float, double, uint32_t, uint64_t) {
+    auto epsilon = GENERATE(32, 64, 128);
+    auto data = generate_data<TestType>(1000000);
     auto segments = pgm::internal::make_segmentation(data.begin(), data.end(), epsilon);
     auto it = segments.begin();
     auto [slope, intercept] = it->get_floating_point_segment(it->get_first_x());
@@ -66,58 +99,22 @@ TEMPLATE_TEST_CASE_SIG("PGM-index", "",
                        (uint32_t, 16, 0), (uint32_t, 32, 0), (uint32_t, 64, 0),
                        (uint64_t, 16, 4), (uint64_t, 32, 4), (uint64_t, 64, 4),
                        (uint64_t, 4, 16), (uint64_t, 4, 32), (uint64_t, 4, 64)) {
-    std::vector<T> data(2000000);
-    std::mt19937 engine(42);
-
-    using RandomFunction = std::function<T()>;
-    RandomFunction uniform_dense = std::bind(std::uniform_int_distribution<T>(0, 10000), engine);
-    RandomFunction uniform_sparse = std::bind(std::uniform_int_distribution<T>(0, 10000000), engine);
-    RandomFunction binomial = std::bind(std::binomial_distribution<T>(50000), engine);
-    RandomFunction geometric = std::bind(std::geometric_distribution<T>(0.8), engine);
-    auto rand = GENERATE_COPY(as<RandomFunction>{}, uniform_dense, uniform_sparse, binomial, geometric);
-
-    std::generate(data.begin(), data.end(), rand);
-    std::sort(data.begin(), data.end());
-    pgm::PGMIndex<T, E1, E2> pgm_index(data);
-
-    for (auto i = 1; i <= 10000; ++i) {
-        auto q = data[std::rand() % data.size()];
-        auto range = pgm_index.search(q);
-        auto lo = data.begin() + range.lo;
-        auto hi = data.begin() + range.hi;
-        auto k = std::lower_bound(lo, hi, q);
-        REQUIRE(*k == q);
-    }
-
-    // Test elements outside range
-    auto q = data.back() + 42;
-    auto range = pgm_index.search(q);
-    auto lo = data.begin() + range.lo;
-    auto hi = data.begin() + range.hi;
-    REQUIRE(std::lower_bound(lo, hi, q) == data.end());
-
-    q = 0;
-    range = pgm_index.search(q);
-    lo = data.begin() + range.lo;
-    hi = data.begin() + range.hi;
-    REQUIRE(std::lower_bound(lo, hi, q) == data.begin());
+    auto data = generate_data<T>(3000000);
+    pgm::PGMIndex<T, E1, E2> index(data.begin(), data.end());
+    test_index(index, data);
 }
 
 TEST_CASE("Compressed PGM-index") {
-    std::srand(42);
-    std::vector<uint32_t> data(1000000);
-    std::generate(data.begin(), data.end(), [] { return std::rand() % 10000; });
-    std::sort(data.begin(), data.end());
-    pgm::CompressedPGMIndex<uint32_t, 32, 32> compressed_pgm_index(data);
+    auto data = generate_data<uint32_t>(3000000);
+    pgm::CompressedPGMIndex<uint32_t, 32, 32> index(data);
+    test_index(index, data);
+}
 
-    for (auto i = 1; i <= 1000; ++i) {
-        auto q = data[std::rand() % data.size()];
-        auto range = compressed_pgm_index.search(q);
-        auto lo = data.begin() + range.lo;
-        auto hi = data.begin() + range.hi;
-        auto k = std::lower_bound(lo, hi, q);
-        REQUIRE(*k == q);
-    }
+TEST_CASE("In-memory PGM-index") {
+    auto data = generate_data<uint32_t>(3000000);
+    auto top_level_size = GENERATE(256, 1024, 4096);
+    pgm::InMemoryPGMIndex<uint32_t, 8> index(data.begin(), data.end(), top_level_size);
+    test_index(index, data);
 }
 
 TEMPLATE_TEST_CASE_SIG("Dynamic PGM-index", "",
