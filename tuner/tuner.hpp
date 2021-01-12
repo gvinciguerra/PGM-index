@@ -34,7 +34,8 @@ public:
 
     MockPGMIndex(std::vector<K> &data, size_t epsilon) : epsilon(epsilon) {
         this->n = data.size();
-        this->build(data.begin(), data.end(), epsilon, PGM_EPSILON_RECURSIVE);
+        this->build(data.begin(), data.end(), epsilon, PGM_EPSILON_RECURSIVE,
+                    this->segments, this->levels_sizes, this->levels_offsets);
     }
 
     pgm::ApproxPos search(const K &key) const {
