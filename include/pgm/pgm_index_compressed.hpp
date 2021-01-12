@@ -30,7 +30,7 @@ namespace pgm {
  * @tparam EpsilonRecursive controls the size of the search range in the internal structure
  * @tparam Floating the floating-point type to use for slopes
  */
-template<typename K, size_t Epsilon, size_t EpsilonRecursive = 4, typename Floating = double>
+template<typename K, size_t Epsilon, size_t EpsilonRecursive = 4, typename Floating = float>
 class CompressedPGMIndex {
     static_assert(Epsilon > 0);
     struct CompressedLevel;
@@ -80,9 +80,8 @@ public:
         // Build first level
         auto in_fun = [this, first](auto i) {
             auto x = first[i];
-            if (i > 0 && i + 1u < n && x == first[i - 1] && x != first[i + 1] && x + 1 != first[i + 1])
-                return std::pair<K, size_t>(x + 1, i);
-            return std::pair<K, size_t>(x, i);
+            auto flag = i > 0 && i + 1u < n && x == first[i - 1] && x != first[i + 1] && x + 1 != first[i + 1];
+            return std::pair<K, size_t>(x + flag, i);
         };
         auto out_fun = [&, this](auto cs) { segments.emplace_back(cs); };
         last_n = internal::make_segmentation_par(last_n, Epsilon, in_fun, out_fun);

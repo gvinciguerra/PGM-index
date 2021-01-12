@@ -57,7 +57,7 @@ struct ApproxPos {
  * @tparam EpsilonRecursive controls the size of the search range in the internal structure
  * @tparam Floating the floating-point type to use for slopes
  */
-template<typename K, size_t Epsilon = 64, size_t EpsilonRecursive = 4, typename Floating = double>
+template<typename K, size_t Epsilon = 64, size_t EpsilonRecursive = 4, typename Floating = float>
 class PGMIndex {
 protected:
     template<typename, size_t, uint8_t, typename>
@@ -272,7 +272,7 @@ struct PGMIndex<K, Epsilon, EpsilonRecursive, Floating>::Segment {
  * @tparam Epsilon controls the size of the search range
  * @tparam Floating the floating-point type to use for slopes
  */
-template<typename K, size_t Epsilon, typename Floating = double>
+template<typename K, size_t Epsilon, typename Floating = float>
 using BinarySearchBasedPGMIndex = PGMIndex<K, Epsilon, 0, Floating>;
 
 }
