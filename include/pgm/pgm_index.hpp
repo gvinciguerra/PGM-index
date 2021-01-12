@@ -73,11 +73,15 @@ protected:
     std::vector<size_t> levels_offsets; ///< The starting position of each level in segments[], in reverse order.
 
     template<typename RandomIt>
-    void build(RandomIt first, RandomIt last, size_t epsilon, size_t epsilon_recursive) {
+    static void build(RandomIt first, RandomIt last,
+                      size_t epsilon, size_t epsilon_recursive,
+                      std::vector<Segment> &segments,
+                      std::vector<size_t> &levels_sizes,
+                      std::vector<size_t> &levels_offsets) {
+        auto n = std::distance(first, last);
         if (n == 0)
             return;
 
-        first_key = *first;
         levels_offsets.push_back(0);
         segments.reserve(n / (epsilon * epsilon));
 
@@ -85,33 +89,33 @@ protected:
         auto last_n = n - ignore_last;
         last -= ignore_last;
 
-        auto back_check = [this, last](size_t n_segments, size_t prev_level_size) {
+        auto build_level = [&] (auto epsilon, auto in_fun, auto out_fun) {
+            auto n_segments = internal::make_segmentation_par(last_n, epsilon, in_fun, out_fun);
             if (segments.back().slope == 0) {
                 // Here, we need to ensure that keys > *(last-1) are approximated to a position == prev_level_size
-                segments.emplace_back(*std::prev(last) + 1, 0, prev_level_size);
+                segments.emplace_back(*std::prev(last) + 1, 0, last_n);
                 ++n_segments;
             }
-            segments.emplace_back(prev_level_size);
+            segments.emplace_back(last_n);
             return n_segments;
         };
 
         // Build first level
-        auto in_fun = [this, first](auto i) {
+        auto in_fun = [&](auto i) {
             auto x = first[i];
-            if (i > 0 && i + 1u < n && x == first[i - 1] && x != first[i + 1] && x + 1 != first[i + 1])
-                return std::pair<K, size_t>(x + 1, i);
-            return std::pair<K, size_t>(x, i);
+            auto flag = i > 0 && i + 1u < n && x == first[i - 1] && x != first[i + 1] && x + 1 != first[i + 1];
+            return std::pair<K, size_t>(x + flag, i);
         };
-        auto out_fun = [this](auto cs) { segments.emplace_back(cs); };
-        last_n = back_check(internal::make_segmentation_par(last_n, epsilon, in_fun, out_fun), last_n);
+        auto out_fun = [&](auto cs) { segments.emplace_back(cs); };
+        last_n = build_level(epsilon, in_fun, out_fun);
         levels_offsets.push_back(levels_offsets.back() + last_n + 1);
         levels_sizes.push_back(last_n);
 
         // Build upper levels
         while (epsilon_recursive && last_n > 1) {
             auto offset = levels_offsets[levels_offsets.size() - 2];
-            auto in_fun_rec = [this, offset](auto i) { return std::pair<K, size_t>(segments[offset + i].key, i); };
-            last_n = back_check(internal::make_segmentation(last_n, epsilon_recursive, in_fun_rec, out_fun), last_n);
+            auto in_fun_rec = [&](auto i) { return std::pair<K, size_t>(segments[offset + i].key, i); };
+            last_n = build_level(epsilon_recursive, in_fun_rec, out_fun);
             levels_offsets.push_back(levels_offsets.back() + last_n + 1);
             levels_sizes.push_back(last_n);
         }
@@ -174,11 +178,11 @@ public:
     template<typename RandomIt>
     PGMIndex(RandomIt first, RandomIt last)
         : n(std::distance(first, last)),
-          first_key(),
+          first_key(n ? *first : 0),
           segments(),
           levels_sizes(),
           levels_offsets() {
-        build(first, last, Epsilon, EpsilonRecursive);
+        build(first, last, Epsilon, EpsilonRecursive, segments, levels_sizes, levels_offsets);
     }
 
     /**

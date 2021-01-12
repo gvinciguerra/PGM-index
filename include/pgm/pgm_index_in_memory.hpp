@@ -59,39 +59,6 @@ protected:
     K step;
 
     template<typename RandomIt>
-    void build_segments(RandomIt first, RandomIt last, size_t epsilon) {
-        if (n == 0)
-            return;
-
-        first_key = *first;
-        segments.reserve(n / (epsilon * epsilon));
-
-        auto ignore_last = *std::prev(last) == std::numeric_limits<K>::max(); // max is reserved for padding
-        auto last_n = n - ignore_last;
-        last -= ignore_last;
-
-        auto back_check = [this, last](size_t n_segments, size_t prev_level_size) {
-            if (segments.back().slope == 0) {
-                // Here, we need to ensure that keys > *(last-1) are approximated to a position == prev_level_size
-                segments.emplace_back(*std::prev(last) + 1, 0, prev_level_size);
-                ++n_segments;
-            }
-            segments.emplace_back(prev_level_size);
-            return n_segments;
-        };
-
-        // Build first level
-        auto in_fun = [this, first](auto i) {
-            auto x = first[i];
-            if (i > 0 && i + 1u < n && x == first[i - 1] && x != first[i + 1] && x + 1 != first[i + 1])
-                return std::pair<K, size_t>(x + 1, i);
-            return std::pair<K, size_t>(x, i);
-        };
-        auto out_fun = [this](auto cs) { segments.emplace_back(cs); };
-        back_check(internal::make_segmentation_par(last_n, epsilon, in_fun, out_fun), last_n);
-    }
-
-    template<typename RandomIt>
     void build_top_level(RandomIt, RandomIt last, size_t top_level_size) {
         auto log_segments = (size_t) BIT_WIDTH(segments.size());
         if constexpr (TopLevelBitSize == 0)
@@ -146,8 +113,14 @@ public:
      * @param top_level_size the number of cells allocated for the top-level table
      */
     template<typename RandomIt>
-    InMemoryPGMIndex(RandomIt first, RandomIt last, size_t top_level_size) : n(std::distance(first, last)) {
-        build_segments(first, last, Epsilon);
+    InMemoryPGMIndex(RandomIt first, RandomIt last, size_t top_level_size)
+        : n(std::distance(first, last)),
+          first_key(n ? *first : 0),
+          segments(),
+          top_level() {
+        std::vector<size_t> sizes;
+        std::vector<size_t> offsets;
+        PGMIndex<K, Epsilon, 0, Floating>::build(first, last, Epsilon, 0, segments, sizes, offsets);
         build_top_level(first, last, top_level_size);
     }
 
