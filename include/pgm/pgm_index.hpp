@@ -61,7 +61,7 @@ template<typename K, size_t Epsilon = 64, size_t EpsilonRecursive = 4, typename 
 class PGMIndex {
 protected:
     template<typename, size_t, uint8_t, typename>
-    friend class InMemoryPGMIndex;
+    friend class BucketingPGMIndex;
 
     template<typename, size_t, typename>
     friend class EliasFanoPGMIndex;
@@ -268,17 +268,5 @@ struct PGMIndex<K, Epsilon, EpsilonRecursive, Floating>::Segment {
 };
 
 #pragma pack(pop)
-
-/**
- * A space-efficient index that enables fast search operations on a sorted sequence of numbers. This variant of
- * @ref PGMIndex uses a binary search in the last level, and it should only be used when the space usage, returned by
- * @ref PGMIndex::size_in_bytes(), is low (for example, less than the last level cache size).
- *
- * @tparam K the type of the indexed keys
- * @tparam Epsilon controls the size of the search range
- * @tparam Floating the floating-point type to use for slopes
- */
-template<typename K, size_t Epsilon, typename Floating = float>
-using BinarySearchBasedPGMIndex = PGMIndex<K, Epsilon, 0, Floating>;
 
 }

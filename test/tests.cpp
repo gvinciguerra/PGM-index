@@ -21,7 +21,6 @@
 #include "pgm/pgm_index.hpp"
 #include "pgm/pgm_index_dynamic.hpp"
 #include "pgm/pgm_index_variants.hpp"
-#include "pgm/pgm_index_compressed.hpp"
 
 template <typename T>
 std::vector<T> generate_data(size_t n) {
@@ -110,10 +109,10 @@ TEMPLATE_TEST_CASE_SIG("Compressed PGM-index", "", ((size_t E), E), 8, 32, 128) 
     test_index(index, data);
 }
 
-TEMPLATE_TEST_CASE_SIG("In-memory PGM-index", "", ((size_t E), E), 8, 32, 128) {
+TEMPLATE_TEST_CASE_SIG("Bucketing PGM-index", "", ((size_t E), E), 8, 32, 128) {
     auto data = generate_data<uint32_t>(3000000);
     auto top_level_size = GENERATE(256, 1024, 4096);
-    pgm::InMemoryPGMIndex<uint32_t, E> index(data.begin(), data.end(), top_level_size);
+    pgm::BucketingPGMIndex<uint32_t, E> index(data.begin(), data.end(), top_level_size);
     test_index(index, data);
 }
 
