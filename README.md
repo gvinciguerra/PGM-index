@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://gvinciguerra.github.io/PGM-index/images/logo.svg" alt="The PGM-index" style="width: 565px">
+  <img src="https://pgm.di.unipi.it/images/logo.svg" alt="The PGM-index" style="width: 565px">
 </p>
 
 <p align="center">The Piecewise Geometric Model index (PGM-index) is a data structure that enables fast lookup, predecessor, range searches and updates in arrays of billions of items using orders of magnitude less space than traditional indexes while providing the same worst-case query time guarantees.</p>
@@ -8,6 +8,7 @@
     <a href="https://pgm.di.unipi.it/">Website</a>
     | <a href="https://pgm.di.unipi.it/docs">Documentation</a>
     | <a href="http://www.vldb.org/pvldb/vol13/p1162-ferragina.pdf">Paper</a>
+    | <a href="https://pgm.di.unipi.it/slides-pgm-index-vldb.pdf">Slides</a>
     | <a href="https://github.com/gvinciguerra/PyGM">Python wrapper</a>
     | <a href="http://acube.di.unipi.it">A³ Lab</a>
 </p>
@@ -69,6 +70,18 @@ int main() {
 g++ examples/simple.cpp -std=c++17 -I./include -o simple
 ./simple
 ```
+
+## Classes overview
+
+Other than the `pgm::PGMIndex` class in the example above, this library provides the following classes:
+
+- `pgm::DynamicPGMIndex` supports insertions and deletions.
+- `pgm::CompressedPGMIndex` compresses the segments to reduce the space usage of the index.
+- `pgm::OneLevelPGMIndex` uses a binary search on the segments rather than a recursive structure.
+- `pgm::BucketingPGMIndex` uses a top-level lookup table to speed up the search on the segments. 
+- `pgm::EliasFanoPGMIndex` uses a top-level succinct structure to speed up the search on the segments.
+
+The full documentation is available [here](https://pgm.di.unipi.it/docs/).
 
 ## Compile the tests and the tuner
 
