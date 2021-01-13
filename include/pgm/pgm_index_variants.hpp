@@ -163,4 +163,121 @@ public:
     }
 };
 
+/**
+ * A variant of @ref BinarySearchBasedPGMIndex that builds a top-level succinct structure to speed up the search on the
+ * segments.
+ *
+ * @tparam K the type of the indexed keys
+ * @tparam Epsilon controls the size of the returned search range
+ * @tparam Floating the floating-point type to use for slopes
+ */
+template<typename K, size_t Epsilon = 64, typename Floating = float>
+class EliasFanoPGMIndex {
+protected:
+    static_assert(Epsilon > 0);
+
+    using Segment = typename PGMIndex<K, Epsilon, 0, Floating>::Segment;
+
+    struct SegmentData {
+        Floating slope;    ///< The slope of the segment.
+        int32_t intercept; ///< The intercept of the segment.
+
+        SegmentData() = default;
+
+        SegmentData(Segment &s) : slope(s.slope), intercept(s.intercept) {}
+
+        inline size_t operator()(const K &origin, const K &k) const {
+            auto pos = int64_t(slope * (k - origin)) + intercept;
+            return pos > 0 ? size_t(pos) : 0ull;
+        }
+    };
+
+    size_t n;                                ///< The number of elements this index was built on.
+    K first_key;                             ///< The smallest segment key.
+    std::vector<SegmentData> segments;       ///< The segments composing the index.
+    sdsl::sd_vector<> ef;                    ///< The Elias-Fano structure on the segment.
+    sdsl::sd_vector<>::rank_1_type rank;     ///< The rank1 structure.
+
+public:
+
+    static constexpr size_t epsilon_value = Epsilon;
+
+    /**
+     * Constructs an empty index.
+     */
+    EliasFanoPGMIndex() = default;
+
+    /**
+     * Constructs the index on the given sorted vector.
+     * @param data the vector of keys, must be sorted
+     */
+    explicit EliasFanoPGMIndex(const std::vector<K> &data) : EliasFanoPGMIndex(data.begin(), data.end()) {}
+
+    /**
+     * Constructs the index on the sorted keys in the range [first, last).
+     * @param first, last the range containing the sorted keys to be indexed
+     */
+    template<typename RandomIt>
+    EliasFanoPGMIndex(RandomIt first, RandomIt last)
+        : n(std::distance(first, last)),
+          first_key(n ? *first : 0),
+          segments(),
+          ef() {
+        if (n == 0)
+            return;
+
+        std::vector<Segment> tmp;
+        std::vector<size_t> sizes;
+        std::vector<size_t> offsets;
+        PGMIndex<K, Epsilon, 0, Floating>::build(first, last, Epsilon, 0, tmp, sizes, offsets);
+
+        segments.reserve(tmp.size());
+        for (auto &x: tmp) {
+            segments.push_back(x);
+            x.key -= first_key;
+        }
+
+        ef = decltype(ef)(tmp.begin(), std::prev(tmp.end()));
+        sdsl::util::init_support(rank, &ef);
+    }
+
+    /**
+     * Returns the approximate position and the range where @p key can be found.
+     * @param key the value of the element to search for
+     * @return a struct with the approximate position and bounds of the range
+     */
+    ApproxPos search(const K &key) const {
+        auto k = std::max(first_key, key);
+        auto[r, origin] = rank.pred(k - first_key);
+        auto pos = std::min<size_t>(segments[r](origin + first_key, k), segments[r + 1].intercept);
+        auto lo = PGM_SUB_EPS(pos, Epsilon);
+        auto hi = PGM_ADD_EPS(pos, Epsilon, n);
+        return {pos, lo, hi};
+    }
+
+    /**
+     * Returns the number of segments in the last level of the index.
+     * @return the number of segments
+     */
+    size_t segments_count() const {
+        return segments.size();
+    }
+
+    /**
+     * Returns the number of levels of the index.
+     * @return the number of levels of the index
+     */
+    size_t height() const {
+        return 1;
+    }
+
+    /**
+     * Returns the size of the index in bytes.
+     * @return the size of the index in bytes
+     */
+    size_t size_in_bytes() const {
+        return segments.size() * sizeof(SegmentData) + sdsl::size_in_bytes(ef);
+    }
+};
+
 }

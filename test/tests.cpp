@@ -20,7 +20,7 @@
 #include "catch.hpp"
 #include "pgm/pgm_index.hpp"
 #include "pgm/pgm_index_dynamic.hpp"
-#include "pgm/pgm_index_in_memory.hpp"
+#include "pgm/pgm_index_variants.hpp"
 #include "pgm/pgm_index_compressed.hpp"
 
 template <typename T>
@@ -104,16 +104,22 @@ TEMPLATE_TEST_CASE_SIG("PGM-index", "",
     test_index(index, data);
 }
 
-TEST_CASE("Compressed PGM-index") {
+TEMPLATE_TEST_CASE_SIG("Compressed PGM-index", "", ((size_t E), E), 8, 32, 128) {
     auto data = generate_data<uint32_t>(3000000);
-    pgm::CompressedPGMIndex<uint32_t, 32, 32> index(data);
+    pgm::CompressedPGMIndex<uint32_t, E> index(data);
     test_index(index, data);
 }
 
-TEST_CASE("In-memory PGM-index") {
+TEMPLATE_TEST_CASE_SIG("In-memory PGM-index", "", ((size_t E), E), 8, 32, 128) {
     auto data = generate_data<uint32_t>(3000000);
     auto top_level_size = GENERATE(256, 1024, 4096);
-    pgm::InMemoryPGMIndex<uint32_t, 8> index(data.begin(), data.end(), top_level_size);
+    pgm::InMemoryPGMIndex<uint32_t, E> index(data.begin(), data.end(), top_level_size);
+    test_index(index, data);
+}
+
+TEMPLATE_TEST_CASE_SIG("Elias-Fano PGM-index", "", ((size_t E), E), 8, 32, 128) {
+    auto data = generate_data<uint32_t>(3000000);
+    pgm::EliasFanoPGMIndex<uint32_t, E> index(data);
     test_index(index, data);
 }
 

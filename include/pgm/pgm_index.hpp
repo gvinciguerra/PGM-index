@@ -63,6 +63,9 @@ protected:
     template<typename, size_t, uint8_t, typename>
     friend class InMemoryPGMIndex;
 
+    template<typename, size_t, typename>
+    friend class EliasFanoPGMIndex;
+
     static_assert(Epsilon > 0);
     struct Segment;
 
@@ -89,7 +92,7 @@ protected:
         auto last_n = n - ignore_last;
         last -= ignore_last;
 
-        auto build_level = [&] (auto epsilon, auto in_fun, auto out_fun) {
+        auto build_level = [&](auto epsilon, auto in_fun, auto out_fun) {
             auto n_segments = internal::make_segmentation_par(last_n, epsilon, in_fun, out_fun);
             if (segments.back().slope == 0) {
                 // Here, we need to ensure that keys > *(last-1) are approximated to a position == prev_level_size
@@ -249,6 +252,9 @@ struct PGMIndex<K, Epsilon, EpsilonRecursive, Floating>::Segment {
 
     friend inline bool operator<(const Segment &s, const K &k) { return s.key < k; }
     friend inline bool operator<(const K &k, const Segment &s) { return k < s.key; }
+    friend inline bool operator<(const Segment &s, const Segment &t) { return s.key < t.key; }
+
+    operator K() { return key; };
 
     /**
      * Returns the approximate position of the specified key.
