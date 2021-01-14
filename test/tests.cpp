@@ -118,8 +118,35 @@ TEMPLATE_TEST_CASE_SIG("Bucketing PGM-index", "", ((size_t E), E), 8, 32, 128) {
 
 TEMPLATE_TEST_CASE_SIG("Elias-Fano PGM-index", "", ((size_t E), E), 8, 32, 128) {
     auto data = generate_data<uint32_t>(3000000);
-    pgm::EliasFanoPGMIndex<uint32_t, E> index(data);
+    pgm::EliasFanoPGMIndex<uint32_t, E> index(data.begin(), data.end());
     test_index(index, data);
+}
+
+TEMPLATE_TEST_CASE_SIG("Mapped PGM-index", "", ((size_t E), E), 8, 32, 128) {
+    std::string tmp_filename = std::tmpnam(nullptr);
+    auto data = generate_data<uint32_t>(500000);
+    auto random_query = std::bind(std::uniform_int_distribution<uint32_t>(data.front(), data.back()), std::mt19937{42});
+
+    {
+        pgm::MappedPGMIndex<uint32_t, E> index(data.begin(), data.end(), tmp_filename);
+        for (auto i = 1; i <= 5000; ++i) {
+            auto q = random_query();
+            auto lb = std::lower_bound(data.begin(), data.end(), q);
+            auto ub = std::upper_bound(data.begin(), data.end(), q);
+            REQUIRE(std::distance(index.begin(), index.lower_bound(q)) == std::distance(data.begin(), lb));
+            REQUIRE(std::distance(index.begin(), index.upper_bound(q)) == std::distance(data.begin(), ub));
+        }
+    }
+
+    {
+        pgm::MappedPGMIndex<uint32_t, E> index(tmp_filename);
+        for (auto i = 1; i <= 5000; ++i) {
+            auto q = random_query();
+            REQUIRE(index.count(q) == std::count(data.begin(), data.end(), q));
+        }
+    }
+
+    std::remove(tmp_filename.c_str());
 }
 
 TEMPLATE_TEST_CASE_SIG("Dynamic PGM-index", "",

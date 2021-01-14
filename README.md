@@ -76,6 +76,7 @@ g++ examples/simple.cpp -std=c++17 -I./include -o simple
 Other than the `pgm::PGMIndex` class in the example above, this library provides the following classes:
 
 - `pgm::DynamicPGMIndex` supports insertions and deletions.
+- `pgm::MappedPGMIndex` stores data on disk and uses a PGMIndex for fast search operations.
 - `pgm::CompressedPGMIndex` compresses the segments to reduce the space usage of the index.
 - `pgm::OneLevelPGMIndex` uses a binary search on the segments rather than a recursive structure.
 - `pgm::BucketingPGMIndex` uses a top-level lookup table to speed up the search on the segments. 

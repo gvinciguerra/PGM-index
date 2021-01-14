@@ -16,7 +16,13 @@
 #pragma once
 
 #include <string>
+#include <fstream>
+#include <cstring>
+#include <iostream>
 #include <stdexcept>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 #include "sdsl.hpp"
 #include "pgm_index.hpp"
 
@@ -580,6 +586,197 @@ public:
      */
     size_t size_in_bytes() const {
         return segments.size() * sizeof(SegmentData) + sdsl::size_in_bytes(ef);
+    }
+};
+
+/**
+ * A disk-backed container storing a sorted sequence of numbers and a @ref PGMIndex for fast search operations.
+ *
+ * @tparam K the type of the indexed keys
+ * @tparam Epsilon controls the size of the returned search range
+ * @tparam EpsilonRecursive controls the size of the search range in the internal structure
+ * @tparam Floating the floating-point type to use for slopes
+ */
+template<typename K, size_t Epsilon = 64, size_t EpsilonRecursive = 4, typename Floating = float>
+class MappedPGMIndex : public PGMIndex<K, Epsilon, EpsilonRecursive, Floating> {
+    using base = PGMIndex<K, Epsilon, EpsilonRecursive, Floating>;
+    K *data;
+    size_t file_bytes;
+    size_t header_bytes;
+
+public:
+
+    /**
+     * Constructs a new disk-backed container on the sorted keys in the range [first, last).
+     * @param first, last the range containing the sorted keys
+     * @param out_filename the name of the output file
+     */
+    template<class RandomIt>
+    MappedPGMIndex(RandomIt first, RandomIt last, const std::string &out_filename)
+        : base(first, last),
+          data(),
+          file_bytes(),
+          header_bytes() {
+        auto out = std::fstream(out_filename, std::ios::out | std::ios::binary);
+        header_bytes += write_member(header_bytes, out);
+        header_bytes += write_member(this->n, out);
+        header_bytes += write_member(this->first_key, out);
+        header_bytes += write_container(this->levels_sizes, out);
+        header_bytes += write_container(this->levels_offsets, out);
+        header_bytes += write_container(this->segments, out);
+        for (auto it = first; it != last; ++it)
+            write_member(*it, out);
+        out.seekp(0);
+        write_member(header_bytes, out);
+        map_file(out_filename);
+    }
+
+    /**
+     * Loads a disk-backed container from the given file.
+     * @param in_filename the name of the input file
+     */
+    explicit MappedPGMIndex(const std::string &in_filename)
+        : base(),
+          data(),
+          file_bytes(),
+          header_bytes() {
+        auto in = std::fstream(in_filename, std::ios::in | std::ios::binary);
+        read_member(header_bytes, in);
+        read_member(this->n, in);
+        read_member(this->first_key, in);
+        read_container(this->levels_sizes, in);
+        read_container(this->levels_offsets, in);
+        read_container(this->segments, in);
+        map_file(in_filename);
+    }
+
+    /**
+     * Destructs the object and closes the file backing the container.
+     */
+    ~MappedPGMIndex() {
+        if (data && munmap(data, file_bytes))
+            std::cerr << "munmap error " << std::string(strerror(errno));
+    }
+
+    /**
+     * Checks if there is an element with key equivalent to @p key in the container.
+     * @param key the value of the element to search for
+     * @return @c true if there is such an element, otherwise @c false
+     */
+    bool contains(const K &key) const {
+        auto range = this->search(key);
+        return std::binary_search(begin() + range.lo, begin() + range.hi, key);
+    }
+
+    /**
+     * Returns an iterator pointing to the first element that is not less than (i.e. greater or equal to) @p key.
+     * @param key value to compare the elements to
+     * @return iterator to the first element that is not less than @p key, or @ref end() if no such element is found
+     */
+    auto lower_bound(const K &key) const {
+        auto range = this->search(key);
+        return std::lower_bound(begin() + range.lo, begin() + range.hi, key);
+    }
+
+    /**
+     * Returns an iterator pointing to the first element that is greater than @p key.
+     * @param key value to compare the elements to
+     * @return iterator to the first element that is greater than @p key, or @ref end() if no such element is found
+     */
+    auto upper_bound(const K &key) const {
+        auto range = this->search(key);
+        auto it = std::upper_bound(begin() + range.lo, begin() + range.hi, key);
+        auto step = 1ull;
+        while (it + step < end() && *(it + step) == key)  // exponential search to skip duplicates
+            step *= 2;
+        return std::upper_bound(it + (step / 2), std::min(it + step, end()), key);
+    }
+
+    /**
+     * Returns the number of elements with key equal to the specified argument.
+     * @param key value of the elements to count
+     * @return the number of elements with key equal to @p key
+     */
+    size_t count(const K &key) const {
+        auto lb = lower_bound(key);
+        if (lb == end() || *lb != key)
+            return 0;
+        return std::distance(lb, upper_bound(key));
+    }
+
+    /**
+     * Returns the number of elements in the container.
+     * @return the number of elements in the container
+     */
+    size_t size() const { return this->n; }
+
+    /**
+     * Returns the size in bytes of the file backing the container.
+     * @return the size in bytes of the file backing the container
+     */
+    size_t file_size_in_bytes() const { return file_bytes; }
+
+    /**
+     * Returns an iterator to the first element of the container.
+     * @return an iterator to the first element of the container
+     */
+    auto begin() const { return reinterpret_cast<K *>(reinterpret_cast<char *>(data) + header_bytes); }
+
+    /**
+     * Returns an iterator to the element following the last element of the container.
+     * @return an iterator to the element following the last element of the container
+     */
+    auto end() const { return begin() + size(); }
+
+private:
+
+    void map_file(const std::string &in_filename) {
+        auto fd = open(in_filename.c_str(), O_RDONLY);
+        if (fd == -1)
+            throw std::runtime_error("Open file error" + std::string(strerror(errno)));
+
+        struct stat fs;
+        stat(in_filename.c_str(), &fs);
+        file_bytes = fs.st_size;
+
+        data = (K *) mmap(NULL, file_bytes, PROT_READ, MAP_SHARED, fd, 0);
+        if (data == MAP_FAILED)
+            throw std::runtime_error("mmap error" + std::string(strerror(errno)));
+    }
+
+    template<typename T>
+    static size_t write_member(const T &x, std::ostream &out) {
+        out.write((char *) &x, sizeof(T));
+        return sizeof(T);
+    }
+
+    template<typename T>
+    static void read_member(T &x, std::istream &in) {
+        in.read((char *) &x, sizeof(T));
+    }
+
+    template<typename C>
+    static size_t write_container(const C &container, std::ostream &out) {
+        using value_type = typename C::value_type;
+        size_t written_bytes = write_member(container.size(), out);
+        for (auto &x: container) {
+            out.write((char *) &x, sizeof(value_type));
+            written_bytes += sizeof(value_type);
+        }
+        return written_bytes;
+    }
+
+    template<typename C>
+    static void read_container(C &container, std::istream &in) {
+        using value_type = typename C::value_type;
+        typename C::size_type size;
+        read_member(size, in);
+        container.reserve(size);
+        for (size_t i = 0; i < size; ++i) {
+            value_type s;
+            in.read((char *) &s, sizeof(value_type));
+            container.push_back(s);
+        }
     }
 };
 
