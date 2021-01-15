@@ -617,18 +617,35 @@ public:
           data(),
           file_bytes(),
           header_bytes() {
-        auto out = std::fstream(out_filename, std::ios::out | std::ios::binary);
-        header_bytes += write_member(header_bytes, out);
-        header_bytes += write_member(this->n, out);
-        header_bytes += write_member(this->first_key, out);
-        header_bytes += write_container(this->levels_sizes, out);
-        header_bytes += write_container(this->levels_offsets, out);
-        header_bytes += write_container(this->segments, out);
-        for (auto it = first; it != last; ++it)
-            write_member(*it, out);
-        out.seekp(0);
-        write_member(header_bytes, out);
-        map_file(out_filename);
+        serialize_and_map(first, last, out_filename);
+    }
+
+    /**
+     * Constructs a new disk-backed container on the sorted keys from the given input file.
+     *
+     * The @p in_filename must be a binary file containing a sorted sequence numbers of type @p K with the same
+     * endianness of the CPU.
+     *
+     * @param in_filename the name of the input file
+     * @param out_filename the name of the output file
+     */
+    MappedPGMIndex(const std::string &in_filename, const std::string &out_filename)
+        : base(),
+          data(),
+          file_bytes(),
+          header_bytes() {
+        struct stat fs;
+        stat(in_filename.c_str(), &fs);
+        auto in_bytes = fs.st_size;
+        if (in_bytes % sizeof(K) != 0)
+            throw std::runtime_error("Input file size must be a multiple of " + std::to_string(sizeof(K)) + " bytes.");
+
+        auto in_data = map_file(in_filename, in_bytes);
+        this->n = in_bytes / sizeof(K);
+        this->template build(in_data, in_data + this->n, Epsilon, EpsilonRecursive,
+                             this->segments, this->levels_sizes, this->levels_offsets);
+        serialize_and_map(in_data, in_data + this->n, out_filename);
+        unmap_file(in_data, in_bytes);
     }
 
     /**
@@ -647,16 +664,14 @@ public:
         read_container(this->levels_sizes, in);
         read_container(this->levels_offsets, in);
         read_container(this->segments, in);
-        map_file(in_filename);
+        file_bytes = header_bytes + this->n * sizeof(K);
+        data = map_file(in_filename, file_bytes);
     }
 
     /**
      * Destructs the object and closes the file backing the container.
      */
-    ~MappedPGMIndex() {
-        if (data && munmap(data, file_bytes))
-            std::cerr << "munmap error " << std::string(strerror(errno));
-    }
+    ~MappedPGMIndex() { unmap_file(data, file_bytes); }
 
     /**
      * Checks if there is an element with key equivalent to @p key in the container.
@@ -720,7 +735,7 @@ public:
      * Returns an iterator to the first element of the container.
      * @return an iterator to the first element of the container
      */
-    auto begin() const { return reinterpret_cast<K *>(reinterpret_cast<char *>(data) + header_bytes); }
+    auto begin() const { return (K *) ((char *) data + header_bytes); }
 
     /**
      * Returns an iterator to the element following the last element of the container.
@@ -730,18 +745,37 @@ public:
 
 private:
 
-    void map_file(const std::string &in_filename) {
+    template<class RandomIt>
+    void serialize_and_map(RandomIt first, RandomIt last, const std::string &out_filename) {
+        auto out = std::fstream(out_filename, std::ios::out | std::ios::binary);
+        header_bytes += write_member(header_bytes, out);
+        header_bytes += write_member(this->n, out);
+        header_bytes += write_member(this->first_key, out);
+        header_bytes += write_container(this->levels_sizes, out);
+        header_bytes += write_container(this->levels_offsets, out);
+        header_bytes += write_container(this->segments, out);
+        for (auto it = first; it != last; ++it)
+            write_member(*it, out);
+        file_bytes = header_bytes + this->n * sizeof(K);
+        out.seekp(0);
+        write_member(header_bytes, out);
+        data = map_file(out_filename, file_bytes);
+    }
+
+    static K *map_file(const std::string &in_filename, size_t file_bytes) {
         auto fd = open(in_filename.c_str(), O_RDONLY);
         if (fd == -1)
             throw std::runtime_error("Open file error" + std::string(strerror(errno)));
 
-        struct stat fs;
-        stat(in_filename.c_str(), &fs);
-        file_bytes = fs.st_size;
-
-        data = (K *) mmap(NULL, file_bytes, PROT_READ, MAP_SHARED, fd, 0);
+        auto data = (K *) mmap(nullptr, file_bytes, PROT_READ, MAP_SHARED, fd, 0);
         if (data == MAP_FAILED)
             throw std::runtime_error("mmap error" + std::string(strerror(errno)));
+        return data;
+    }
+
+    static void unmap_file(K *data, size_t file_bytes) {
+        if (data && munmap(data, file_bytes))
+            std::cerr << "munmap error " << std::string(strerror(errno));
     }
 
     template<typename T>
