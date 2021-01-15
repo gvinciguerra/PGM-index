@@ -41,15 +41,18 @@ int main() {
         // When the code block ends, the data and pgm objects gets deallocated
     }
 
-    // Read the existing disk-backed container
-    pgm::MappedPGMIndex<int, 32> pgm(tmp_filename);
-    std::cout << "File re-opened" << std::endl
-              << "count(15) = " << pgm.count(15) << std::endl
-              << "contains(1) = " << (pgm.contains(1) ? "true" : "false") << std::endl
-              << "lower_bound(42) = " << *pgm.lower_bound(42) << std::endl
-              << "upper_bound(70) = " << *pgm.upper_bound(70) << std::endl
-              << "Range search [50, 60] = ";
-    print_iterator<int>(pgm.lower_bound(50), pgm.upper_bound(60));
+    {
+        // Read the existing disk-backed container
+        pgm::MappedPGMIndex<int, 32> pgm(tmp_filename);
+        std::cout << "File re-opened" << std::endl
+                  << "count(15) = " << pgm.count(15) << std::endl
+                  << "contains(1) = " << (pgm.contains(1) ? "true" : "false") << std::endl
+                  << "lower_bound(42) = " << *pgm.lower_bound(42) << std::endl
+                  << "upper_bound(70) = " << *pgm.upper_bound(70) << std::endl
+                  << "Range search [50, 60] = ";
+        print_iterator<int>(pgm.lower_bound(50), pgm.upper_bound(60));
+    }
+
     std::remove(tmp_filename.c_str());
     return 0;
 }
