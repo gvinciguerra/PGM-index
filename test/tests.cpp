@@ -18,33 +18,10 @@
 #include <functional>
 #include <type_traits>
 #include "catch.hpp"
+#include "utils.hpp"
 #include "pgm/pgm_index.hpp"
 #include "pgm/pgm_index_dynamic.hpp"
 #include "pgm/pgm_index_variants.hpp"
-
-template <typename T>
-std::vector<T> generate_data(size_t n) {
-    std::vector<T> data(n);
-    std::mt19937 engine(42);
-
-    using RandomFunction = std::function<T()>;
-    if constexpr (std::is_floating_point<T>()) {
-        RandomFunction lognormal = std::bind(std::lognormal_distribution<T>(0, 0.5), engine);
-        RandomFunction exponential = std::bind(std::exponential_distribution<T>(1.2), engine);
-        auto rand = GENERATE_COPY(as<RandomFunction>{}, lognormal, exponential);
-        std::generate(data.begin(), data.end(), rand);
-    } else {
-        RandomFunction uniform_dense = std::bind(std::uniform_int_distribution<T>(0, 10000), engine);
-        RandomFunction uniform_sparse = std::bind(std::uniform_int_distribution<T>(0, 10000000), engine);
-        RandomFunction binomial = std::bind(std::binomial_distribution<T>(50000), engine);
-        RandomFunction geometric = std::bind(std::geometric_distribution<T>(0.8), engine);
-        auto rand = GENERATE_COPY(as<RandomFunction>{}, uniform_dense, uniform_sparse, binomial, geometric);
-        std::generate(data.begin(), data.end(), rand);
-    }
-
-    std::sort(data.begin(), data.end());
-    return data;
-}
 
 template <typename Index, typename Data>
 void test_index(const Index &index, const Data &data) {
@@ -69,7 +46,6 @@ void test_index(const Index &index, const Data &data) {
     lo = data.begin() + range.lo;
     hi = data.begin() + range.hi;
     REQUIRE(std::lower_bound(lo, hi, q) == data.begin());
-
 }
 
 TEMPLATE_TEST_CASE("Segmentation algorithm", "", float, double, uint32_t, uint64_t) {
@@ -225,5 +201,30 @@ TEMPLATE_TEST_CASE_SIG("Dynamic PGM-index", "",
         REQUIRE(it->first == k);
         REQUIRE(it->second == v);
         ++it;
+    }
+}
+
+TEMPLATE_TEST_CASE_SIG("Multidimensional PGM-index", "",
+                       ((typename T, uint8_t D), T, D),
+                       (uint32_t, 2), (uint32_t, 3), (uint64_t, 2), (uint64_t, 3), (uint64_t, 4)) {
+    auto u = 1ull << (std::numeric_limits<T>::digits / D - 2);
+    auto rand = std::bind(std::uniform_int_distribution<T>(0, u), std::mt19937{42});
+    auto rand_tuple = [&] { return make_rand_tuple(rand, std::make_index_sequence<D>()); };
+
+    std::vector<decltype(rand_tuple())> data(1000000);
+    std::generate(data.begin(), data.end(), rand_tuple);
+    pgm::MultidimensionalPGMIndex<D, T, 16> pgm(data.begin(), data.end());
+
+    for (auto p: data)
+        REQUIRE(pgm.contains(p));
+
+    for (int i = 0; i < 500; ++i) {
+        auto min = rand_tuple();
+        auto max = min + rand_tuple();
+        auto count = std::distance(pgm.range(min, max), pgm.end());
+        auto expected_count = 0;
+        for (auto &x : data)
+            expected_count += box_contains(min, max, x);
+        REQUIRE(count == expected_count);
     }
 }

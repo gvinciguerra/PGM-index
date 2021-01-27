@@ -24,6 +24,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include "sdsl.hpp"
+#include "morton_nd.hpp"
 #include "pgm_index.hpp"
 
 namespace pgm {
@@ -597,7 +598,7 @@ public:
  * @tparam EpsilonRecursive controls the size of the search range in the internal structure
  * @tparam Floating the floating-point type to use for slopes
  */
-template<typename K, size_t Epsilon = 64, size_t EpsilonRecursive = 4, typename Floating = float>
+template<typename K, size_t Epsilon, size_t EpsilonRecursive = 4, typename Floating = float>
 class MappedPGMIndex : public PGMIndex<K, Epsilon, EpsilonRecursive, Floating> {
     using base = PGMIndex<K, Epsilon, EpsilonRecursive, Floating>;
     K *data;
@@ -608,7 +609,7 @@ public:
 
     /**
      * Constructs a new disk-backed container on the sorted keys in the range [first, last).
-     * @param first, last the range containing the sorted keys
+     * @param first, last the range containing the sorted keys to copy
      * @param out_filename the name of the output file
      */
     template<class RandomIt>
@@ -813,5 +814,272 @@ private:
         }
     }
 };
+
+#ifdef MORTON_ND_BMI2_ENABLED
+
+/**
+ * A multidimensional container that uses a @ref PGMIndex for fast orthogonal range queries.
+ *
+ * @tparam Dimensions the number of fields/dimensions
+ * @tparam T the type of the stored elements
+ * @tparam Epsilon the Epsilon parameter for the internal @ref PGMIndex
+ * @tparam EpsilonRecursive the EpsilonRecursive parameter for the internal @ref PGMIndex
+ * @tparam Floating the Floating parameter for the internal @ref PGMIndex
+ */
+template<uint8_t Dimensions, typename T, size_t Epsilon, size_t EpsilonRecursive = 4, typename Floating = float>
+class MultidimensionalPGMIndex {
+    std::vector<T> data;
+    PGMIndex<T, Epsilon, EpsilonRecursive, Floating> pgm;
+
+    using morton = mortonnd::MortonNDBmi<Dimensions, T>;
+    static constexpr auto selector = mortonnd::BuildSelector<morton::FieldBits>(Dimensions);
+    static constexpr auto miss_threshold = 64;
+
+    class RangeIterator;
+    friend class RangeIterator;
+
+public:
+
+    using iterator = RangeIterator;
+    using size_type = size_t;
+    using value_type = decltype(morton::Decode(0));
+
+    /**
+     * Constructs an empty multidimensional container.
+     */
+    MultidimensionalPGMIndex() = default;
+
+    /**
+     * Constructs the multidimensional container with the elements in the range [first, last).
+     * @param first, last the range to copy the elements from
+     */
+    template<typename RandomIt>
+    MultidimensionalPGMIndex(RandomIt first, RandomIt last) : data(), pgm() {
+        data.reserve(std::distance(first, last));
+        std::for_each(first, last, [&](const auto &x) {
+            std::apply([](auto &...x) {
+                if (((BIT_WIDTH(x) >= morton::FieldBits) || ...)) {
+                    auto tuple_str = ((std::to_string(x) + ",") + ...);
+                    throw std::runtime_error("Type is too small to encode (" + tuple_str + "\b)");
+                }
+            }, x);
+            data.emplace_back(encode(x));
+        });
+        std::sort(data.begin(), data.end());
+        pgm = decltype(pgm)(data.begin(), data.end());
+    }
+
+    /**
+     * Returns the size of the index in bytes.
+     * @return the size of the index in bytes
+     */
+    size_t size_in_bytes() const { return pgm.size_in_bytes(); }
+
+    /**
+     * Checks if there is an element equal to @p p in the container.
+     * @param p the element to search for
+     * @return @c true if there is such an element, @c false otherwise
+     */
+    bool contains(const value_type &p) {
+        auto zp = encode(p);
+        auto range = pgm.search(zp);
+        auto it = std::lower_bound(data.begin() + range.lo, data.begin() + range.hi, zp);
+        return it != data.end() || morton::Decode(*it) == p;
+    }
+
+    /**
+     * Returns an iterator to the first element of the container.
+     * @return an iterator to the first element of the container
+     */
+    iterator begin() const { return iterator(data.begin()); }
+
+    /**
+     * Returns an iterator to the element following the last element of the container.
+     * @return an iterator to the element following the last element of the container
+     */
+    iterator end() const { return iterator(data.end(), value_type()); }
+
+    /**
+     * Returns an iterator pointing to an element satisfying an orthogonal range query.
+     *
+     * Equivalently, returns an iterator to an element lying inside the hyperrectangle defined by the extreme points
+     * @p min and @p max.
+     *
+     * Successive elements can be retrieved by calling @c operator++() on the returned iterator @c it until
+     * @c it != end().
+     *
+     * @param min the lower extreme of the query hyperrectangle
+     * @param max the upper extreme of the query hyperrectangle, must be greater than or equal to min.
+     * @return an iterator pointing to an element inside the query hyperrectangle
+     */
+    iterator range(const value_type &min, const value_type &max) { return iterator(this, min, max); }
+
+private:
+
+    class RangeIterator {
+        using multidimensional_pgm_type = MultidimensionalPGMIndex<Dimensions, T, Epsilon, EpsilonRecursive, Floating>;
+        using internal_iterator = typename decltype(multidimensional_pgm_type::data)::const_iterator;
+
+    public:
+
+        using value_type = multidimensional_pgm_type::value_type;
+        using difference_type = ssize_t;
+        using pointer = const value_type *;
+        using reference = const value_type &;
+        using iterator_category = std::forward_iterator_tag;
+
+    private:
+
+        const multidimensional_pgm_type *super;
+        multidimensional_pgm_type::value_type p;
+        internal_iterator it;
+        value_type min;
+        value_type max;
+        T zmin;
+        T zmax;
+        int miss;
+
+        void advance() {
+            ++it;
+            if (miss == -1)
+                return;
+
+            while (it != super->data.end() && *it <= zmax) {
+                if (box_zcontains(zmin, zmax, *it)) {
+                    this->p = morton::Decode(*it);
+                    return;
+                }
+                else if (++miss > miss_threshold) {
+                    miss = 0;
+                    auto bmin = bigmin(*it, zmin, zmax);
+                    auto range = super->pgm.search(bmin);
+                    it = std::upper_bound(super->data.begin() + range.lo, super->data.begin() + range.hi, bmin);
+                    --it;
+                }
+                ++it;
+            }
+
+            if (*it > zmax)
+                it = super->data.end();
+        }
+
+    public:
+
+        RangeIterator(internal_iterator it) : RangeIterator(it, morton::Decode(*it)) {}
+
+        RangeIterator(internal_iterator it, const value_type &p) : it(it), p(p), miss(-1) {}
+
+        RangeIterator(const decltype(super) super, const value_type &min, const value_type &max)
+            : super(super),
+              min(min),
+              max(max),
+              zmin(multidimensional_pgm_type::encode(min)),
+              zmax(multidimensional_pgm_type::encode(max)),
+              miss(0) {
+            if (zmin > zmax)
+                throw std::invalid_argument("min > max");
+
+            auto range = super->pgm.search(zmin);
+            this->it = std::lower_bound(super->data.begin() + range.lo, super->data.begin() + range.hi, zmin);
+            if (this->it == super->data.end())
+                return;
+
+            if (box_zcontains(zmin, zmax, *this->it))
+                this->p = morton::Decode(*this->it);
+            else
+                advance();
+        }
+
+        RangeIterator &operator++() {
+            advance();
+            return *this;
+        }
+
+        RangeIterator operator++(int) {
+            RangeIterator i(this->super, min, max);
+            i.it = this->it;
+            i.advance();
+            return i;
+        }
+
+        reference operator*() const { return p; }
+        pointer operator->() const { return &p; };
+        bool operator==(const iterator &rhs) const { return it == rhs.it; }
+        bool operator!=(const iterator &rhs) const { return it != rhs.it; }
+    };
+
+    template<typename Head, typename... Tail>
+    constexpr static T encode(const std::tuple<Head, Tail...> &t) {
+        return apply([](const auto &head, const auto &... tail) { return morton::Encode(head, tail...); }, t);
+    }
+
+    template<typename T1, typename T2>
+    constexpr static T encode(const std::pair<T1, T2> &t) { return encode(std::tuple<T1, T2>(t.first, t.second)); }
+
+    template<size_t ...I>
+    constexpr static bool box_zcontains_field(const T &min, const T &max, const T &p, std::index_sequence<I...>) {
+        return (((min & (selector << I)) <= (p & (selector << I))
+            && (p & (selector << I)) <= (max & (selector << I))) && ... );
+    }
+
+    /**
+     * Returns @c true if and only if the given element @p p lies inside the hyperrectangle defined by the extremes
+     * @p min and @p max.
+     */
+    constexpr static bool box_zcontains(const T &min, const T &max, const T &p) {
+        return box_zcontains_field(min, max, p, std::make_index_sequence<Dimensions>());
+    }
+
+    /**
+     * Loads @p pattern into the bits of @p target associated to the given @p dimension, starting at @p bit_position,
+     * leaving the other bits untouched.
+     */
+    static T load(T target, T pattern, uint8_t bit_position, uint8_t dimension) {
+        auto mask = ~_pdep_u64(sdsl::bits::lo_set[bit_position], selector << dimension);
+        auto pdep = _pdep_u64(pattern, selector << dimension);
+        return (target & mask) | pdep;
+    }
+
+    /**
+     * Computes the lowest morton code within the range [@p min, @p max] greater than @p x.
+     */
+    static T bigmin(const T &xd, const T &min, const T &max) {
+        // http://hermanntropf.de/media/multidimensionalrangequery.pdf
+        T bigmin = 0;
+        T zmin = min;
+        T zmax = max;
+        auto hi_bit = std::max(std::max(sdsl::bits::hi(xd), sdsl::bits::hi(zmin)), sdsl::bits::hi(zmax));
+
+        for (int b = hi_bit; b >= 0; --b) {
+            auto bits = b / Dimensions + 1;
+            auto dim = b % Dimensions;
+            auto decision = uint8_t((((xd >> b) & 1) << 2) | (((zmin >> b) & 1) << 1) | ((zmax >> b) & 1));
+            switch (decision) {
+                case 0b001:
+                    bigmin = load(zmin, T(1) << (bits - 1), bits, dim);
+                    zmax = load(zmax, sdsl::bits::lo_set[bits - 1], bits, dim);
+                    break;
+
+                case 0b011:
+                    bigmin = zmin;
+                    return bigmin;
+
+                case 0b100:
+                    return bigmin;
+
+                case 0b101:
+                    zmin = load(zmin, T(1) << (bits - 1), bits, dim);
+                    break;
+
+                default:
+                    continue;
+            }
+        }
+
+        return bigmin;
+    }
+};
+
+#endif
 
 }
