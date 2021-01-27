@@ -204,6 +204,8 @@ TEMPLATE_TEST_CASE_SIG("Dynamic PGM-index", "",
     }
 }
 
+#ifdef MORTON_ND_BMI2_ENABLED
+
 TEMPLATE_TEST_CASE_SIG("Multidimensional PGM-index", "",
                        ((typename T, uint8_t D), T, D),
                        (uint32_t, 2), (uint32_t, 3), (uint64_t, 2), (uint64_t, 3), (uint64_t, 4)) {
@@ -228,3 +230,5 @@ TEMPLATE_TEST_CASE_SIG("Multidimensional PGM-index", "",
         REQUIRE(count == expected_count);
     }
 }
+
+#endif
