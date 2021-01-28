@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
     }
 
     std::sort(data.begin(), data.end());
-    auto lo_eps = 2 * x86_cache_line() / sizeof(int64_t);
+    auto lo_eps = 2 * cache_line_size() / sizeof(int64_t);
     auto hi_eps = data.size() / 2;
     auto minimize_space = time.Matched();
 
