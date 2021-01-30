@@ -2096,7 +2096,6 @@ public:
         if (m_ram_file) {
             if (mode & std::ios_base::ate) {
                 // TODO: move put pointer to the end of the file
-            } else {
             }
             setg(m_ram_file->data(), m_ram_file->data(), m_ram_file->data() + m_ram_file->size());
             setp(m_ram_file->data(), m_ram_file->data() + m_ram_file->size());
