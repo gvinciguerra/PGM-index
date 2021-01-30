@@ -95,7 +95,7 @@ protected:
         auto build_level = [&](auto epsilon, auto in_fun, auto out_fun) {
             auto n_segments = internal::make_segmentation_par(last_n, epsilon, in_fun, out_fun);
             if (segments.back().slope == 0) {
-                // Here, we need to ensure that keys > *(last-1) are approximated to a position == prev_level_size
+                // Here we need to ensure that keys > *(last-1) are approximated to a position == prev_level_size
                 segments.emplace_back(*std::prev(last) + 1, 0, last_n);
                 ++n_segments;
             }
@@ -106,6 +106,8 @@ protected:
         // Build first level
         auto in_fun = [&](auto i) {
             auto x = first[i];
+            // Here there is an adjustment for inputs with duplicate keys: at the end of a run of duplicate keys equal
+            // to x=first[i] such that x+1!=first[i+1], we map the values x+1,...,first[i+1]-1 to their correct rank i
             auto flag = i > 0 && i + 1u < n && x == first[i - 1] && x != first[i + 1] && x + 1 != first[i + 1];
             return std::pair<K, size_t>(x + flag, i);
         };
