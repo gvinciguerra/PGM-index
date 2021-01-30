@@ -17,7 +17,6 @@
 
 #include <cmath>
 #include "pgm/pgm_index.hpp"
-#include "interpolation.h"
 
 #define PGM_IGNORED_PARAMETER 1
 #define PGM_EPSILON_RECURSIVE 4
@@ -32,7 +31,7 @@ public:
 
     MockPGMIndex() = default;
 
-    MockPGMIndex(std::vector<K> &data, size_t epsilon) : epsilon(epsilon) {
+    MockPGMIndex(const std::vector<K> &data, size_t epsilon) : epsilon(epsilon) {
         this->n = data.size();
         this->build(data.begin(), data.end(), epsilon, PGM_EPSILON_RECURSIVE,
                     this->segments, this->levels_sizes, this->levels_offsets);
@@ -72,7 +71,7 @@ struct IndexStats {
     IndexStats() = default;
 
     template<typename K>
-    IndexStats(std::vector<K> &data, size_t epsilon) : epsilon(epsilon) {
+    IndexStats(const std::vector<K> &data, size_t epsilon) : epsilon(epsilon) {
         auto start = std::chrono::high_resolution_clock::now();
         MockPGMIndex<K> pgm(data, epsilon);
         auto end = std::chrono::high_resolution_clock::now();
@@ -107,60 +106,57 @@ struct IndexStats {
 
 /*------- FUNCTION FITTING -------*/
 
-void segments_count_model(const alglib::real_1d_array &c, const alglib::real_1d_array &x, double &func, void *) {
-    func = c[0] * std::pow(x[0], -c[1]);
-}
+/** Fits the coefficients (a,b) of a function f(ε)=aε^b. */
+auto fit_segments_count_model(const std::vector<IndexStats> &all_index_stats) {
+    auto count = 0;
+    auto avg_y = 0.;
+    auto avg_x = 0.;
+    auto var_x = 0.;
+    auto var_y = 0.;
+    auto cov_xy = 0.;
 
-void segments_count_model_grad_c(const alglib::real_1d_array &c, const alglib::real_1d_array &x, double &func,
-                                 alglib::real_1d_array &grad, void *) {
-    func = c[0] * std::pow(x[0], -c[1]);
-    grad[0] = std::pow(x[0], -c[1]);
-    grad[1] = -grad[0] * c[0] * std::log(x[0]);
-}
-
-auto fit_segments_count_model(const std::vector<IndexStats> &all_index_stats, alglib::real_1d_array c_space) {
-    alglib::real_2d_array x;
-    alglib::real_1d_array y_space;
-    x.setlength(all_index_stats.size(), 1);
-    y_space.setlength(all_index_stats.size());
-    for (int r = 0; r < all_index_stats.size(); ++r) {
-        x[r][0] = all_index_stats[r].epsilon;
-        y_space[r] = all_index_stats[r].segments_count;
+    for (const auto &stats: all_index_stats) {
+        count++;
+        auto x = std::log(stats.epsilon);
+        auto y = std::log(stats.segments_count);
+        auto dx = x - avg_x;
+        auto dy = y - avg_y;
+        avg_x += dx / count;
+        avg_y += dy / count;
+        var_x += dx * (x - avg_x);
+        var_y += dy * (y - avg_y);
+        cov_xy += dx * (y - avg_y);
     }
 
-    alglib::real_1d_array s = "[1.0e+8, 1]";
-    alglib::ae_int_t info;
-    alglib::lsfitstate state;
-    alglib::lsfitreport rep;
-    alglib::lsfitcreatefg(x, y_space, c_space, true, state);
-    alglib::lsfitsetcond(state, 0.00001, 500);
-    alglib::lsfitsetscale(state, s);
-    alglib::lsfitfit(state, segments_count_model, segments_count_model_grad_c);
-    alglib::lsfitresults(state, info, c_space, rep);
-    return std::make_pair(c_space, rep);
+    var_x /= (count - 1);
+    cov_xy /= (count - 1);
+    auto b = cov_xy / var_x;
+    auto a = std::exp(avg_y - b * avg_x);
+    return std::make_pair(a, b);
 }
 
 /*------- ROOT FINDING -------*/
 
 double target_space_function(double epsilon, double a, double b, double max_space, double constants) {
     // s(ε) = c (m + (m-1) / (2ε-1), where m=aε^-b
-    double last_layer_segments = std::fmax(1., a * std::pow(epsilon, -b));
-    double total_segments = (2 * epsilon * last_layer_segments - 1) / (2. * epsilon - 1);
+    auto last_layer_segments = std::fmax(1., a * std::pow(epsilon, -b));
+    auto total_segments = (2 * epsilon * last_layer_segments - 1) / (2 * epsilon - 1);
     return total_segments * constants - max_space;
 }
 
 double target_space_function_derivative(double epsilon, double a, double b, double, double constants) {
     // s'(ε) = (2c ε^(-b) (ab ε^b - a - 2abε)) / (2ε - 1)^2
-    double numerator = 2 * constants * std::pow(epsilon, -b) * (a * b + std::pow(epsilon, b) - a - 2 * a * b * epsilon);
-    double denominator = std::pow(2 * epsilon - 1, 2.);
+    auto numerator = 2 * constants * std::pow(epsilon, -b) * (a * b + std::pow(epsilon, b) - a - 2 * a * b * epsilon);
+    auto denominator = std::pow(2 * epsilon - 1, 2.);
     return numerator / denominator;
 }
 
 double guess_epsilon_space(double x, double a, double b, double max_space, double constants) {
-    double n = target_space_function(x, a, b, max_space, constants);
-    double d = target_space_function_derivative(x, a, b, max_space, constants);
+    auto n = target_space_function(x, a, b, max_space, constants);
+    auto d = target_space_function_derivative(x, a, b, max_space, constants);
+    auto iterations = 0;
 
-    while (std::abs(n / d) >= 0.0001) {
+    while (std::abs(n / d) >= 0.0001 && iterations++ < 100) {
         n = target_space_function(x, a, b, max_space, constants);
         d = target_space_function_derivative(x, a, b, max_space, constants);
         x = x - n / d;
@@ -185,7 +181,7 @@ void minimize_time_logging(const IndexStats &stats, bool verbose, size_t lo_eps,
 }
 
 template<typename K>
-void minimize_space_given_time(size_t max_time, double tolerance, std::vector<K> &data,
+void minimize_space_given_time(size_t max_time, double tolerance, const std::vector<K> &data,
                                size_t lo_eps, size_t hi_eps, bool verbose) {
     auto latency = 82.1;
     auto cache_line = cache_line_size();
@@ -248,17 +244,13 @@ void minimize_space_given_time(size_t max_time, double tolerance, std::vector<K>
 }
 
 template<typename K>
-void minimize_time_given_space(size_t max_space, double tolerance, std::vector<K> &data,
+void minimize_time_given_space(size_t max_space, double tolerance, const std::vector<K> &data,
                                size_t lo_eps, size_t hi_eps, bool verbose) {
     const auto guess_steps_threshold = size_t(2 * std::log2(std::log2(hi_eps - lo_eps)));
     size_t guess_steps = 0;
     std::vector<IndexStats> all_stats;
-
-    double p[2] = {data.size() / 2., 1.000000001};
-    alglib::real_1d_array c_starting_point;
-    c_starting_point.setcontent(2, p);
-    alglib::real_1d_array c_space = c_starting_point;
-
+    auto a = double(data.size() / 2);
+    auto b = -1.;
     auto lo = lo_eps;
     auto hi = hi_eps;
 
@@ -266,16 +258,13 @@ void minimize_time_given_space(size_t max_space, double tolerance, std::vector<K
         size_t guess = 0;
         size_t mid = (lo + hi) / 2;
 
-        if (all_stats.size() >= 4 && guess_steps < guess_steps_threshold) {
-            auto[c_fit, fit_report] = fit_segments_count_model(all_stats, c_starting_point);
-            if (fit_report.r2 > 0.8) // use the guess of the position only if the fitted model is good
-                c_space = c_fit;
-        }
+        if (all_stats.size() >= 4 && guess_steps < guess_steps_threshold)
+            std::tie(a,b) = fit_segments_count_model(all_stats);
 
         if (guess_steps < guess_steps_threshold) {
             auto constants = sizeof(typename MockPGMIndex<K>::segment_type);
 
-            guess = size_t(guess_epsilon_space(100, c_space[0], c_space[1], max_space, constants));
+            guess = size_t(guess_epsilon_space(100, a, -b, max_space, constants));
             guess = std::clamp(guess, lo + 1, hi - 1);
 
             auto bias_weight = guess_steps <= 1 ? 0 : double(guess_steps) / guess_steps_threshold;
@@ -292,7 +281,7 @@ void minimize_time_given_space(size_t max_space, double tolerance, std::vector<K
         printf("%-19zu %-19.1f %-19.2f %-19s", mid, stats.construction_ns * 1.e-9, kib, query_time.c_str());
         if (verbose) {
             auto s = "(" + std::to_string(lo) + ", " + std::to_string(hi) + ")";
-            printf("\t↝ search space=%-15s \ts(ε)=%.0fε^-%.2f \tε guess=%zu", s.c_str(), c_space[0], c_space[1], guess);
+            printf("\t↝ search space=%-15s \ts(ε)=%.0fε^%.2f \tε guess=%zu", s.c_str(), a, b, guess);
         }
         printf("\n");
         fflush(stdout);
