@@ -4,6 +4,7 @@ project(PiecewiseGeometricModelIndex
         HOMEPAGE_URL https://github.com/gvinciguerra/PGM-index)
 
 option(BUILD_PGM_TUNER "Build the tuner target" ON)
+option(BUILD_EXAMPLES "Build the examples" ON)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -34,9 +35,12 @@ include_directories(include)
 add_library(pgmindexlib INTERFACE)
 target_include_directories(pgmindexlib INTERFACE include/)
 
-# tuner
 if (${BUILD_PGM_TUNER})
     add_subdirectory(tuner)
+endif ()
+
+if (${BUILD_EXAMPLES})
+    add_subdirectory(examples)
 endif ()
 
 enable_testing()
