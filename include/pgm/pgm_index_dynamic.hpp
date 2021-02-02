@@ -400,7 +400,7 @@ namespace internal {
 /* LoserTree implementation adapted from Timo Bingmann's https://tlx.github.io and http://stxxl.org, and from
  * Johannes Singler's http://algo2.iti.uni-karlsruhe.de/singler/mcstl. These three libraries are distributed under the
  * Boost Software License 1.0. */
-template<typename T, typename Compare = std::less<T>>
+template<typename T>
 class LoserTree {
     using Source = uint8_t;
 
@@ -412,7 +412,6 @@ class LoserTree {
 
     Source ik;                 ///< Number of nodes.
     Source k;                  ///< Smallest power of 2 greater than ik.
-    Compare cmp;               ///< The comparator object.
     bool first_insert;         ///< true iff still have to construct keys.
     std::vector<Loser> losers; ///< Vector of size 2k containing loser tree nodes.
 
@@ -427,7 +426,7 @@ class LoserTree {
 
         auto left = init_winner(2 * root);
         auto right = init_winner(2 * root + 1);
-        if (losers[right].sup || (!losers[left].sup && !cmp(losers[right].key, losers[left].key))) {
+        if (losers[right].sup || (!losers[left].sup && losers[right].key >= losers[left].key)) {
             losers[root] = losers[right];
             return left;
         } else {
@@ -440,10 +439,9 @@ public:
 
     LoserTree() = default;
 
-    explicit LoserTree(const Source &ik, const Compare &cmp = Compare())
+    explicit LoserTree(const Source &ik)
         : ik(ik),
           k(next_pow2(ik)),
-          cmp(cmp),
           first_insert(true),
           losers(2 * k) {
         for (auto i = ik - 1u; i < k; ++i) {
@@ -481,8 +479,8 @@ public:
 
         while (pos > 0) {
             if ((sup && (!losers[pos].sup || losers[pos].source < source))
-                || (!sup && !losers[pos].sup && (cmp(losers[pos].key, key)
-                    || (!cmp(key, losers[pos].key) && losers[pos].source < source)))) {
+                || (!sup && !losers[pos].sup && (losers[pos].key < key
+                    || (key >= losers[pos].key && losers[pos].source < source)))) {
                 std::swap(losers[pos].sup, sup);
                 std::swap(losers[pos].source, source);
                 std::swap(losers[pos].key, key);

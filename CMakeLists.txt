@@ -43,5 +43,7 @@ if (${BUILD_EXAMPLES})
     add_subdirectory(examples)
 endif ()
 
+add_subdirectory(c-interface)
+
 enable_testing()
 add_subdirectory(test)
