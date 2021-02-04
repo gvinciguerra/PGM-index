@@ -18,6 +18,7 @@
 #include <string>
 #include <fstream>
 #include <cstring>
+#include <climits>
 #include <iostream>
 #include <stdexcept>
 #include <fcntl.h>
@@ -382,7 +383,7 @@ protected:
 
         step = (size_t) CEIL_UINT_DIV(*std::prev(last), top_level_size);
         for (auto i = 0ull, k = 1ull; i < top_level_size - 1; ++i) {
-            while (k < segments.size() && segments[k].key < (i + 1) * step)
+            while (k < segments.size() && (segments[k].key - first_key) < (i + 1) * step)
                 ++k;
             top_level[i] = k;
         }
@@ -394,8 +395,9 @@ protected:
      * @return an iterator to the segment responsible for the given key
      */
     auto segment_for_key(const K &key) const {
-        auto j = std::min<size_t>(key / step, top_level.size() - 1);
-        auto first = segments.begin() + (key < step ? 1 : top_level[j - 1]);
+        auto k = key - first_key;
+        auto j = std::min<size_t>(k / step, top_level.size() - 1);
+        auto first = segments.begin() + (k < step ? 1 : top_level[j - 1]);
         auto last = segments.begin() + top_level[j];
         return std::prev(std::upper_bound(first, last, key));
     }
@@ -469,7 +471,7 @@ public:
      * @return the size of the index in bytes
      */
     size_t size_in_bytes() const {
-        return segments.size() * sizeof(Segment) + top_level.size() * top_level.width();
+        return segments.size() * sizeof(Segment) + top_level.size() * top_level.width() / CHAR_BIT;
     }
 };
 
