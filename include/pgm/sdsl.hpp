@@ -10452,33 +10452,6 @@ public:
         return rank_support_sd_trait<t_b>::adjust_rank(rank_low + 1, i);
     }
 
-    std::pair<size_type, uint64_t> pred(size_type i) const
-    {
-        assert(m_v != nullptr);
-        if (i > m_v->size()) {
-            auto j = m_v->low.size();
-            return {j - 1,  m_v->low[j-1] +  ((m_v->high_1_select(j) + 1 - j)  << (m_v->wl))};
-        }
-        ++i;
-        // split problem in two parts:
-        // (1) find  >=
-        size_type high_val = (i >> (m_v->wl));
-        size_type sel_high = m_v->high_0_select(high_val + 1);
-        size_type rank_low = sel_high - high_val; //
-        if (0 == rank_low)
-            return {rank_support_sd_trait<t_b>::adjust_rank(0, i), m_v->low[0] + (high_val << m_v->wl)};
-        size_type val_low = i & bits::lo_set[ m_v->wl ];
-        // now since rank_low > 0 => sel_high > 0
-        do {
-            if (!sel_high) {
-                return {rank_support_sd_trait<t_b>::adjust_rank(0, i), m_v->low[rank_low] + (high_val < m_v->wl)};
-            }
-            --sel_high; --rank_low;
-        } while (m_v->high[sel_high] and m_v->low[rank_low] >= val_low);
-        auto h = m_v->high[sel_high] ? high_val : bits::prev(m_v->high.data(), sel_high) - rank_low;
-        return {rank_support_sd_trait<t_b>::adjust_rank(rank_low, i), m_v->low[rank_low] + (h << m_v->wl)};
-    }
-
     size_type operator()(size_type i) const { return rank(i); }
 
     size_type size() const { return m_v->size(); }

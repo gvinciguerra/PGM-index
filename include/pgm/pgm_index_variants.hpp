@@ -504,11 +504,10 @@ protected:
         }
     };
 
-    size_t n;                                ///< The number of elements this index was built on.
-    K first_key;                             ///< The smallest segment key.
-    std::vector<SegmentData> segments;       ///< The segments composing the index.
-    sdsl::sd_vector<> ef;                    ///< The Elias-Fano structure on the segment.
-    sdsl::sd_vector<>::rank_1_type rank;     ///< The rank1 structure.
+    size_t n;                           ///< The number of elements this index was built on.
+    K first_key;                        ///< The smallest segment key.
+    std::vector<SegmentData> segments;  ///< The segments composing the index.
+    sdsl::sd_vector<> ef;               ///< The Elias-Fano structure on the segment.
 
 public:
 
@@ -550,7 +549,6 @@ public:
         }
 
         ef = decltype(ef)(tmp.begin(), std::prev(tmp.end()));
-        sdsl::util::init_support(rank, &ef);
     }
 
     /**
@@ -560,7 +558,7 @@ public:
      */
     ApproxPos search(const K &key) const {
         auto k = std::max(first_key, key);
-        auto[r, origin] = rank.pred(k - first_key);
+        auto[r, origin] = pred(k - first_key);
         auto pos = std::min<size_t>(segments[r](origin + first_key, k), segments[r + 1].intercept);
         auto lo = PGM_SUB_EPS(pos, Epsilon);
         auto hi = PGM_ADD_EPS(pos, Epsilon, n);
@@ -589,6 +587,33 @@ public:
      */
     size_t size_in_bytes() const {
         return segments.size() * sizeof(SegmentData) + sdsl::size_in_bytes(ef);
+    }
+
+private:
+
+    std::pair<size_t, uint64_t> pred(uint64_t i) const {
+        assert(m_v != nullptr);
+        if (i > ef.size()) {
+            auto j = ef.low.size();
+            return {j - 1, ef.low[j - 1] + ((ef.high_1_select(j) + 1 - j) << (ef.wl))};
+        }
+        ++i;
+
+        auto high_val = (i >> (ef.wl));
+        auto sel_high = ef.high_0_select(high_val + 1);
+        auto rank_low = sel_high - high_val;
+        if (0 == rank_low)
+            return {0, ef.low[0] + (high_val << ef.wl)};
+
+        auto val_low = i & sdsl::bits::lo_set[ef.wl];
+        do {
+            if (!sel_high)
+                return {0, ef.low[rank_low] + (high_val < ef.wl)};
+            --sel_high;
+            --rank_low;
+        } while (ef.high[sel_high] and ef.low[rank_low] >= val_low);
+        auto h = ef.high[sel_high] ? high_val : sdsl::bits::prev(ef.high.data(), sel_high) - rank_low;
+        return {rank_low, ef.low[rank_low] + (h << ef.wl)};
     }
 };
 
