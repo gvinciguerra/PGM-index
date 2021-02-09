@@ -592,7 +592,6 @@ public:
 private:
 
     std::pair<size_t, uint64_t> pred(uint64_t i) const {
-        assert(m_v != nullptr);
         if (i > ef.size()) {
             auto j = ef.low.size();
             return {j - 1, ef.low[j - 1] + ((ef.high_1_select(j) + 1 - j) << (ef.wl))};
