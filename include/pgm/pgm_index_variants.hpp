@@ -63,6 +63,7 @@ class CompressedPGMIndex {
     K first_key;                          ///< The smallest element in the data.
     Floating root_slope;                  ///< The slope of the root segment.
     int64_t root_intercept;               ///< The intercept of the root segment.
+    size_t root_range;                    ///< The size of the level below the root segment.
     std::vector<Floating> slopes_table;   ///< The vector containing the slopes used by the segments in the index.
     std::vector<CompressedLevel> levels;  ///< The levels composing the compressed index.
 
@@ -124,14 +125,16 @@ public:
         slopes_table = tmp_table;
 
         // Build levels
+        auto n_levels = levels_offsets.size() - 1;
         first_key = *first;
         if constexpr (EpsilonRecursive > 0) {
             auto root = *std::prev(levels_offsets.end(), 2);
             std::tie(root_slope, root_intercept) = segments[root].get_floating_point_segment(first_key);
+            root_range = n_levels == 1 ? n : levels_offsets[n_levels - 1] - levels_offsets[n_levels - 2];
         }
 
-        levels.reserve(levels_offsets.size() - 2);
-        for (auto i = EpsilonRecursive == 0 ? 1 : int(levels_offsets.size()) - 2; i > 0; --i) {
+        levels.reserve(n_levels - 1);
+        for (int i = EpsilonRecursive == 0 ? 1 : n_levels - 1; i > 0; --i) {
             auto l = levels_offsets[i - 1];
             auto r = levels_offsets[i];
             auto prev_level_size = i == 1 ? n : l - levels_offsets[i - 2];
@@ -173,9 +176,9 @@ public:
         }
 
         auto p = int64_t(root_slope * (k - first_key)) + root_intercept;
-        auto pos = std::min<size_t>(p > 0 ? size_t(p) : 0ull, levels.front().size());
+        auto pos = std::min<size_t>(p > 0 ? size_t(p) : 0ull, root_range);
 
-        for (auto &level : levels) {
+        for (const auto &level : levels) {
             auto lo = level.keys.begin() + PGM_SUB_EPS(pos, EpsilonRecursive + 1);
 
             static constexpr size_t linear_search_threshold = 8 * 64 / sizeof(K);
