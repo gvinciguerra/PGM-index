@@ -267,7 +267,7 @@ public:
 
             auto it = std::lower_bound(first, last, key);
             if (it != level(i).end() && it->first == key)
-                return it->deleted() ? end() : iterator(this, it);
+                return it->deleted() ? end() : iterator(this, i, it);
         }
 
         return end();
@@ -281,6 +281,7 @@ public:
     iterator lower_bound(const K &key) const {
         typename Level::const_iterator lb;
         auto lb_set = false;
+        uint8_t lb_level;
         std::unordered_set<K> deleted;
 
         for (auto i = min_level; i < used_levels; ++i) {
@@ -302,12 +303,13 @@ public:
             if (it != level(i).end() && it->first >= key && (!lb_set || it->first < lb->first)
                 && deleted.find(it->first) == deleted.end()) {
                 lb = it;
+                lb_level = i;
                 lb_set = true;
             }
         }
 
         if (lb_set)
-            return iterator(this, lb);
+            return iterator(this, lb_level, lb);
         return end();
     }
 
@@ -327,7 +329,7 @@ public:
      * Returns an iterator to the end.
      * @return an iterator to the end
      */
-    iterator end() const { return iterator(this, levels.back().end()); }
+    iterator end() const { return iterator(this, levels.size() - 1, levels.back().end()); }
 
     /**
      * Returns the number of elements with key that compares equal to the specified argument key, which is either 1
@@ -503,22 +505,28 @@ template<typename K, typename V, typename PGMType, uint8_t MinIndexedLevel>
 class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::Iterator {
     friend class DynamicPGMIndex;
 
-    using internal_iterator = typename Level::const_iterator;
-    using it_pair = std::pair<internal_iterator, internal_iterator>;
+    using level_iterator = typename Level::const_iterator;
     using dynamic_pgm_type = DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>;
 
+    struct Cursor {
+        uint8_t level_number;
+        level_iterator iterator;
+        Cursor() = default;
+        Cursor(uint8_t level_number, const level_iterator iterator) : level_number(level_number), iterator(iterator) {}
+    };
+
     const dynamic_pgm_type *super;  ///< Pointer to the container that is being iterated.
-    internal_iterator it;           ///< Iterator to the current element.
+    Cursor current;                 ///< Pair (level number, iterator to the current element).
     bool initialized;               ///< true iff the members tree and iterators have been initialized.
     uint8_t unconsumed_count;       ///< Number of iterators that have not yet reached the end.
     internal::LoserTree<K> tree;    ///< Tournament tree with one leaf for each iterator.
-    std::vector<it_pair> iterators; ///< Vector with pairs (current, end) iterators.
+    std::vector<Cursor> iterators;  ///< Vector with pairs (level number, iterator).
 
     void lazy_initialize() {
         if (initialized)
             return;
 
-        // For each level create and position an iterator to the first key > it->first
+        // For each level create and position an iterator to the first key > current
         iterators.reserve(super->used_levels - super->min_level);
         for (uint8_t i = super->min_level; i < super->used_levels; ++i) {
             auto &level = super->level(i);
@@ -528,19 +536,19 @@ class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::Iterator {
             size_t lo = 0;
             size_t hi = level.size();
             if (i >= MinIndexedLevel) {
-                auto range = super->pgm(i).search(it->first);
+                auto range = super->pgm(i).search(current.iterator->first);
                 lo = range.lo;
                 hi = range.hi;
             }
 
-            auto pos = std::upper_bound(level.begin() + lo, level.begin() + hi, *it);
+            auto pos = std::upper_bound(level.begin() + lo, level.begin() + hi, current.iterator->first);
             if (pos != level.end())
-                iterators.emplace_back(pos, level.end());
+                iterators.emplace_back(i, pos);
         }
 
         tree = decltype(tree)(iterators.size());
         for (size_t i = 0; i < iterators.size(); ++i)
-            tree.insert_start(&iterators[i].first->first, i, false);
+            tree.insert_start(&iterators[i].iterator->first, i, false);
         tree.init();
 
         initialized = true;
@@ -555,36 +563,37 @@ class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::Iterator {
 
         auto step = [&] {
             auto &it_min = iterators[tree.min_source()];
-            auto result = it_min.first;
-            ++it_min.first;
-            if (it_min.first == it_min.second) {
+            auto level_number = it_min.level_number;
+            auto result = it_min.iterator;
+            ++it_min.iterator;
+            if (it_min.iterator == super->level(level_number).end()) {
                 tree.delete_min_insert(nullptr, true);
                 --unconsumed_count;
             } else
-                tree.delete_min_insert(&it_min.first->first, false);
-            return result;
+                tree.delete_min_insert(&it_min.iterator->first, false);
+            return Cursor(level_number, result);
         };
 
-        internal_iterator tmp_it;
+        Cursor tmp;
         do {
-            tmp_it = step();
-            while (unconsumed_count > 0 && iterators[tree.min_source()].first->first == tmp_it->first)
+            tmp = step();
+            while (unconsumed_count > 0 && iterators[tree.min_source()].iterator->first == tmp.iterator->first)
                 step();
-        } while (unconsumed_count > 0 && tmp_it->deleted());
+        } while (unconsumed_count > 0 && tmp.iterator->deleted());
 
-        if (tmp_it->deleted())
+        if (tmp.iterator->deleted())
             *this = super->end();
         else
-            it = tmp_it;
+            current = tmp;
     }
 
     Iterator() = default;
-    Iterator(const dynamic_pgm_type *p, const internal_iterator it)
-        : super(p), it(it), initialized(), unconsumed_count(), tree(), iterators() {};
+    Iterator(const dynamic_pgm_type *p, uint8_t level_number, const level_iterator it)
+        : super(p), current(level_number, it), initialized(), unconsumed_count(), tree(), iterators() {};
 
 public:
 
-    using difference_type = ssize_t;
+    using difference_type = typename decltype(levels)::difference_type;
     using value_type = const Item;
     using pointer = const Item *;
     using reference = const Item &;
@@ -597,15 +606,19 @@ public:
     }
 
     Iterator operator++(int) {
-        Iterator i(it);
+        Iterator i(current);
         ++i;
         return i;
     }
 
-    reference operator*() const { return *it; }
-    pointer operator->() const { return &*it; };
-    bool operator==(const Iterator &rhs) const { return it == rhs.it; }
-    bool operator!=(const Iterator &rhs) const { return it != rhs.it; }
+    reference operator*() const { return *current.iterator; }
+    pointer operator->() const { return &*current.iterator; };
+
+    bool operator==(const Iterator &rhs) const {
+        return current.level_number == rhs.current.level_number && current.iterator == rhs.current.iterator;
+    }
+
+    bool operator!=(const Iterator &rhs) const { return !(*this == rhs); }
 };
 
 #pragma pack(push, 1)
