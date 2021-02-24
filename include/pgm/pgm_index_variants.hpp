@@ -996,7 +996,7 @@ private:
 
         RangeIterator(internal_iterator it) : RangeIterator(it, morton::Decode(*it)) {}
 
-        RangeIterator(internal_iterator it, const value_type &p) : it(it), p(p), miss(-1) {}
+        RangeIterator(internal_iterator it, const value_type &p) : p(p), it(it), miss(-1) {}
 
         RangeIterator(const decltype(super) super, const value_type &min, const value_type &max)
             : super(super),

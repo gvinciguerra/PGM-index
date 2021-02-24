@@ -81,7 +81,7 @@ protected:
                       std::vector<Segment> &segments,
                       std::vector<size_t> &levels_sizes,
                       std::vector<size_t> &levels_offsets) {
-        auto n = std::distance(first, last);
+        auto n = (size_t) std::distance(first, last);
         if (n == 0)
             return;
 
