@@ -25,8 +25,10 @@
 
 template <typename Index, typename Data>
 void test_index(const Index &index, const Data &data) {
+    auto rand = std::bind(std::uniform_int_distribution<size_t>(0, data.size() - 1), std::mt19937{42});
+
     for (auto i = 1; i <= 10000; ++i) {
-        auto q = data[std::rand() % data.size()];
+        auto q = data[rand()];
         auto range = index.search(q);
         auto lo = data.begin() + range.lo;
         auto hi = data.begin() + range.hi;
@@ -55,7 +57,7 @@ TEMPLATE_TEST_CASE("Segmentation algorithm", "", float, double, uint32_t, uint64
     auto it = segments.begin();
     auto [slope, intercept] = it->get_floating_point_segment(it->get_first_x());
 
-    for (auto i = 0; i < data.size(); ++i) {
+    for (auto i = 0u; i < data.size(); ++i) {
         if (i != 0 && data[i] == data[i - 1])
             continue;
         if (std::next(it) != segments.end() && std::next(it)->get_first_x() <= data[i]) {
@@ -118,7 +120,7 @@ TEMPLATE_TEST_CASE_SIG("Mapped PGM-index", "", ((size_t E), E), 8, 32, 128) {
         pgm::MappedPGMIndex<uint32_t, E> index(tmp_filename);
         for (auto i = 1; i <= 5000; ++i) {
             auto q = random_query();
-            REQUIRE(index.count(q) == std::count(data.begin(), data.end(), q));
+            REQUIRE(index.count(q) == (size_t) std::count(data.begin(), data.end(), q));
         }
     }
 
@@ -129,12 +131,13 @@ TEMPLATE_TEST_CASE_SIG("Dynamic PGM-index", "",
                        ((typename V, uint8_t MinIndexedLevel), V, MinIndexedLevel),
                        (uint32_t*, 8), (uint32_t, 10), (uint32_t*, 16), (uint32_t, 20)) {
     V time = 0;
-    std::srand(42);
-    auto gen = [&time] { return std::pair<uint32_t, V>{std::rand() % 1000000000, ++time}; };
+    auto rand = std::bind(std::uniform_int_distribution<uint32_t>(0, 1000000000), std::mt19937{42});
+    auto gen = [&] { return std::pair<uint32_t, V>{rand(), ++time}; };
 
     std::vector<std::pair<uint32_t, V>> bulk(GENERATE(0, 10, 1000, 1000000));
     std::generate(bulk.begin(), bulk.end(), gen);
     std::sort(bulk.begin(), bulk.end());
+    bulk.erase(std::unique(bulk.begin(), bulk.end(), [](auto &a, auto &b) { return a.first == b.first; }), bulk.end());
 
     using PGMType = pgm::PGMIndex<uint32_t>;
     pgm::DynamicPGMIndex<uint32_t, V, PGMType, MinIndexedLevel> pgm(bulk.begin(), bulk.end());
@@ -150,7 +153,7 @@ TEMPLATE_TEST_CASE_SIG("Dynamic PGM-index", "",
 
     // Test lower bound
     for (size_t i = 0; i < std::min<size_t>(1000, bulk.size()); ++i) {
-        auto q = bulk[std::rand() % bulk.size()];
+        auto q = bulk[rand() % bulk.size()];
         auto c = pgm.count(q.first);
         auto it = pgm.lower_bound(q.first);
         REQUIRE(c == 1);
