@@ -249,7 +249,7 @@ struct PGMIndex<K, Epsilon, EpsilonRecursive, Floating>::Segment {
         if (cs_intercept > std::numeric_limits<decltype(intercept)>::max())
             throw std::overflow_error("Change the type of Segment::intercept to int64");
         slope = cs_slope;
-        intercept = std::round(cs_intercept);
+        intercept = cs_intercept;
     }
 
     friend inline bool operator<(const Segment &s, const K &k) { return s.key < k; }
