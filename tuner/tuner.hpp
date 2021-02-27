@@ -16,6 +16,13 @@
 #pragma once
 
 #include <cmath>
+#include <cstdint>
+#include <vector>
+#include <chrono>
+#include <numeric>
+#include <fstream>
+#include <iostream>
+#include <algorithm>
 #include "pgm/pgm_index.hpp"
 
 #define PGM_IGNORED_PARAMETER 1
@@ -52,6 +59,40 @@ public:
     }
 
 };
+
+/*------- INPUT FILE READING -------*/
+
+std::vector<int64_t> read_data_csv(const std::string &file, size_t max_lines = std::numeric_limits<size_t>::max()) {
+    std::fstream in(file);
+    in.exceptions(std::ios::failbit | std::ios::badbit);
+    std::string line;
+    std::vector<int64_t> data;
+    data.reserve(max_lines == std::numeric_limits<size_t>::max() ? 1024 : max_lines);
+
+    for (size_t i = 0; i < max_lines && std::getline(in, line); ++i) {
+        int value;
+        std::stringstream stringstream(line);
+        stringstream >> value;
+        data.push_back(value);
+    }
+
+    return data;
+}
+
+template<typename TypeIn, typename TypeOut>
+std::vector<TypeOut> read_data_binary(const std::string &file, size_t max_size = std::numeric_limits<size_t>::max()) {
+    std::fstream in(file, std::ios::in | std::ios::binary | std::ios::ate);
+    in.exceptions(std::ios::failbit | std::ios::badbit);
+
+    auto size = std::min(max_size, static_cast<size_t>(in.tellg() / sizeof(TypeIn)));
+    std::vector<TypeIn> data(size);
+    in.seekg(0);
+    in.read((char *) data.data(), size * sizeof(TypeIn));
+
+    if constexpr (std::is_same<TypeIn, TypeOut>::value)
+        return data;
+    return std::vector<TypeOut>(data.begin(), data.end());
+}
 
 /*------- INDEX STATS -------*/
 
@@ -343,7 +384,7 @@ size_t cache_line_size() {
     FILE *p = fopen("/sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size", "r");
     unsigned int i = 0;
     if (p) {
-        fscanf(p, "%d", &i);
+        fscanf(p, "%u", &i);
         fclose(p);
     }
     return i;

@@ -13,48 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <vector>
-#include <chrono>
-#include <numeric>
-#include <cstdint>
 #include <cstring>
-#include <fstream>
-#include <iostream>
-#include <algorithm>
 #include "args.hxx"
 #include "tuner.hpp"
-
-std::vector<int64_t> read_data_csv(const std::string &file, size_t max_lines = std::numeric_limits<size_t>::max()) {
-    std::fstream in(file);
-    in.exceptions(std::ios::failbit | std::ios::badbit);
-    std::string line;
-    std::vector<int64_t> data;
-    data.reserve(max_lines == std::numeric_limits<size_t>::max() ? 1024 : max_lines);
-
-    for (size_t i = 0; i < max_lines && std::getline(in, line); ++i) {
-        int value;
-        std::stringstream stringstream(line);
-        stringstream >> value;
-        data.push_back(value);
-    }
-
-    return data;
-}
-
-template<typename TypeIn, typename TypeOut>
-std::vector<TypeOut> read_data_binary(const std::string &file, size_t max_size = std::numeric_limits<size_t>::max()) {
-    std::fstream in(file, std::ios::in | std::ios::binary | std::ios::ate);
-    in.exceptions(std::ios::failbit | std::ios::badbit);
-
-    auto size = std::min(max_size, static_cast<size_t>(in.tellg() / sizeof(TypeIn)));
-    std::vector<TypeIn> data(size);
-    in.seekg(0);
-    in.read((char *) data.data(), size * sizeof(TypeIn));
-
-    if constexpr (std::is_same<TypeIn, TypeOut>::value)
-        return data;
-    return std::vector<TypeOut>(data.begin(), data.end());
-}
 
 int main(int argc, char **argv) {
     using namespace args;
