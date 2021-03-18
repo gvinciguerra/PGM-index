@@ -72,14 +72,12 @@ protected:
     size_t n;                           ///< The number of elements this index was built on.
     K first_key;                        ///< The smallest element.
     std::vector<Segment> segments;      ///< The segments composing the index.
-    std::vector<size_t> levels_sizes;   ///< The number of segment in each level, in reverse order.
     std::vector<size_t> levels_offsets; ///< The starting position of each level in segments[], in reverse order.
 
     template<typename RandomIt>
     static void build(RandomIt first, RandomIt last,
                       size_t epsilon, size_t epsilon_recursive,
                       std::vector<Segment> &segments,
-                      std::vector<size_t> &levels_sizes,
                       std::vector<size_t> &levels_offsets) {
         auto n = (size_t) std::distance(first, last);
         if (n == 0)
@@ -88,7 +86,7 @@ protected:
         levels_offsets.push_back(0);
         segments.reserve(n / (epsilon * epsilon));
 
-        auto ignore_last = *std::prev(last) == std::numeric_limits<K>::max(); // max is reserved for padding
+        auto ignore_last = *std::prev(last) == std::numeric_limits<K>::max(); // max() is the sentinel value
         auto last_n = n - ignore_last;
         last -= ignore_last;
 
@@ -99,7 +97,7 @@ protected:
                 segments.emplace_back(*std::prev(last) + 1, 0, last_n);
                 ++n_segments;
             }
-            segments.emplace_back(last_n);
+            segments.emplace_back(last_n); // Add the sentinel segment
             return n_segments;
         };
 
@@ -114,7 +112,6 @@ protected:
         auto out_fun = [&](auto cs) { segments.emplace_back(cs); };
         last_n = build_level(epsilon, in_fun, out_fun);
         levels_offsets.push_back(levels_offsets.back() + last_n + 1);
-        levels_sizes.push_back(last_n);
 
         // Build upper levels
         while (epsilon_recursive && last_n > 1) {
@@ -122,10 +119,7 @@ protected:
             auto in_fun_rec = [&](auto i) { return std::pair<K, size_t>(segments[offset + i].key, i); };
             last_n = build_level(epsilon_recursive, in_fun_rec, out_fun);
             levels_offsets.push_back(levels_offsets.back() + last_n + 1);
-            levels_sizes.push_back(last_n);
         }
-
-        levels_offsets.pop_back();
     }
 
     /**
@@ -135,12 +129,11 @@ protected:
      */
     auto segment_for_key(const K &key) const {
         if constexpr (EpsilonRecursive == 0) {
-            auto it = std::upper_bound(segments.begin(), segments.begin() + levels_sizes[0], key);
+            auto it = std::upper_bound(segments.begin(), segments.begin() + segments_count(), key);
             return it == segments.begin() ? it : std::prev(it);
         }
 
-        auto it = segments.begin() + levels_offsets.back();
-
+        auto it = segments.begin() + *(levels_offsets.end() - 2);
         for (auto l = int(height()) - 2; l >= 0; --l) {
             auto level_begin = segments.begin() + levels_offsets[l];
             auto pos = std::min<size_t>((*it)(key), std::next(it)->intercept);
@@ -152,7 +145,7 @@ protected:
                     continue;
                 it = lo;
             } else {
-                auto level_size = levels_sizes[l];
+                auto level_size = levels_offsets[l + 1] - levels_offsets[l] - 1;
                 auto hi = level_begin + PGM_ADD_EPS(pos, EpsilonRecursive, level_size);
                 it = std::upper_bound(lo, hi, key);
                 it = it == level_begin ? it : std::prev(it);
@@ -185,9 +178,8 @@ public:
         : n(std::distance(first, last)),
           first_key(n ? *first : 0),
           segments(),
-          levels_sizes(),
           levels_offsets() {
-        build(first, last, Epsilon, EpsilonRecursive, segments, levels_sizes, levels_offsets);
+        build(first, last, Epsilon, EpsilonRecursive, segments, levels_offsets);
     }
 
     /**
@@ -208,25 +200,19 @@ public:
      * Returns the number of segments in the last level of the index.
      * @return the number of segments
      */
-    size_t segments_count() const {
-        return segments.empty() ? 0 : levels_sizes.front();
-    }
+    size_t segments_count() const { return segments.empty() ? 0 : levels_offsets[1] - 1; }
 
     /**
      * Returns the number of levels of the index.
      * @return the number of levels of the index
      */
-    size_t height() const {
-        return levels_sizes.size();
-    }
+    size_t height() const { return levels_offsets.size() - 1; }
 
     /**
      * Returns the size of the index in bytes.
      * @return the size of the index in bytes
      */
-    size_t size_in_bytes() const {
-        return segments.size() * sizeof(Segment);
-    }
+    size_t size_in_bytes() const { return segments.size() * sizeof(Segment) + levels_offsets.size() * sizeof(size_t); }
 };
 
 #pragma pack(push, 1)
@@ -239,7 +225,7 @@ struct PGMIndex<K, Epsilon, EpsilonRecursive, Floating>::Segment {
 
     Segment() = default;
 
-    Segment(K key, Floating slope, Floating intercept) : key(key), slope(slope), intercept(intercept) {};
+    Segment(K key, Floating slope, int32_t intercept) : key(key), slope(slope), intercept(intercept) {};
 
     explicit Segment(size_t n) : key(std::numeric_limits<K>::max()), slope(), intercept(n) {};
 

@@ -435,7 +435,7 @@ public:
           top_level() {
         std::vector<size_t> sizes;
         std::vector<size_t> offsets;
-        PGMIndex<K, Epsilon, 0, Floating>::build(first, last, Epsilon, 0, segments, sizes, offsets);
+        PGMIndex<K, Epsilon, 0, Floating>::build(first, last, Epsilon, 0, segments, offsets);
         build_top_level(first, last, top_level_size);
     }
 
@@ -541,9 +541,8 @@ public:
             return;
 
         std::vector<Segment> tmp;
-        std::vector<size_t> sizes;
         std::vector<size_t> offsets;
-        PGMIndex<K, Epsilon, 0, Floating>::build(first, last, Epsilon, 0, tmp, sizes, offsets);
+        PGMIndex<K, Epsilon, 0, Floating>::build(first, last, Epsilon, 0, tmp, offsets);
 
         segments.reserve(tmp.size());
         for (auto &x: tmp) {
@@ -673,7 +672,7 @@ public:
         auto in_data = map_file(in_filename, in_bytes);
         this->n = in_bytes / sizeof(K);
         this->template build(in_data, in_data + this->n, Epsilon, EpsilonRecursive,
-                             this->segments, this->levels_sizes, this->levels_offsets);
+                             this->segments, this->levels_offsets);
         serialize_and_map(in_data, in_data + this->n, out_filename);
         unmap_file(in_data, in_bytes);
     }
@@ -691,7 +690,6 @@ public:
         read_member(header_bytes, in);
         read_member(this->n, in);
         read_member(this->first_key, in);
-        read_container(this->levels_sizes, in);
         read_container(this->levels_offsets, in);
         read_container(this->segments, in);
         file_bytes = header_bytes + this->n * sizeof(K);
@@ -781,7 +779,6 @@ private:
         header_bytes += write_member(header_bytes, out);
         header_bytes += write_member(this->n, out);
         header_bytes += write_member(this->first_key, out);
-        header_bytes += write_container(this->levels_sizes, out);
         header_bytes += write_container(this->levels_offsets, out);
         header_bytes += write_container(this->segments, out);
         for (auto it = first; it != last; ++it)
