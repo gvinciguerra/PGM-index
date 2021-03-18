@@ -30,7 +30,7 @@ public:
     PGMWrapper(const K *a, size_t n, size_t epsilon) : epsilon(epsilon) {
         this->n = n;
         this->first_key = n ? *a : 0;
-        this->build(a, a + n, epsilon, EPSILON_RECURSIVE, this->segments, this->levels_sizes, this->levels_offsets);
+        this->build(a, a + n, epsilon, EPSILON_RECURSIVE, this->segments, this->levels_offsets);
     }
 
     approx_pos_t search(const K &key) const {
@@ -92,11 +92,11 @@ PGM_INDEX_DEFINE(uint64)
                                                                                                                        \
     size_t dynamic_pgm_index_##type##_size_in_bytes(PGM_PTR(dynamic_pgm_index, type) pgm) {                            \
         return pgm->size_in_bytes();                                                                                   \
-    };                                                                                                                 \
+    }                                                                                                                  \
                                                                                                                        \
     size_t dynamic_pgm_index_##type##_index_size_in_bytes(PGM_PTR(dynamic_pgm_index, type) pgm) {                      \
         return pgm->index_size_in_bytes();                                                                             \
-    };                                                                                                                 \
+    }                                                                                                                  \
                                                                                                                        \
     void dynamic_pgm_index_##type##_insert_or_assign(PGM_PTR(dynamic_pgm_index, type) pgm, PGM_T(type) key,            \
                                                      PGM_T(type) value) {                                              \
