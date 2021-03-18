@@ -103,7 +103,7 @@ public:
         last -= ignore_last;
 
         // Build first level
-        auto in_fun = [this, first](auto i) {
+        auto in_fun = [&](auto i) {
             auto x = first[i];
             auto flag = i > 0 && i + 1u < n && x == first[i - 1] && x != first[i + 1] && x + 1 != first[i + 1];
             return std::pair<K, size_t>(x + flag, i);
@@ -419,7 +419,7 @@ public:
      * @param data the vector of keys, must be sorted
      * @param top_level_size the number of cells allocated for the top-level table
      */
-    explicit BucketingPGMIndex(const std::vector<K> &data, size_t top_level_size)
+    BucketingPGMIndex(const std::vector<K> &data, size_t top_level_size)
         : BucketingPGMIndex(data.begin(), data.end(), top_level_size) {}
 
     /**
@@ -433,10 +433,34 @@ public:
           first_key(n ? *first : 0),
           segments(),
           top_level() {
-        std::vector<size_t> sizes;
+        if (top_level_size == 0)
+            throw std::invalid_argument("top_level_size == 0");
         std::vector<size_t> offsets;
         PGMIndex<K, Epsilon, 0, Floating>::build(first, last, Epsilon, 0, segments, offsets);
         build_top_level(first, last, top_level_size);
+    }
+
+    /**
+     * Constructs the index on the given sorted vector, with a dynamically-set top level size.
+     * @param data the vector of keys, must be sorted
+     */
+    BucketingPGMIndex(const std::vector<K> &data) : BucketingPGMIndex(data.begin(), data.end()) {}
+
+    /**
+     * Constructs the index on the sorted keys in the range [first, last), with a dynamically-set top level size.
+     * @param first, last the range containing the sorted keys to be indexed
+     */
+    template<typename RandomIt>
+    BucketingPGMIndex(RandomIt first, RandomIt last)
+        : n(std::distance(first, last)),
+          first_key(n ? *first : 0),
+          segments(),
+          top_level() {
+        if (n == 0)
+            return;
+        std::vector<size_t> offsets;
+        PGMIndex<K, Epsilon, 0, Floating>::build(first, last, Epsilon, 0, segments, offsets);
+        build_top_level(first, last, segments.size() / 2);
     }
 
     /**
