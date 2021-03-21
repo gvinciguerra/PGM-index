@@ -30,8 +30,8 @@
 
 namespace pgm {
 
-/** Computes the smallest integral value not less than x / y, where x and y must be positive integers. */
-#define CEIL_UINT_DIV(x, y) ((x) / (y) + ((x) % (y) != 0))
+/** Computes the smallest integral value not less than x / y, where y must be a positive integer. */
+#define CEIL_INT_DIV(x, y) ((x) / (y) + ((x) % (y) > 0))
 
 /** Computes the number of bits needed to store x, that is, 0 if x is 0, 1 + floor(log2(x)) otherwise. */
 #define BIT_WIDTH(x) ((x) == 0 ? 0 : 64 - __builtin_clzll(x))
@@ -384,9 +384,9 @@ protected:
             top_level = sdsl::int_vector<TopLevelBitSize>(top_level_size, segments.size(), TopLevelBitSize);
         }
 
-        step = (size_t) CEIL_UINT_DIV(*std::prev(last), top_level_size);
+        step = CEIL_INT_DIV(*std::prev(last), top_level_size);
         for (auto i = 0ull, k = 1ull; i < top_level_size - 1; ++i) {
-            while (k < segments.size() && (segments[k].key - first_key) < (i + 1) * step)
+            while (k < segments.size() && (segments[k].key - first_key) < K(i + 1) * step)
                 ++k;
             top_level[i] = k;
         }
