@@ -101,7 +101,7 @@ TEMPLATE_TEST_CASE_SIG("Elias-Fano PGM-index", "", ((size_t E), E), 8, 32, 128) 
 }
 
 TEMPLATE_TEST_CASE_SIG("Mapped PGM-index", "", ((size_t E), E), 8, 32, 128) {
-    std::string tmp_filename = std::tmpnam(nullptr);
+    std::string tmp_filename = "tmp.mapped.pgm";
     auto data = generate_data<uint32_t>(500000);
     auto random_query = std::bind(std::uniform_int_distribution<uint32_t>(data.front(), data.back()), std::mt19937{42});
 

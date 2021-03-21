@@ -108,14 +108,14 @@ public:
             auto flag = i > 0 && i + 1u < n && x == first[i - 1] && x != first[i + 1] && x + 1 != first[i + 1];
             return std::pair<K, size_t>(x + flag, i);
         };
-        auto out_fun = [&, this](auto cs) { segments.emplace_back(cs); };
+        auto out_fun = [&](auto cs) { segments.emplace_back(cs); };
         last_n = internal::make_segmentation_par(last_n, Epsilon, in_fun, out_fun);
         levels_offsets.push_back(levels_offsets.back() + last_n);
 
         // Build upper levels
         while (EpsilonRecursive && last_n > 1) {
             auto offset = levels_offsets[levels_offsets.size() - 2];
-            auto in_fun_rec = [&, this](auto i) { return std::pair<K, size_t>(segments[offset + i].get_first_x(), i); };
+            auto in_fun_rec = [&](auto i) { return std::pair<K, size_t>(segments[offset + i].get_first_x(), i); };
             last_n = internal::make_segmentation(last_n, EpsilonRecursive, in_fun_rec, out_fun);
             levels_offsets.push_back(levels_offsets.back() + last_n);
         }
