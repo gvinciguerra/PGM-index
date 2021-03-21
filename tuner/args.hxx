@@ -1,4 +1,8 @@
-/* Copyright (c) 2016-2017 Taylor C. Richberger <taywee@gmx.com> and Pavel
+/* A simple header-only C++ argument parser library.
+ *
+ * https://github.com/Taywee/args
+ *
+ * Copyright (c) 2016-2020 Taylor C. Richberger <taywee@gmx.com> and Pavel
  * Belikov
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -29,6 +33,11 @@
 #ifndef ARGS_HXX
 #define ARGS_HXX
 
+#define ARGS_VERSION "6.2.4"
+#define ARGS_VERSION_MAJOR 6
+#define ARGS_VERSION_MINOR 2
+#define ARGS_VERSION_PATCH 4
+
 #include <algorithm>
 #include <iterator>
 #include <exception>
@@ -40,6 +49,12 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <type_traits>
+#include <cstddef>
+#include <iostream>
+
+#if defined(_MSC_VER) && _MSC_VER <= 1800
+#define noexcept
+#endif
 
 #ifdef ARGS_TESTNAMESPACE
 namespace argstest
@@ -1002,11 +1017,29 @@ namespace args
 
     namespace detail
     {
-        template <typename T, typename = int>
-        struct IsConvertableToString : std::false_type {};
+        template<typename T>
+        using vector = std::vector<T, std::allocator<T>>;
+        
+        template<typename K, typename T>
+        using unordered_map = std::unordered_map<K, T, std::hash<K>, 
+            std::equal_to<K>, std::allocator<std::pair<const K, T> > >;
+
+        template<typename S, typename T>
+        class is_streamable
+        {
+            template<typename SS, typename TT>
+            static auto test(int)
+            -> decltype( std::declval<SS&>() << std::declval<TT>(), std::true_type() );
+
+            template<typename, typename>
+            static auto test(...) -> std::false_type;
+
+        public:
+            using type = decltype(test<S,T>(0));
+        };
 
         template <typename T>
-        struct IsConvertableToString<T, decltype(std::declval<std::ostringstream&>() << std::declval<T>(), int())> : std::true_type {};
+        using IsConvertableToString = typename is_streamable<std::ostringstream, T>::type;
 
         template <typename T>
         typename std::enable_if<IsConvertableToString<T>::value, std::string>::type
@@ -1470,7 +1503,9 @@ namespace args
              */
             std::vector<Base *>::size_type MatchedChildren() const
             {
-                return std::count_if(std::begin(Children()), std::end(Children()), [](const Base *child){return child->Matched();});
+                // Cast to avoid warnings from -Wsign-conversion
+                return static_cast<std::vector<Base *>::size_type>(
+                        std::count_if(std::begin(Children()), std::end(Children()), [](const Base *child){return child->Matched();}));
             }
 
             /** Whether or not this group matches validation
@@ -1630,11 +1665,11 @@ namespace args
 
         public:
             Subparser(std::vector<std::string> args_, ArgumentParser &parser_, const Command &command_, const HelpParams &helpParams_)
-                : args(std::move(args_)), parser(&parser_), helpParams(helpParams_), command(command_)
+                : Group({}, Validators::AllChildGroups), args(std::move(args_)), parser(&parser_), helpParams(helpParams_), command(command_)
             {
             }
 
-            Subparser(const Command &command_, const HelpParams &helpParams_) : helpParams(helpParams_), command(command_)
+            Subparser(const Command &command_, const HelpParams &helpParams_) : Group({}, Validators::AllChildGroups), helpParams(helpParams_), command(command_)
             {
             }
 
@@ -2125,18 +2160,23 @@ namespace args
                     return;
                 }
 
+                auto onValidationError = [&]
+                {
+                    std::ostringstream problem;
+                    problem << "Group validation failed somewhere!";
+#ifdef ARGS_NOEXCEPT
+                    error = Error::Validation;
+                    errorMsg = problem.str();
+#else
+                    throw ValidationError(problem.str());
+#endif
+                };
+
                 for (Base *child: Children())
                 {
                     if (child->IsGroup() && !child->Matched())
                     {
-                        std::ostringstream problem;
-                        problem << "Group validation failed somewhere!";
-#ifdef ARGS_NOEXCEPT
-                        error = Error::Validation;
-                        errorMsg = problem.str();
-#else
-                        throw ValidationError(problem.str());
-#endif
+                        onValidationError();
                     }
 
                     child->Validate(shortprefix, longprefix);
@@ -2145,6 +2185,10 @@ namespace args
                 if (subparser != nullptr)
                 {
                     subparser->Validate(shortprefix, longprefix);
+                    if (!subparser->Matched())
+                    {
+                        onValidationError();
+                    }
                 }
 
                 if (selectedCommand == nullptr && commandIsRequired && (Group::HasCommand() || subparserHasCommand))
@@ -2308,7 +2352,7 @@ namespace args
 
                     while (valueIt != end &&
                            values.size() < nargs.max &&
-                           (nargs.min == nargs.max || ParseOption(*valueIt) == OptionType::Positional))
+                           (values.size() < nargs.min || ParseOption(*valueIt) == OptionType::Positional))
                     {
                         if (Complete(flag, valueIt, end))
                         {
@@ -2697,7 +2741,7 @@ namespace args
 #endif
                         readCompletion = true;
                         ++it;
-                        size_t argsLeft = std::distance(it, end);
+                        const auto argsLeft = static_cast<size_t>(std::distance(it, end));
                         if (completion->cword == 0 || argsLeft <= 1 || completion->cword >= argsLeft)
                         {
 #ifndef ARGS_NOEXCEPT
@@ -2716,13 +2760,15 @@ namespace args
                                 if (idx > 0 && curArgs[idx] == "=")
                                 {
                                     curArgs[idx - 1] += "=";
+                                    // Avoid warnings from -Wsign-conversion
+                                    const auto signedIdx = static_cast<std::ptrdiff_t>(idx);
                                     if (idx + 1 < curArgs.size())
                                     {
                                         curArgs[idx - 1] += curArgs[idx + 1];
-                                        curArgs.erase(curArgs.begin() + idx, curArgs.begin() + idx + 2);
+                                        curArgs.erase(curArgs.begin() + signedIdx, curArgs.begin() + signedIdx + 2);
                                     } else
                                     {
-                                        curArgs.erase(curArgs.begin() + idx);
+                                        curArgs.erase(curArgs.begin() + signedIdx);
                                     }
                                 } else
                                 {
@@ -3251,9 +3297,14 @@ namespace args
         operator ()(const std::string &name, const std::string &value, T &destination)
         {
             std::istringstream ss(value);
-            ss >> destination >> std::ws;
+            bool failed = !(ss >> destination);
 
-            if (ss.rdbuf()->in_avail() > 0)
+            if (!failed)
+            {
+                ss >> std::ws;
+            }
+
+            if (ss.rdbuf()->in_avail() > 0 || failed)
             {
 #ifdef ARGS_NOEXCEPT
                 (void)name;
@@ -3407,7 +3458,7 @@ namespace args
      */
     template <
         typename T,
-        template <typename...> class List = std::vector,
+        template <typename...> class List = detail::vector,
         typename Reader = ValueReader>
     class NargsValueFlag : public FlagBase
     {
@@ -3527,7 +3578,7 @@ namespace args
      */
     template <
         typename T,
-        template <typename...> class List = std::vector,
+        template <typename...> class List = detail::vector,
         typename Reader = ValueReader>
     class ValueFlagList : public ValueFlagBase
     {
@@ -3647,7 +3698,7 @@ namespace args
         typename K,
         typename T,
         typename Reader = ValueReader,
-        template <typename...> class Map = std::unordered_map>
+        template <typename...> class Map = detail::unordered_map>
     class MapFlag : public ValueFlagBase
     {
         private:
@@ -3734,9 +3785,9 @@ namespace args
     template <
         typename K,
         typename T,
-        template <typename...> class List = std::vector,
+        template <typename...> class List = detail::vector,
         typename Reader = ValueReader,
-        template <typename...> class Map = std::unordered_map>
+        template <typename...> class Map = detail::unordered_map>
     class MapFlagList : public ValueFlagBase
     {
         private:
@@ -3925,7 +3976,7 @@ namespace args
      */
     template <
         typename T,
-        template <typename...> class List = std::vector,
+        template <typename...> class List = detail::vector,
         typename Reader = ValueReader>
     class PositionalList : public PositionalBase
     {
@@ -4046,7 +4097,7 @@ namespace args
         typename K,
         typename T,
         typename Reader = ValueReader,
-        template <typename...> class Map = std::unordered_map>
+        template <typename...> class Map = detail::unordered_map>
     class MapPositional : public PositionalBase
     {
         private:
@@ -4126,9 +4177,9 @@ namespace args
     template <
         typename K,
         typename T,
-        template <typename...> class List = std::vector,
+        template <typename...> class List = detail::vector,
         typename Reader = ValueReader,
-        template <typename...> class Map = std::unordered_map>
+        template <typename...> class Map = detail::unordered_map>
     class MapPositionalList : public PositionalBase
     {
         private:
