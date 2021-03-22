@@ -15,6 +15,7 @@
 
 #pragma once
 
+#include <sys/stat.h>
 #include <cstdio>
 #include <cassert>
 #include <cstdint>
@@ -25,7 +26,6 @@
 #include <iostream>
 #include <iterator>
 #include <algorithm>
-#include <filesystem>
 #include <type_traits>
 
 bool global_verbose = false;
@@ -70,7 +70,9 @@ std::vector<T> read_data_binary(const std::string &filename, bool check_sorted) 
     try {
         std::fstream in(filename, std::ios::in | std::ios::binary);
         in.exceptions(std::ios::failbit | std::ios::badbit);
-        size_t file_size = std::filesystem::file_size(filename);
+        struct stat fs;
+        stat(filename.c_str(), &fs);
+        size_t file_size = fs.st_size;
         data.resize(file_size / sizeof(T));
         in.read((char *) data.data(), file_size);
     } catch (std::ios_base::failure &e) {
