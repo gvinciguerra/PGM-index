@@ -94,7 +94,7 @@ cmake . -DCMAKE_BUILD_TYPE=Release
 make -j8
 ```
 
-The test runner will be placed in `test/`. The [tuner](https://pgm.di.unipi.it/docs/tuner/) executable will be placed in `tuner/`.
+The test runner will be placed in `test/`. The [tuner](https://pgm.di.unipi.it/docs/tuner/) executable will be placed in `tuner/`. The [benchmark](https://pgm.di.unipi.it/docs/benchmark/) executable will be placed in `benchmark/`.
 
 ## License
 
