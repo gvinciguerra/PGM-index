@@ -3,20 +3,16 @@ project(PiecewiseGeometricModelIndex
         VERSION 1.0
         HOMEPAGE_URL https://github.com/gvinciguerra/PGM-index)
 
-option(BUILD_PGM_TUNER "Build the tuner target" ON)
 option(BUILD_EXAMPLES "Build the examples" ON)
+option(BUILD_PGM_TUNER "Build the tuner target" ON)
+option(BUILD_PGM_BENCHMARK "Build the benchmark target" ON)
 
 set(CMAKE_CXX_STANDARD 17)
 
 include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
+check_cxx_compiler_flag("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
 if (COMPILER_SUPPORTS_MARCH_NATIVE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
-endif ()
-
-CHECK_CXX_COMPILER_FLAG("-ftree-vectorize" COMPILER_SUPPORTS_FTREE_VECTORIZE)
-if (COMPILER_SUPPORTS_FTREE_VECTORIZE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftree-vectorize")
 endif ()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
@@ -24,9 +20,9 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 endif ()
 
 find_package(OpenMP)
-if (OPENMP_FOUND)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+if (OpenMP_CXX_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    link_libraries(OpenMP::OpenMP_CXX)
 endif ()
 
 include_directories(include)
@@ -35,12 +31,16 @@ include_directories(include)
 add_library(pgmindexlib INTERFACE)
 target_include_directories(pgmindexlib INTERFACE include/)
 
-if (${BUILD_PGM_TUNER})
+if (BUILD_PGM_TUNER)
     add_subdirectory(tuner)
 endif ()
 
-if (${BUILD_EXAMPLES})
+if (BUILD_EXAMPLES)
     add_subdirectory(examples)
+endif ()
+
+if (BUILD_PGM_BENCHMARK)
+    add_subdirectory(benchmark)
 endif ()
 
 add_subdirectory(c-interface)
