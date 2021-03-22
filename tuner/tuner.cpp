@@ -17,26 +17,46 @@
 #include "args.hxx"
 #include "tuner.hpp"
 
+template<typename K>
+void run_tuner(args::ValueFlag<size_t> &time,
+               args::ValueFlag<size_t> &space,
+               args::ValueFlag<double> &tol,
+               args::ValueFlag<float> &ratio,
+               args::Positional<std::string> &file);
+
 int main(int argc, char **argv) {
     using namespace args;
-    ArgumentParser p("Space-time trade-off tuner for the PGM-index.",
-                     "This program lets you specify a maximum space and get the PGM-index minimising the query time "
-                     "within that space.  Or, it lets you specify a maximum query time and get the PGM-index "
-                     "minimising the space.");
+    ArgumentParser p("Space-time trade-off tuner for the PGM-index. \n\nThis program lets you specify a maximum space "
+                     "and get the PGM-index minimising the query time within that space. Or, it lets you specify a "
+                     "maximum query time and get the PGM-index minimising the space.");
+    p.helpParams.flagindent = 2;
+    p.helpParams.helpindent = 25;
+    p.helpParams.progindent = 0;
+    p.helpParams.descriptionindent = 0;
+
     HelpFlag help(p, "help", "Display this help menu", {'h', "help"});
-    Group g(p, "Operation modes:", args::Group::Validators::Xor, args::Options::Required);
+    ValueFlag<double> tol(p, "float", "Tolerance between 0 and 1 on the constraint (default 0.01)", {'o', "tol"}, 0.01);
+    ValueFlag<float> ratio(p, "ratio", "Ratio of lookups in the query workload (default 0.33)", {'r', "ratio"}, 0.333);
+    Flag verbose(p, "verbose", "Show additional logging info", {'v', "verbose"});
+
+    Group g(p, "OPERATION MODES:", args::Group::Validators::Xor, args::Options::Required);
     ValueFlag<size_t> time(g, "ns", "Specify a time to minimise the space", {'t', "time"});
     ValueFlag<size_t> space(g, "bytes", "Specify a space to minimise the time", {'s', "space"});
-    ValueFlag<double> tol(p, "float", "Tolerance between 0 and 1 on the constraint (default 0.01)", {'o', "tol"}, 0.01);
-    Flag verbose(p, "verbose", "Show additional logging info", {'v', "verbose"});
-    Group t(p, "File type:", args::Group::Validators::Xor, args::Options::Required);
-    Flag bin(t, "binary", "The input file is a binary file containing 32-bit integers", {'b', "binary"});
-    Flag csv(t, "csv", "The input file is a csv file containing integers separated by a newline", {'c', "csv"});
+
+    Group t(p, "INPUT DATA OPTIONS:", args::Group::Validators::Xor, args::Options::Required);
+    Flag u64(t, "", "Input file contains unsigned 64-bit ints", {'U', "u64"});
+    Flag i64(t, "", "Input file contains signed 64-bit ints", {'I', "i64"});
+    Flag u32(t, "", "Input file contains unsigned 32-bit ints", {'u', "u32"});
+    Flag i32(t, "", "Input file contains signed 32-bit ints", {'i', "i32"});
     Positional<std::string> file(p, "file", "The file containing the input data", args::Options::Required);
     CompletionFlag completion(p, {"complete"});
 
     try {
         p.ParseCLI(argc, argv);
+    }
+    catch (args::Completion &e) {
+        std::cout << e.what();
+        return 0;
     }
     catch (args::Help &) {
         std::cout << p;
@@ -47,14 +67,25 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    std::vector<int64_t> data;
-    try {
-        data = bin.Get() ? read_data_binary<int32_t, int64_t>(file.Get()) : read_data_csv(file.Get());
-    } catch (std::ios_base::failure &e) {
-        std::cerr << e.what() << std::endl;
-        std::cerr << std::strerror(errno) << std::endl;
-        exit(1);
-    }
+    global_verbose = verbose.Get();
+
+    if (i64.Get())
+        run_tuner<int64_t>(time, space, tol, ratio, file);
+    if (u64.Get())
+        run_tuner<uint64_t>(time, space, tol, ratio, file);
+    if (i32.Get())
+        run_tuner<int32_t>(time, space, tol, ratio, file);
+    if (u32.Get())
+        run_tuner<uint32_t>(time, space, tol, ratio, file);
+}
+
+template<typename K>
+void run_tuner(args::ValueFlag<size_t> &time,
+               args::ValueFlag<size_t> &space,
+               args::ValueFlag<double> &tol,
+               args::ValueFlag<float> &ratio,
+               args::Positional<std::string> &file) {
+    std::vector<K> data = read_data_binary<K>(file.Get(), true);
 
     std::sort(data.begin(), data.end());
     auto lo_eps = 2 * cache_line_size() / sizeof(int64_t);
@@ -71,8 +102,9 @@ int main(int argc, char **argv) {
     printf("%-19s %-19s %-19s %-19s\n", "Epsilon", "Construction (s)", "Space (KiB)", "Query (ns)");
     printf("%s\n", std::string(80, '-').c_str());
 
+    auto queries = generate_queries(data.begin(), data.end(), ratio.Get(), 1000000);
     if (minimize_space)
-        minimize_space_given_time(time.Get(), tol.Get(), data, lo_eps, hi_eps, verbose.Get());
+        minimize_space_given_time(time.Get(), tol.Get(), data, queries, lo_eps, hi_eps, global_verbose);
     else
-        minimize_time_given_space(space.Get(), tol.Get(), data, lo_eps, hi_eps, verbose.Get());
+        minimize_time_given_space(space.Get(), tol.Get(), data, queries, lo_eps, hi_eps, global_verbose);
 }

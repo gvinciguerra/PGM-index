@@ -44,7 +44,11 @@ void read_ints_helper(args::PositionalList<std::string> &files,
 int main(int argc, char **argv) {
     using namespace args;
     ArgumentParser p("Benchmark for the PGM-index library.");
+    p.helpParams.flagindent = 2;
     p.helpParams.helpindent = 25;
+    p.helpParams.progindent = 0;
+    p.helpParams.descriptionindent = 0;
+
     CompletionFlag completion(p, {"complete"});
     HelpFlag help(p, "help", "Display this help menu", {'h', "help"});
     Flag verbose(p, "", "Verbose output", {'v', "verbose"});

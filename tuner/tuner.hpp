@@ -23,6 +23,7 @@
 #include <fstream>
 #include <iostream>
 #include <algorithm>
+#include "benchmark.hpp"
 #include "pgm/pgm_index.hpp"
 
 #define PGM_IGNORED_PARAMETER 1
@@ -40,6 +41,7 @@ public:
 
     MockPGMIndex(const std::vector<K> &data, size_t epsilon) : epsilon(epsilon) {
         this->n = data.size();
+        this->first_key = data[0];
         this->build(data.begin(), data.end(), epsilon, PGM_EPSILON_RECURSIVE, this->segments, this->levels_offsets);
     }
 
@@ -51,54 +53,9 @@ public:
         auto hi = PGM_ADD_EPS(pos, epsilon, this->n);
         return {pos, lo, hi};
     }
-
-    auto lower_bound(const std::vector<K> &data, K x) const {
-        auto range = search(x);
-        return std::lower_bound(data.begin() + range.lo, data.begin() + range.hi, x);
-    }
-
 };
 
-/*------- INPUT FILE READING -------*/
-
-std::vector<int64_t> read_data_csv(const std::string &file, size_t max_lines = std::numeric_limits<size_t>::max()) {
-    std::fstream in(file);
-    in.exceptions(std::ios::failbit | std::ios::badbit);
-    std::string line;
-    std::vector<int64_t> data;
-    data.reserve(max_lines == std::numeric_limits<size_t>::max() ? 1024 : max_lines);
-
-    for (size_t i = 0; i < max_lines && std::getline(in, line); ++i) {
-        int value;
-        std::stringstream stringstream(line);
-        stringstream >> value;
-        data.push_back(value);
-    }
-
-    return data;
-}
-
-template<typename TypeIn, typename TypeOut>
-std::vector<TypeOut> read_data_binary(const std::string &file, size_t max_size = std::numeric_limits<size_t>::max()) {
-    std::fstream in(file, std::ios::in | std::ios::binary | std::ios::ate);
-    in.exceptions(std::ios::failbit | std::ios::badbit);
-
-    auto size = std::min(max_size, static_cast<size_t>(in.tellg() / sizeof(TypeIn)));
-    std::vector<TypeIn> data(size);
-    in.seekg(0);
-    in.read((char *) data.data(), size * sizeof(TypeIn));
-
-    if constexpr (std::is_same<TypeIn, TypeOut>::value)
-        return data;
-    return std::vector<TypeOut>(data.begin(), data.end());
-}
-
 /*------- INDEX STATS -------*/
-
-template<class T>
-void do_not_optimize(T const &value) {
-    asm volatile("" : : "r,m"(value) : "memory");
-}
 
 struct IndexStats {
     size_t epsilon;
@@ -111,27 +68,30 @@ struct IndexStats {
     IndexStats() = default;
 
     template<typename K>
-    IndexStats(const std::vector<K> &data, size_t epsilon) : epsilon(epsilon) {
-        auto start = std::chrono::high_resolution_clock::now();
+    IndexStats(const std::vector<K> &data, const std::vector<K> &queries, size_t epsilon) : epsilon(epsilon) {
+        auto start = timer::now();
         MockPGMIndex<K> pgm(data, epsilon);
-        auto end = std::chrono::high_resolution_clock::now();
+        auto end = timer::now();
         construction_ns = size_t(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
 
         double avg_time = 0;
         double var_time = 0;
         const int repetitions = 5;
-        const int queries = 100000;
 
         for (int repetition = 1; repetition < repetitions; ++repetition) {
-            auto t0 = std::chrono::high_resolution_clock::now();
+            auto t0 = timer::now();
 
-            for (int i = 1; i <= queries; ++i) {
-                auto q = data[std::rand() % data.size()];
-                do_not_optimize(pgm.lower_bound(data, q));
+            uint64_t cnt = 0;
+            for (auto &q : queries) {
+                auto range = pgm.search(q);
+                auto lo = data.begin() + range.lo;
+                auto hi = data.begin() + range.hi;
+                cnt += std::distance(data.begin(), std::lower_bound(lo, hi, q));
             }
+            [[maybe_unused]] volatile auto tmp = cnt;
 
-            auto t1 = std::chrono::high_resolution_clock::now();
-            auto time = std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0).count() / queries;
+            auto t1 = timer::now();
+            auto time = std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0).count() / queries.size();
             auto next_avg_time = avg_time + (time - avg_time) / repetition;
             var_time += (time - avg_time) * (time - next_avg_time);
             avg_time = next_avg_time;
@@ -212,7 +172,7 @@ size_t cache_line_size();
 void minimize_time_logging(const IndexStats &stats, bool verbose, size_t lo_eps, size_t hi_eps) {
     auto kib = stats.bytes / double(1u << 10u);
     auto query_time = std::to_string(stats.lookup_ns) + "±" + std::to_string(stats.lookup_ns_std);
-    printf("%-19zu %-19.1f %-19.2f %-19s", stats.epsilon, stats.construction_ns * 1.e-9, kib, query_time.c_str());
+    printf("%-19zu %-19.2f %-19.2f %-19s", stats.epsilon, stats.construction_ns * 1.e-9, kib, query_time.c_str());
     if (verbose) {
         auto bounds = "(" + std::to_string(lo_eps) + ", " + std::to_string(hi_eps) + ")";
         printf("\t↝ search space=%-15s", bounds.c_str());
@@ -222,7 +182,7 @@ void minimize_time_logging(const IndexStats &stats, bool verbose, size_t lo_eps,
 
 template<typename K>
 void minimize_space_given_time(size_t max_time, double tolerance, const std::vector<K> &data,
-                               size_t lo_eps, size_t hi_eps, bool verbose) {
+                               const std::vector<K> &queries, size_t lo_eps, size_t hi_eps, bool verbose) {
     auto latency = 82.1;
     auto cache_line = cache_line_size();
     auto block_size = cache_line / sizeof(K);
@@ -234,13 +194,13 @@ void minimize_space_given_time(size_t max_time, double tolerance, const std::vec
     auto hi = hi_eps;
 
     std::vector<IndexStats> all_stats;
-    all_stats.emplace_back(data, eps_start);
+    all_stats.emplace_back(data, queries, eps_start);
     minimize_time_logging(all_stats.back(), verbose, eps_start, eps_start);
 
     if (all_stats.back().lookup_ns < max_time) {
         while (eps_start + (i << 1) < hi_eps && all_stats.back().lookup_ns < max_time * (1 + tolerance)) {
             i <<= 1;
-            all_stats.emplace_back(data, eps_start + i);
+            all_stats.emplace_back(data, queries, eps_start + i);
             lo = eps_start + i / 2;
             hi = eps_start + i;
             minimize_time_logging(all_stats.back(), verbose, lo, hi);
@@ -249,7 +209,7 @@ void minimize_space_given_time(size_t max_time, double tolerance, const std::vec
     } else {
         while (eps_start > (i << 1) + lo_eps && all_stats.back().lookup_ns > max_time * (1 - tolerance)) {
             i <<= 1;
-            all_stats.emplace_back(data, eps_start - i);
+            all_stats.emplace_back(data, queries, eps_start - i);
             lo = eps_start - i;
             hi = eps_start - i / 2;
             minimize_time_logging(all_stats.back(), verbose, lo, hi);
@@ -259,7 +219,7 @@ void minimize_space_given_time(size_t max_time, double tolerance, const std::vec
 
     while (hi - lo > cache_line / 2) {
         i = (hi + lo) / 2;
-        all_stats.emplace_back(data, i);
+        all_stats.emplace_back(data, queries, i);
         if (all_stats.back().lookup_ns > max_time)
             hi = i;
         else
@@ -275,17 +235,13 @@ void minimize_space_given_time(size_t max_time, double tolerance, const std::vec
 
     auto cmp = [&](const IndexStats &a, const IndexStats &b) { return !pred(b) || (pred(a) && a.bytes < b.bytes); };
     auto best = std::min_element(all_stats.cbegin(), all_stats.cend(), cmp);
-    auto time = std::accumulate(all_stats.cbegin(), all_stats.cend(), 0ul,
-                                [](size_t result, const IndexStats &s) { return result + s.construction_ns; });
-
     printf("%s\n", std::string(80, '-').c_str());
-    printf("%zu iterations for a total construction time of %.0f s\n", all_stats.size(), time * 1.e-9);
     printf("Set epsilon to %zu for an index of %zu bytes\n", best->epsilon, best->bytes);
 }
 
 template<typename K>
 void minimize_time_given_space(size_t max_space, double tolerance, const std::vector<K> &data,
-                               size_t lo_eps, size_t hi_eps, bool verbose) {
+                               const std::vector<K> &queries, size_t lo_eps, size_t hi_eps, bool verbose) {
     const auto guess_steps_threshold = size_t(2 * std::log2(std::log2(hi_eps - lo_eps)));
     size_t guess_steps = 0;
     std::vector<IndexStats> all_stats;
@@ -314,11 +270,11 @@ void minimize_time_given_space(size_t max_space, double tolerance, const std::ve
             guess_steps++;
         }
 
-        all_stats.emplace_back(data, mid);
+        all_stats.emplace_back(data, queries, mid);
         auto &stats = all_stats.back();
         auto kib = stats.bytes / double(1u << 10u);
         auto query_time = std::to_string(stats.lookup_ns) + "±" + std::to_string(stats.lookup_ns_std);
-        printf("%-19zu %-19.1f %-19.2f %-19s", mid, stats.construction_ns * 1.e-9, kib, query_time.c_str());
+        printf("%-19zu %-19.2f %-19.2f %-19s", mid, stats.construction_ns * 1.e-9, kib, query_time.c_str());
         if (verbose) {
             auto s = "(" + std::to_string(lo) + ", " + std::to_string(hi) + ")";
             printf("\t↝ search space=%-15s \ts(ε)=%.0fε^%.2f \tε guess=%zu", s.c_str(), a, b, guess);
@@ -332,10 +288,7 @@ void minimize_time_given_space(size_t max_space, double tolerance, const std::ve
             lo = mid + 1;
     } while (lo < hi && std::abs(all_stats.back().bytes - (double) max_space) > max_space * tolerance);
 
-    auto time = std::accumulate(all_stats.cbegin(), all_stats.cend(), 0ull,
-                                [](size_t r, const IndexStats &s) { return r + s.construction_ns; });
     printf("%s\n", std::string(80, '-').c_str());
-    printf("Total construction time %.0f s\n", time * 1.e-9);
     printf("Set epsilon to %zu\n", lo);
 }
 
