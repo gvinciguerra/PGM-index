@@ -15,21 +15,17 @@ if (COMPILER_SUPPORTS_MARCH_NATIVE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 endif ()
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
-endif ()
-
-find_package(OpenMP)
-if (OpenMP_CXX_FOUND)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    link_libraries(OpenMP::OpenMP_CXX)
-endif ()
-
 include_directories(include)
 
 # PGM-index library
 add_library(pgmindexlib INTERFACE)
 target_include_directories(pgmindexlib INTERFACE include/)
+
+find_package(OpenMP)
+if (OpenMP_CXX_FOUND)
+    message(STATUS "OpenMP found")
+    target_link_libraries(pgmindexlib INTERFACE OpenMP::OpenMP_CXX)
+endif ()
 
 if (BUILD_PGM_TUNER)
     add_subdirectory(tuner)
