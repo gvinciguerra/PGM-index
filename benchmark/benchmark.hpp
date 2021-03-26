@@ -16,17 +16,21 @@
 #pragma once
 
 #include <sys/stat.h>
-#include <cstdio>
+#include <algorithm>
 #include <cassert>
-#include <cstdint>
-#include <vector>
 #include <chrono>
-#include <random>
+#include <cmath>
+#include <cstdint>
+#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <iterator>
-#include <algorithm>
+#include <random>
+#include <stdexcept>
+#include <string>
+#include <tuple>
 #include <type_traits>
+#include <vector>
 
 bool global_verbose = false;
 
@@ -48,7 +52,7 @@ std::string to_metric(const T &x, int digits = 2, bool space = false) {
     else
         log_x = (-log_x + 3) / 3 * (-3);
 
-    value *= pow(10, -log_x);
+    value *= std::pow(10, -log_x);
     if (value >= 1000.)
         value /= 1000.0, log_x += 3;
 

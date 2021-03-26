@@ -15,18 +15,21 @@
 
 #pragma once
 
-#include <cmath>
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <iterator>
 #include <limits>
-#include <vector>
 #include <stdexcept>
 #include <type_traits>
+#include <utility>
+#include <vector>
 
 #ifdef _OPENMP
 #include <omp.h>
 #else
 #pragma message ("Compilation with -fopenmp is optional but recommended")
-typedef int omp_int_t;
-inline omp_int_t omp_get_max_threads() { return 1; }
+#define omp_get_max_threads() 1
 #endif
 
 namespace pgm::internal {

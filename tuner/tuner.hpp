@@ -15,16 +15,20 @@
 
 #pragma once
 
-#include <cmath>
-#include <cstdint>
-#include <vector>
-#include <chrono>
-#include <numeric>
-#include <fstream>
-#include <iostream>
-#include <algorithm>
 #include "benchmark.hpp"
 #include "pgm/pgm_index.hpp"
+#include <algorithm>
+#include <chrono>
+#include <cmath>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <iterator>
+#include <memory>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 #define PGM_IGNORED_PARAMETER 1
 #define PGM_EPSILON_RECURSIVE 4
@@ -172,12 +176,12 @@ size_t cache_line_size();
 void minimize_time_logging(const IndexStats &stats, bool verbose, size_t lo_eps, size_t hi_eps) {
     auto kib = stats.bytes / double(1u << 10u);
     auto query_time = std::to_string(stats.lookup_ns) + "±" + std::to_string(stats.lookup_ns_std);
-    printf("%-19zu %-19.2f %-19.2f %-19s", stats.epsilon, stats.construction_ns * 1.e-9, kib, query_time.c_str());
+    std::printf("%-19zu %-19.2f %-19.2f %-19s", stats.epsilon, stats.construction_ns * 1.e-9, kib, query_time.c_str());
     if (verbose) {
         auto bounds = "(" + std::to_string(lo_eps) + ", " + std::to_string(hi_eps) + ")";
-        printf("\t↝ search space=%-15s", bounds.c_str());
+        std::printf("\t↝ search space=%-15s", bounds.c_str());
     }
-    printf("\n");
+    std::printf("\n");
 }
 
 template<typename K>
@@ -229,14 +233,14 @@ void minimize_space_given_time(size_t max_time, double tolerance, const std::vec
 
     auto pred = [&](const IndexStats &a) { return a.lookup_ns <= max_time * (1 + tolerance); };
     if (!std::any_of(all_stats.cbegin(), all_stats.cend(), pred)) {
-        printf("It is not possible to satisfy the given constraint. Increase the maximum time.");
-        exit(1);
+        std::printf("It is not possible to satisfy the given constraint. Increase the maximum time.");
+        std::exit(1);
     }
 
     auto cmp = [&](const IndexStats &a, const IndexStats &b) { return !pred(b) || (pred(a) && a.bytes < b.bytes); };
     auto best = std::min_element(all_stats.cbegin(), all_stats.cend(), cmp);
-    printf("%s\n", std::string(80, '-').c_str());
-    printf("Set epsilon to %zu for an index of %zu bytes\n", best->epsilon, best->bytes);
+    std::printf("%s\n", std::string(80, '-').c_str());
+    std::printf("Set epsilon to %zu for an index of %zu bytes\n", best->epsilon, best->bytes);
 }
 
 template<typename K>
@@ -274,13 +278,13 @@ void minimize_time_given_space(size_t max_space, double tolerance, const std::ve
         auto &stats = all_stats.back();
         auto kib = stats.bytes / double(1u << 10u);
         auto query_time = std::to_string(stats.lookup_ns) + "±" + std::to_string(stats.lookup_ns_std);
-        printf("%-19zu %-19.2f %-19.2f %-19s", mid, stats.construction_ns * 1.e-9, kib, query_time.c_str());
+        std::printf("%-19zu %-19.2f %-19.2f %-19s", mid, stats.construction_ns * 1.e-9, kib, query_time.c_str());
         if (verbose) {
             auto s = "(" + std::to_string(lo) + ", " + std::to_string(hi) + ")";
-            printf("\t↝ search space=%-15s \ts(ε)=%.0fε^%.2f \tε guess=%zu", s.c_str(), a, b, guess);
+            std::printf("\t↝ search space=%-15s \ts(ε)=%.0fε^%.2f \tε guess=%zu", s.c_str(), a, b, guess);
         }
-        printf("\n");
-        fflush(stdout);
+        std::printf("\n");
+        std::fflush(stdout);
 
         if (stats.bytes <= max_space)
             hi = mid;
@@ -288,8 +292,8 @@ void minimize_time_given_space(size_t max_space, double tolerance, const std::ve
             lo = mid + 1;
     } while (lo < hi && std::abs(all_stats.back().bytes - (double) max_space) > max_space * tolerance);
 
-    printf("%s\n", std::string(80, '-').c_str());
-    printf("Set epsilon to %zu\n", lo);
+    std::printf("%s\n", std::string(80, '-').c_str());
+    std::printf("Set epsilon to %zu\n", lo);
 }
 
 /*------- cache_line_size() implementation (credits: https://stackoverflow.com/a/4049562) -------*/
@@ -331,13 +335,12 @@ size_t cache_line_size() {
 
 #elif defined(linux)
 
-#include <stdio.h>
 size_t cache_line_size() {
-    FILE *p = fopen("/sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size", "r");
+    FILE *p = std::fopen("/sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size", "r");
     unsigned int i = 0;
     if (p) {
-        fscanf(p, "%u", &i);
-        fclose(p);
+        std::fscanf(p, "%u", &i);
+        std::fclose(p);
     }
     return i;
 }

@@ -13,11 +13,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <memory>
-
 #include "cpgm.h"
 #include "pgm/pgm_index.hpp"
 #include "pgm/pgm_index_dynamic.hpp"
+
+#include <algorithm>
+#include <iterator>
+#include <stdexcept>
+#include <type_traits>
+#include <vector>
 
 #define EPSILON_RECURSIVE 4
 

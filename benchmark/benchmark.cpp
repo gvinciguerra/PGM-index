@@ -13,10 +13,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "args.hxx"
 #include "benchmark.hpp"
+#include "args.hxx"
 #include "pgm/pgm_index.hpp"
 #include "pgm/pgm_index_variants.hpp"
+
+#include <fstream>
+#include <functional>
+#include <utility>
 
 #define FOR_EACH_EPSILON(C, K) C<K, 8>, C<K, 16>, C<K, 32>, C<K, 64>, C<K, 128>, C<K, 256>, \
                                C<K, 512>, C<K, 1024>, C<K, 2048>, C<K, 4096>

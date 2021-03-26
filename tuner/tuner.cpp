@@ -13,9 +13,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cstring>
-#include "args.hxx"
 #include "tuner.hpp"
+#include "args.hxx"
+#include <cstdint>
+#include <iostream>
 
 template<typename K>
 void run_tuner(args::ValueFlag<size_t> &time,
@@ -92,15 +93,15 @@ void run_tuner(args::ValueFlag<size_t> &time,
     auto hi_eps = data.size() / 2;
     auto minimize_space = time.Matched();
 
-    printf("Dataset: %zu entries\n", data.size());
+    std::printf("Dataset: %zu entries\n", data.size());
     if (minimize_space)
-        printf("Max time: %zu±%.0f ns\n", time.Get(), time.Get() * tol.Get());
+        std::printf("Max time: %zu±%.0f ns\n", time.Get(), time.Get() * tol.Get());
     else
-        printf("Max space: %zu±%.0f KiB\n", space.Get() / (1ul << 10ul), space.Get() * tol.Get() / (1ul << 10ul));
+        std::printf("Max space: %zu±%.0f KiB\n", space.Get() / (1ul << 10ul), space.Get() * tol.Get() / (1ul << 10ul));
 
-    printf("%s\n", std::string(80, '-').c_str());
-    printf("%-19s %-19s %-19s %-19s\n", "Epsilon", "Construction (s)", "Space (KiB)", "Query (ns)");
-    printf("%s\n", std::string(80, '-').c_str());
+    std::printf("%s\n", std::string(80, '-').c_str());
+    std::printf("%-19s %-19s %-19s %-19s\n", "Epsilon", "Construction (s)", "Space (KiB)", "Query (ns)");
+    std::printf("%s\n", std::string(80, '-').c_str());
 
     auto queries = generate_queries(data.begin(), data.end(), ratio.Get(), 1000000);
     if (minimize_space)

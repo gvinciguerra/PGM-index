@@ -16,6 +16,15 @@
 #pragma once
 
 #include "catch.hpp"
+#include <algorithm>
+#include <cstddef>
+#include <functional>
+#include <iterator>
+#include <random>
+#include <tuple>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
 template <typename T>
 std::vector<T> generate_data(size_t n) {

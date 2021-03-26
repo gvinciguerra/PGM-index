@@ -13,15 +13,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <map>
-#include <random>
-#include <functional>
-#include <type_traits>
 #include "catch.hpp"
-#include "utils.hpp"
+#include "pgm/morton_nd.hpp"
 #include "pgm/pgm_index.hpp"
 #include "pgm/pgm_index_dynamic.hpp"
 #include "pgm/pgm_index_variants.hpp"
+#include "pgm/piecewise_linear_model.hpp"
+#include "utils.hpp"
+
+#include <algorithm>
+#include <cstdint>
+#include <cstdio>
+#include <cmath>
+#include <functional>
+#include <iterator>
+#include <limits>
+#include <map>
+#include <random>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 template <typename Index, typename Data>
 void test_index(const Index &index, const Data &data) {

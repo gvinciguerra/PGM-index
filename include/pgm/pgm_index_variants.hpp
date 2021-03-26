@@ -15,18 +15,30 @@
 
 #pragma once
 
-#include <string>
-#include <fstream>
-#include <cstring>
-#include <climits>
-#include <iostream>
-#include <stdexcept>
+#include "morton_nd.hpp"
+#include "piecewise_linear_model.hpp"
+#include "pgm_index.hpp"
+#include "sdsl.hpp"
+
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include "sdsl.hpp"
-#include "morton_nd.hpp"
-#include "pgm_index.hpp"
+#include <algorithm>
+#include <cerrno>
+#include <climits>
+#include <cmath>
+#include <cstdint>
+#include <cstring>
+#include <fstream>
+#include <iostream>
+#include <iterator>
+#include <limits>
+#include <numeric>
+#include <stdexcept>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 namespace pgm {
 
@@ -867,6 +879,8 @@ private:
 
 #ifdef MORTON_ND_BMI2_ENABLED
 
+#include <immintrin.h>
+
 /**
  * A multidimensional container that uses a @ref PGMIndex for fast orthogonal range queries.
  *
@@ -973,7 +987,7 @@ private:
     public:
 
         using value_type = multidimensional_pgm_type::value_type;
-        using difference_type = ssize_t;
+        using difference_type = typename internal_iterator::difference_type;
         using pointer = const value_type *;
         using reference = const value_type &;
         using iterator_category = std::forward_iterator_tag;

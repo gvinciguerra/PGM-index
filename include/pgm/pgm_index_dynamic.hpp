@@ -15,16 +15,20 @@
 
 #pragma once
 
-#include <queue>
-#include <limits>
-#include <vector>
-#include <utility>
-#include <numeric>
+#include "pgm_index.hpp"
+#include <cstddef>
+#include <cstdint>
+#include <algorithm>
 #include <cassert>
 #include <iterator>
-#include <algorithm>
+#include <limits>
+#include <memory>
+#include <new>
+#include <stdexcept>
+#include <type_traits>
 #include <unordered_set>
-#include "pgm_index.hpp"
+#include <utility>
+#include <vector>
 
 namespace pgm {
 

@@ -15,11 +15,15 @@
 
 #pragma once
 
-#include <limits>
-#include <vector>
-#include <utility>
-#include <algorithm>
 #include "piecewise_linear_model.hpp"
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <iterator>
+#include <limits>
+#include <stdexcept>
+#include <utility>
+#include <vector>
 
 namespace pgm {
 
