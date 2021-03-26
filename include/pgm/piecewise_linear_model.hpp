@@ -278,7 +278,6 @@ size_t make_segmentation(size_t n, size_t epsilon, Fin in, Fout out) {
     using X = typename std::invoke_result_t<Fin, size_t>::first_type;
     using Y = typename std::invoke_result_t<Fin, size_t>::second_type;
     size_t c = 0;
-    size_t start = 0;
     auto p = in(0);
 
     OptimalPiecewiseLinearModel<X, Y> opt(epsilon);
@@ -286,13 +285,12 @@ size_t make_segmentation(size_t n, size_t epsilon, Fin in, Fout out) {
 
     for (size_t i = 1; i < n; ++i) {
         auto next_p = in(i);
-        if (i != start && next_p.first == p.first)
+        if (next_p.first == p.first)
             continue;
         p = next_p;
         if (!opt.add_point(p.first, p.second)) {
             out(opt.get_segment());
-            start = i;
-            --i;
+            opt.add_point(p.first, p.second);
             ++c;
         }
     }
