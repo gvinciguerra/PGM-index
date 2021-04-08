@@ -29,6 +29,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <cassert>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -212,8 +213,17 @@ public:
             }
         }
 
+        if (pos > n) {
+            pos = n;
+        }
+
         auto lo = PGM_SUB_EPS(pos, Epsilon);
         auto hi = PGM_ADD_EPS(pos, Epsilon, n);
+
+        assert(lo < n);
+        assert(hi <= n);
+        assert(lo < hi);
+
         return {pos, lo, hi};
     }
 
