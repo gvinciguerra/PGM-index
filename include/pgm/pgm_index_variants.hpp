@@ -204,7 +204,12 @@ public:
             }
 
             auto i = std::distance(level.keys.begin(), lo);
-            pos = std::min<size_t>(level(slopes_table, i, k), level.get_intercept(i + 1));
+
+            if ( i + 2 < level.keys.size() ) {
+                pos = std::min<size_t>(level(slopes_table, i, k), level.get_intercept(i + 1));
+            } else {
+                pos = level(slopes_table, i, k);
+            }
         }
 
         auto lo = PGM_SUB_EPS(pos, Epsilon);
