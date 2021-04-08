@@ -28,7 +28,7 @@ jobs:
         working-directory: ${{runner.workspace}}/build
         run: |
           if [[ "${{ matrix.compiler }}" == "gcc" ]]; then
-            export CC=gcc-8 CXX=g++-8
+            export CC=gcc CXX=g++
           else
             export CC=clang CXX=clang++
           fi
