@@ -193,36 +193,37 @@ public:
 
         for (const auto &level : levels) {
             auto lo = level.keys.begin() + PGM_SUB_EPS(pos, EpsilonRecursive + 1);
+            auto hi = level.keys.begin() + PGM_ADD_EPS(pos, EpsilonRecursive, level.size());
 
             static constexpr size_t linear_search_threshold = 8 * 64 / sizeof(K);
             if constexpr (EpsilonRecursive <= linear_search_threshold) {
-                for (; *std::next(lo) <= key; ++lo)
-                    continue;
+                while (*lo <= k && lo < hi) {
+                    ++lo;
+                }
             } else {
-                auto hi = level.keys.begin() + PGM_ADD_EPS(pos, EpsilonRecursive, level.size());
-                auto it = std::upper_bound(lo, hi, k);
-                lo == level.keys.begin() ? it : std::prev(it);
+                lo = std::upper_bound(lo, hi, k);
+            }
+
+            assert(lo >= level.keys.begin());
+            if (lo > level.keys.begin()) {
+                --lo;
             }
 
             auto i = std::distance(level.keys.begin(), lo);
 
-            if ( i + 2 < level.keys.size() ) {
+            assert(i < level.size());
+
+            if ( level.size() > i + 1 ) {
                 pos = std::min<size_t>(level(slopes_table, i, k), level.get_intercept(i + 1));
             } else {
                 pos = level(slopes_table, i, k);
             }
         }
 
-        if (pos > n) {
-            pos = n;
-        }
+        pos = std::min<size_t>(pos, n);
 
         auto lo = PGM_SUB_EPS(pos, Epsilon);
         auto hi = PGM_ADD_EPS(pos, Epsilon, n);
-
-        assert(lo < n);
-        assert(hi <= n);
-        assert(lo < hi);
 
         return {pos, lo, hi};
     }
