@@ -394,8 +394,7 @@ protected:
                     " is too low. Try to set it to " + std::to_string(TopLevelBitSize << 1));
             top_level = sdsl::int_vector<TopLevelBitSize>(top_level_size, segments.size(), TopLevelBitSize);
         }
-
-        step = CEIL_INT_DIV(*std::prev(last), top_level_size);
+        step = std::max<K>(CEIL_INT_DIV(*std::prev(last), top_level_size), 1);
         for (auto i = 0ull, k = 1ull; i < top_level_size - 1; ++i) {
             while (k < segments.size() && (segments[k].key - first_key) < K(i + 1) * step)
                 ++k;

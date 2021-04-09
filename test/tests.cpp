@@ -106,6 +106,13 @@ TEMPLATE_TEST_CASE_SIG("Bucketing PGM-index", "", ((size_t E), E), 8, 32, 128) {
     test_index(index, data);
 }
 
+TEST_CASE("Bucketing PGM-index edge case", "") {
+    std::vector<uint32_t> data(3000000);
+    auto top_level_size = GENERATE(256, 1024, 4096);
+    pgm::BucketingPGMIndex<uint32_t, 16> index(data.begin(), data.end(), top_level_size);
+    test_index(index, data);
+}
+
 TEMPLATE_TEST_CASE_SIG("Elias-Fano PGM-index", "", ((size_t E), E), 8, 32, 128) {
     auto data = generate_data<uint32_t>(3000000);
     pgm::EliasFanoPGMIndex<uint32_t, E> index(data.begin(), data.end());
