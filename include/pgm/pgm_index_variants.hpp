@@ -313,25 +313,24 @@ struct CompressedPGMIndex<K, Epsilon, EpsilonRecursive, Floating>::CompressedLev
         keys.emplace_back(std::numeric_limits<K>::max());
 
         // Compress and store intercepts
-        sdsl::bit_vector intercept_bv(prev_level_size - intercept_offset + 1);
-        intercept_bv[prev_level_size - intercept_offset] = true;
-        for (auto it = first_intercept; it != last_intercept; ++it) {
-            auto idx = std::min<int64_t>(prev_level_size - 1, *it) - intercept_offset;
-            intercept_bv[idx] = true;
-        }
+        auto max_intercept = prev_level_size - intercept_offset + 2;
+        auto intercepts_count = std::distance(first_intercept, last_intercept) + need_extra_segment + 1;
+        sdsl::sd_vector_builder builder(max_intercept, intercepts_count);
+        builder.set(0);
+        for (auto it = first_intercept + 1; it != last_intercept; ++it)
+            builder.set(std::clamp<int64_t>(*it, *(it - 1) + 1, prev_level_size - 1) - intercept_offset);
         if (need_extra_segment)
-            intercept_bv[prev_level_size + 1 - intercept_offset] = true;
-        compressed_intercepts = sdsl::sd_vector<>(intercept_bv);
+            builder.set(max_intercept - 2);
+        builder.set(max_intercept - 1);
+        compressed_intercepts = sdsl::sd_vector<>(builder);
         sdsl::util::init_support(sel1, &compressed_intercepts);
 
         // Compress and store slopes_map
-        size_t i = 0;
-        size_t map_size = std::distance(first_slope, last_slope) + need_extra_segment;
+        auto map_size = std::distance(first_slope, last_slope) + need_extra_segment;
         slopes_map = sdsl::int_vector<>(map_size, 0, sdsl::bits::hi(slopes_table.size() - 1) + 1);
-        for (auto it = first_slope; it != last_slope; ++it)
-            slopes_map[i++] = *it;
+        std::copy(first_slope, last_slope, slopes_map.begin());
         if (need_extra_segment)
-            slopes_map[slopes_map.size() - 1] = slopes_table[*std::prev(last_slope)];
+            slopes_map.back() = slopes_table[*std::prev(last_slope)];
     }
 
     inline size_t operator()(const std::vector<Floating> &slopes, size_t i, K k) const {
