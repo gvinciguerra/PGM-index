@@ -15,6 +15,8 @@
 
 #pragma once
 
+#include "pgm_index.hpp"
+#include "eytzinger_array.hpp"
 #include "piecewise_linear_model.hpp"
 #include <algorithm>
 #include <cstddef>
@@ -29,16 +31,6 @@ namespace pgm {
 
 #define PGM_SUB_EPS(x, epsilon) ((x) <= (epsilon) ? 0 : ((x) - (epsilon)))
 #define PGM_ADD_EPS(x, epsilon, size) ((x) + (epsilon) + 2 >= (size) ? (size) : (x) + (epsilon) + 2)
-
-/**
- * A struct that stores the result of a query to a @ref PGMIndex, that is, a range [@ref lo, @ref hi)
- * centered around an approximate position @ref pos of the sought key.
- */
-struct ApproxPos {
-  size_t pos; ///< The approximate position of the key.
-  size_t lo;  ///< The lower bound of the range.
-  size_t hi;  ///< The upper bound of the range.
-};
 
 /**
  * A space-efficient index that enables fast search operations on a sorted sequence of @c n numbers.
@@ -61,8 +53,8 @@ struct ApproxPos {
  * @tparam EpsilonRecursive controls the size of the search range in the internal structure
  * @tparam Floating the floating-point type to use for slopes
  */
-template<typename K, size_t Epsilon = 64, size_t EpsilonRecursive = 4, typename Floating = float>
-class PGMIndex {
+template<typename K, size_t Epsilon = 64, typename Floating = float>
+class PGMIndexEytzinger {
 protected:
     template<typename, size_t, uint8_t, typename>
     friend class BucketingPGMIndex;
@@ -72,11 +64,14 @@ protected:
 
     static_assert(Epsilon > 0);
     struct Segment;
+    struct IndexIterator;
+    struct IdxHolder;
 
     size_t n;                           ///< The number of elements this index was built on.
     K first_key;                        ///< The smallest element.
     std::vector<Segment> segments;      ///< The segments composing the index.
     std::vector<size_t> levels_offsets; ///< The starting position of each level in segments[], in reverse order.
+    EytzingerArray<IdxHolder> eytzinger_first_layer;
 
     template<typename RandomIt>
     static void build(RandomIt first, RandomIt last,
@@ -132,30 +127,9 @@ protected:
      * @return an iterator to the segment responsible for the given key
      */
     auto segment_for_key(const K &key) const {
-        if constexpr (EpsilonRecursive == 0) {
-            auto it = std::upper_bound(segments.begin(), segments.begin() + segments_count(), key);
-            return it == segments.begin() ? it : std::prev(it);
-        }
-
-        auto it = segments.begin() + *(levels_offsets.end() - 2);
-        for (auto l = int(height()) - 2; l >= 0; --l) {
-            auto level_begin = segments.begin() + levels_offsets[l];
-            auto pos = std::min<size_t>((*it)(key), std::next(it)->intercept);
-            auto lo = level_begin + PGM_SUB_EPS(pos, EpsilonRecursive + 1);
-
-            static constexpr size_t linear_search_threshold = 8 * 64 / sizeof(Segment);
-            if constexpr (EpsilonRecursive <= linear_search_threshold) {
-                for (; std::next(lo)->key <= key; ++lo)
-                    continue;
-                it = lo;
-            } else {
-                auto level_size = levels_offsets[l + 1] - levels_offsets[l] - 1;
-                auto hi = level_begin + PGM_ADD_EPS(pos, EpsilonRecursive, level_size);
-                it = std::upper_bound(lo, hi, key);
-                it = it == level_begin ? it : std::prev(it);
-            }
-        }
-        return it;
+      auto idx = eytzinger_first_layer.search(IdxHolder(key, 0));
+      auto it = segments.begin() + ((idx == eytzinger_first_layer.size()) ? segments_count() : eytzinger_first_layer[idx].idx);
+      return it == segments.begin() ? it : std::prev(it);
     }
 
 public:
@@ -165,25 +139,27 @@ public:
     /**
      * Constructs an empty index.
      */
-    PGMIndex() = default;
+    PGMIndexEytzinger() = default;
 
     /**
      * Constructs the index on the given sorted vector.
      * @param data the vector of keys to be indexed, must be sorted
      */
-    explicit PGMIndex(const std::vector<K> &data) : PGMIndex(data.begin(), data.end()) {}
+    explicit PGMIndexEytzinger(const std::vector<K> &data) : PGMIndexEytzinger(data.begin(), data.end()) {}
 
     /**
      * Constructs the index on the sorted keys in the range [first, last).
      * @param first, last the range containing the sorted keys to be indexed
      */
     template<typename RandomIt>
-    PGMIndex(RandomIt first, RandomIt last)
-        : n(std::distance(first, last)),
+    PGMIndexEytzinger(RandomIt first, RandomIt last)
+        : n(std::distance(first, last)), eytzinger_first_layer(),
           first_key(n ? *first : 0),
           segments(),
           levels_offsets() {
-        build(first, last, Epsilon, EpsilonRecursive, segments, levels_offsets);
+        build(first, last, Epsilon, 0, segments, levels_offsets);
+        auto iter = IndexIterator(segments.begin());
+        eytzinger_first_layer = EytzingerArray<IdxHolder>(iter, segments_count());
     }
 
     /**
@@ -221,8 +197,8 @@ public:
 
 #pragma pack(push, 1)
 
-template<typename K, size_t Epsilon, size_t EpsilonRecursive, typename Floating>
-struct PGMIndex<K, Epsilon, EpsilonRecursive, Floating>::Segment {
+template<typename K, size_t Epsilon, typename Floating>
+struct PGMIndexEytzinger<K, Epsilon, Floating>::Segment {
     K key;             ///< The first key that the segment indexes.
     Floating slope;    ///< The slope of the segment.
     int32_t intercept; ///< The intercept of the segment.
@@ -257,6 +233,49 @@ struct PGMIndex<K, Epsilon, EpsilonRecursive, Floating>::Segment {
         auto pos = int64_t(slope * (k - key)) + intercept;
         return pos > 0 ? size_t(pos) : 0ull;
     }
+};
+
+template<typename K, size_t Epsilon, typename Floating>
+struct PGMIndexEytzinger<K, Epsilon, Floating>::IndexIterator {
+  using T = typename std::vector<Segment>::iterator;
+  T iter;
+  size_t idx = 0;
+
+ public:
+
+  explicit IndexIterator(T iter) : iter(iter) {}
+
+  IndexIterator & operator++() {
+    ++iter;
+    ++idx;
+    return *this;
+  }
+
+  IdxHolder operator*() {
+    return IdxHolder(iter->key, idx);
+  }
+};
+
+template<typename K, size_t Epsilon, typename Floating>
+struct PGMIndexEytzinger<K, Epsilon, Floating>::IdxHolder {
+  K value;
+  size_t idx;
+
+  IdxHolder() = default;
+
+  IdxHolder(K value, size_t idx) : value(value), idx(idx) {}
+
+  IdxHolder(IdxHolder const &) = default;
+  IdxHolder(IdxHolder &&) = default;
+  IdxHolder & operator=(IdxHolder const &) noexcept = default;
+  IdxHolder & operator=(IdxHolder &&) noexcept = default;
+
+  bool operator<(IdxHolder const &val) {
+    return value < val.value;
+  }
+  bool operator<=(IdxHolder const &val) {
+    return value <= val.value;
+  }
 };
 
 #pragma pack(pop)
