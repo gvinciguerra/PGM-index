@@ -18,6 +18,7 @@
 #include "morton_nd.hpp"
 #include "piecewise_linear_model.hpp"
 #include "pgm_index.hpp"
+#include "pgm_index_eytzinger.hpp"
 #include "sdsl.hpp"
 
 #include <fcntl.h>
