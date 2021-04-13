@@ -89,7 +89,7 @@ template<bool builtin>
 size_t EytzingerArray<T>::search(T x) const {
   size_t i = 0;
   while (i < _size) {
-    if (builtin) __builtin_prefetch(array + (multiplier * i + offset));
+    if constexpr (builtin) __builtin_prefetch(array + (multiplier * i + offset));
     i = (x < array[i]) ? ((i << 1u) + 1u) : ((i << 1u) + 2u);
   }
   size_t j = (i + 1u) >> __builtin_ffs(~(i + 1u));

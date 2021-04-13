@@ -55,6 +55,8 @@ namespace pgm {
  */
 template<typename K, size_t Epsilon = 64, typename Floating = float>
 class PGMIndexEytzinger : public PGMIndex<K, Epsilon, 0, Floating> {
+  template<typename, size_t, uint8_t, typename, typename>
+  friend class BucketingPGMIndex;
 protected:
     struct IndexIterator;
     struct IdxHolder;
