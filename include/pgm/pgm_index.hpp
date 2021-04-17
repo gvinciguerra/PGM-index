@@ -35,9 +35,9 @@ namespace pgm {
  * centered around an approximate position @ref pos of the sought key.
  */
 struct ApproxPos {
-    size_t pos; ///< The approximate position of the key.
-    size_t lo;  ///< The lower bound of the range.
-    size_t hi;  ///< The upper bound of the range.
+  size_t pos; ///< The approximate position of the key.
+  size_t lo;  ///< The lower bound of the range.
+  size_t hi;  ///< The upper bound of the range.
 };
 
 /**
@@ -64,7 +64,7 @@ struct ApproxPos {
 template<typename K, size_t Epsilon = 64, size_t EpsilonRecursive = 4, typename Floating = float>
 class PGMIndex {
 protected:
-    template<typename, size_t, uint8_t, typename>
+    template<typename, size_t, uint8_t, typename, typename>
     friend class BucketingPGMIndex;
 
     template<typename, size_t, typename>

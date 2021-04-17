@@ -106,6 +106,7 @@ TEMPLATE_TEST_CASE_SIG("Bucketing PGM-index", "", ((size_t E), E), 8, 32, 128) {
     test_index(index, data);
 }
 
+
 TEST_CASE("Bucketing PGM-index edge case", "") {
     std::vector<uint32_t> data(3000000);
     auto top_level_size = GENERATE(256, 1024, 4096);

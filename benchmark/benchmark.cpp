@@ -16,6 +16,7 @@
 #include "benchmark.hpp"
 #include "args.hxx"
 #include "pgm/pgm_index.hpp"
+#include "pgm/pgm_index_eytzinger.hpp"
 #include "pgm/pgm_index_variants.hpp"
 
 #include <fstream>
@@ -26,11 +27,14 @@
                                C<K, 512>, C<K, 1024>, C<K, 2048>, C<K, 4096>
 
 #define PGM_CLASSES(K) FOR_EACH_EPSILON(pgm::PGMIndex, K)
+#define PGM_CLASSES_ZERO(K) FOR_EACH_EPSILON(pgm::OneLevelPGMIndex, K)
+#define EYPGM_CLASSES(K) FOR_EACH_EPSILON(pgm::PGMIndexEytzinger, K)
 #define BPGM_CLASSES(K) FOR_EACH_EPSILON(pgm::BucketingPGMIndex, K)
+#define BEYPGM_CLASSES(K) FOR_EACH_EPSILON(pgm::BucketingPGMIndexEytzinger, K)
 #define EFPGM_CLASSES(K) FOR_EACH_EPSILON(pgm::EliasFanoPGMIndex, K)
 #define CPGM_CLASSES(K) FOR_EACH_EPSILON(pgm::CompressedPGMIndex, K)
 
-#define ALL_CLASSES(K) PGM_CLASSES(K), BPGM_CLASSES(K), EFPGM_CLASSES(K), CPGM_CLASSES(K)
+#define ALL_CLASSES(K) PGM_CLASSES(K), PGM_CLASSES_ZERO(K), EYPGM_CLASSES(K), BPGM_CLASSES(K), BEYPGM_CLASSES(K), EFPGM_CLASSES(K), CPGM_CLASSES(K)
 
 template<typename K>
 void read_ints_helper(args::PositionalList<std::string> &files,

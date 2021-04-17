@@ -18,6 +18,7 @@
 #include "morton_nd.hpp"
 #include "piecewise_linear_model.hpp"
 #include "pgm_index.hpp"
+#include "pgm_index_eytzinger.hpp"
 #include "sdsl.hpp"
 
 #include <fcntl.h>
@@ -57,6 +58,9 @@ namespace pgm {
  */
 template<typename K, size_t Epsilon, typename Floating = float>
 using OneLevelPGMIndex = PGMIndex<K, Epsilon, 0, Floating>;
+
+template<typename K, size_t Epsilon, typename Floating = float>
+using OneLevelEytzingerPGMIndex = PGMIndexEytzinger<K, Epsilon, Floating>;
 
 /**
  * A variant of @ref PGMIndex that uses compression on the segments to reduce the space of the index.
@@ -369,13 +373,13 @@ struct CompressedPGMIndex<K, Epsilon, EpsilonRecursive, Floating>::CompressedLev
  * @tparam TopLevelBitSize the bit-size of the cells in the top-level table, must be either 0 or a power of two
  * @tparam Floating the floating-point type to use for slopes
  */
-template<typename K, size_t Epsilon = 64, uint8_t TopLevelBitSize = 32, typename Floating = float>
+template<typename K, size_t Epsilon = 64, uint8_t TopLevelBitSize = 32, typename Floating = float, typename PGMType = PGMIndex<K, Epsilon, 0, Floating>>
 class BucketingPGMIndex {
 protected:
     static_assert(Epsilon > 0);
     static_assert(TopLevelBitSize == 0 || (TopLevelBitSize & (TopLevelBitSize - 1u)) == 0);
 
-    using Segment = typename PGMIndex<K, Epsilon, 0, Floating>::Segment;
+    using Segment = typename PGMType::Segment;
 
     size_t n;                                     ///< The number of elements this index was built on.
     K first_key;                                  ///< The smallest element.
@@ -394,7 +398,9 @@ protected:
                     " is too low. Try to set it to " + std::to_string(TopLevelBitSize << 1));
             top_level = sdsl::int_vector<TopLevelBitSize>(top_level_size, segments.size(), TopLevelBitSize);
         }
+
         step = std::max<K>(CEIL_INT_DIV(*std::prev(last), top_level_size), 1);
+
         for (auto i = 0ull, k = 1ull; i < top_level_size - 1; ++i) {
             while (k < segments.size() && (segments[k].key - first_key) < K(i + 1) * step)
                 ++k;
@@ -511,6 +517,9 @@ public:
         return segments.size() * sizeof(Segment) + top_level.size() * top_level.width() / CHAR_BIT;
     }
 };
+
+template<typename K, size_t Epsilon = 64, uint8_t TopLevelBitSize = 32, typename Floating = float>
+using BucketingPGMIndexEytzinger = BucketingPGMIndex<K, Epsilon, TopLevelBitSize, Floating, PGMIndexEytzinger<K, Epsilon, Floating>>;
 
 /**
  * A variant of @ref OneLevelPGMIndex that builds a top-level succinct structure to speed up the search on the
