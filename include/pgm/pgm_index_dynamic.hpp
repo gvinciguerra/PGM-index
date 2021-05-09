@@ -304,11 +304,13 @@ public:
             for (; it != level(i).end() && it->deleted(); ++it)
                 deleted.emplace(it->first);
 
-            if (it != level(i).end() && it->first >= key && (!lb_set || it->first < lb->first)
-                && deleted.find(it->first) == deleted.end()) {
-                lb = it;
-                lb_level = i;
-                lb_set = true;
+            for (; it != level(i).end(); ++it) {
+                if ((!lb_set || it->first < lb->first) && deleted.find(it->first) == deleted.end()) {
+                    lb = it;
+                    lb_level = i;
+                    lb_set = true;
+                    break;
+                }
             }
         }
 
@@ -416,8 +418,7 @@ class LoserTree {
         Source source; ///< Index of the sequence.
     };
 
-    Source ik;                 ///< Number of nodes.
-    Source k;                  ///< Smallest power of 2 greater than ik.
+    Source k;                  ///< Smallest power of 2 greater than the number of nodes.
     bool first_insert;         ///< true iff still have to construct keys.
     std::vector<Loser> losers; ///< Vector of size 2k containing loser tree nodes.
 
@@ -446,8 +447,7 @@ public:
     LoserTree() = default;
 
     explicit LoserTree(const Source &ik)
-        : ik(ik),
-          k(next_pow2(ik)),
+        : k(next_pow2(ik)),
           first_insert(true),
           losers(2 * k) {
         for (auto i = ik - 1u; i < k; ++i) {
