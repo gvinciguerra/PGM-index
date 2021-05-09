@@ -56,7 +56,7 @@ class DynamicPGMIndex {
     static_assert(fully_allocated_levels > min_level);
     static_assert(2 * PGMType::epsilon_value < 1ul << MinIndexedLevel);
 
-    using Item = std::conditional_t<std::is_pointer_v<V>, ItemA, ItemB>;
+    using Item = std::conditional_t<std::is_pointer_v<V> || std::is_arithmetic_v<V>, ItemA, ItemB>;
     using Level = std::vector<Item, DefaultInitAllocator<Item>>;
 
     uint8_t used_levels;       ///< Equal to 1 + last level whose size is greater than 0, or = min_level if no data.
@@ -353,7 +353,7 @@ public:
     }
 
     /**
-     * Returns the size of the container in bytes.
+     * Returns the size of the container (data + index structure) in bytes.
      * @return the size of the container in bytes
      */
     size_t size_in_bytes() const {
@@ -630,13 +630,22 @@ public:
 template<typename K, typename V, typename PGMType, uint8_t MinIndexedLevel>
 class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::ItemA {
     friend class DynamicPGMIndex;
-    static V tombstone;
+    const static V tombstone;
 
     ItemA() = default;
     explicit ItemA(const K &key) : first(key), second(tombstone) {}
-    explicit ItemA(const K &key, const V &value) : first(key), second(value) {}
+    explicit ItemA(const K &key, const V &value) : first(key), second(value) {
+        if (second == tombstone)
+            throw std::invalid_argument("The specified value is reserved and cannot be used.");
+    }
 
     bool deleted() const { return this->second == tombstone; }
+
+    template<typename T = V, std::enable_if_t<std::is_pointer_v<T>, int> = 0>
+    static V get_tombstone() { return new std::remove_pointer_t<V>(); }
+
+    template<typename T = V, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0>
+    static V get_tombstone() { return std::numeric_limits<V>::max(); }
 
 public:
     K first;
@@ -646,7 +655,7 @@ public:
 };
 
 template<typename K, typename V, typename PGMType, uint8_t MinIndexedLevel>
-V DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::ItemA::tombstone = new std::remove_pointer_t<V>();
+const V DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::ItemA::tombstone = get_tombstone<V>();
 
 template<typename K, typename V, typename PGMType, uint8_t MinIndexedLevel>
 class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::ItemB {
