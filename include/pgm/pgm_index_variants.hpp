@@ -392,7 +392,8 @@ protected:
                     " is too low. Try to set it to " + std::to_string(TopLevelBitSize << 1));
             top_level = sdsl::int_vector<TopLevelBitSize>(top_level_size, segments.size(), TopLevelBitSize);
         }
-        step = std::max<K>(CEIL_INT_DIV(*std::prev(last), top_level_size), 1);
+
+        step = std::max<K>(CEIL_INT_DIV(*std::prev(last) - first_key, top_level_size), 1);
         for (auto i = 0ull, k = 1ull; i < top_level_size - 1; ++i) {
             while (k < segments.size() && (segments[k].key - first_key) < K(i + 1) * step)
                 ++k;
@@ -443,6 +444,8 @@ public:
           top_level() {
         if (top_level_size == 0)
             throw std::invalid_argument("top_level_size == 0");
+        if (n == 0)
+            return;
         std::vector<size_t> offsets;
         PGMIndex<K, Epsilon, 0, Floating>::build(first, last, Epsilon, 0, segments, offsets);
         build_top_level(first, last, top_level_size);
