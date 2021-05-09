@@ -55,7 +55,7 @@ void test_index(const Index &index, const Data &data) {
     auto hi = data.begin() + range.hi;
     REQUIRE(std::lower_bound(lo, hi, q) == data.end());
 
-    q = 0;
+    q = std::numeric_limits<typename Data::value_type>::min();
     range = index.search(q);
     lo = data.begin() + range.lo;
     hi = data.begin() + range.hi;
@@ -85,36 +85,42 @@ TEMPLATE_TEST_CASE("Segmentation algorithm", "", float, double, uint32_t, uint64
 
 TEMPLATE_TEST_CASE_SIG("PGM-index", "",
                        ((typename T, size_t E1, size_t E2), T, E1, E2),
-                       (uint32_t, 16, 0), (uint32_t, 32, 0), (uint32_t, 64, 0),
-                       (uint64_t, 16, 4), (uint64_t, 32, 4), (uint64_t, 64, 4),
-                       (uint64_t, 4, 16), (uint64_t, 4, 32), (uint64_t, 4, 64)) {
-    auto data = generate_data<T>(3000000);
+                       (uint32_t, 8, 0), (uint32_t, 32, 0), (uint32_t, 128, 0),
+                       (uint64_t, 8, 4), (uint64_t, 32, 4), (uint64_t, 128, 4),
+                       (uint64_t, 256, 256), (uint64_t, 512, 512)) {
+    auto data = generate_data<T>(2000000);
     pgm::PGMIndex<T, E1, E2> index(data.begin(), data.end());
     test_index(index, data);
 }
 
 TEMPLATE_TEST_CASE_SIG("Compressed PGM-index", "", ((size_t E), E), 8, 32, 128) {
-    auto data = generate_data<uint32_t>(3000000);
+    auto data = generate_data<uint32_t>(2000000);
     pgm::CompressedPGMIndex<uint32_t, E> index(data);
     test_index(index, data);
 }
 
 TEMPLATE_TEST_CASE_SIG("Bucketing PGM-index", "", ((size_t E), E), 8, 32, 128) {
-    auto data = generate_data<uint32_t>(3000000);
-    auto top_level_size = GENERATE(256, 1024, 4096);
+    auto data = generate_data<uint32_t>(2000000);
+    auto top_level_size = GENERATE(1024, 4096);
     pgm::BucketingPGMIndex<uint32_t, E> index(data.begin(), data.end(), top_level_size);
     test_index(index, data);
 }
 
+TEMPLATE_TEST_CASE_SIG("Bucketing PGM-index auto-size", "", ((size_t E), E), 8, 32, 128) {
+    auto data = generate_data<uint32_t>(2000000);
+    pgm::BucketingPGMIndex<uint32_t, E> index(data.begin(), data.end());
+    test_index(index, data);
+}
+
 TEST_CASE("Bucketing PGM-index edge case", "") {
-    std::vector<uint32_t> data(3000000);
+    std::vector<uint32_t> data(2000000);
     auto top_level_size = GENERATE(256, 1024, 4096);
     pgm::BucketingPGMIndex<uint32_t, 16> index(data.begin(), data.end(), top_level_size);
     test_index(index, data);
 }
 
 TEMPLATE_TEST_CASE_SIG("Elias-Fano PGM-index", "", ((size_t E), E), 8, 32, 128) {
-    auto data = generate_data<uint32_t>(3000000);
+    auto data = generate_data<uint32_t>(2000000);
     pgm::EliasFanoPGMIndex<uint32_t, E> index(data.begin(), data.end());
     test_index(index, data);
 }
@@ -148,12 +154,12 @@ TEMPLATE_TEST_CASE_SIG("Mapped PGM-index", "", ((size_t E), E), 8, 32, 128) {
 
 TEMPLATE_TEST_CASE_SIG("Dynamic PGM-index", "",
                        ((typename V, uint8_t MinIndexedLevel), V, MinIndexedLevel),
-                       (uint32_t*, 8), (uint32_t, 10), (uint32_t*, 16), (uint32_t, 20)) {
+                       (uint32_t*, 8), (uint32_t, 12), (uint32_t*, 16), (uint32_t, 20)) {
     V time = 0;
     auto rand = std::bind(std::uniform_int_distribution<uint32_t>(0, 1000000000), std::mt19937{42});
     auto gen = [&] { return std::pair<uint32_t, V>{rand(), ++time}; };
 
-    std::vector<std::pair<uint32_t, V>> bulk(GENERATE(0, 10, 1000, 1000000));
+    std::vector<std::pair<uint32_t, V>> bulk(GENERATE(0, 10, 1000, 100000));
     std::generate(bulk.begin(), bulk.end(), gen);
     std::sort(bulk.begin(), bulk.end());
     bulk.erase(std::unique(bulk.begin(), bulk.end(), [](auto &a, auto &b) { return a.first == b.first; }), bulk.end());
