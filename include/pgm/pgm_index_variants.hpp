@@ -179,8 +179,7 @@ public:
         if constexpr (EpsilonRecursive == 0) {
             auto &level = levels.front();
             auto it = std::upper_bound(level.keys.begin(), level.keys.begin() + level.size(), key);
-            auto i = std::distance(level.keys.begin(), it);
-            i = i == 0 ? 0 : i - 1;
+            auto i = std::distance(level.keys.begin(), it) - 1;
             auto pos = std::min<size_t>(level(slopes_table, i, k), level.get_intercept(i + 1));
             auto lo = PGM_SUB_EPS(pos, Epsilon);
             auto hi = PGM_ADD_EPS(pos, Epsilon, n);
@@ -199,8 +198,7 @@ public:
                     continue;
             } else {
                 auto hi = level.keys.begin() + PGM_ADD_EPS(pos, EpsilonRecursive, level.size());
-                auto it = std::upper_bound(lo, hi, k);
-                lo == level.keys.begin() ? it : std::prev(it);
+                auto it = std::prev(std::upper_bound(lo, hi, k));
             }
 
             auto i = std::distance(level.keys.begin(), lo);

@@ -133,8 +133,7 @@ protected:
      */
     auto segment_for_key(const K &key) const {
         if constexpr (EpsilonRecursive == 0) {
-            auto it = std::upper_bound(segments.begin(), segments.begin() + segments_count(), key);
-            return it == segments.begin() ? it : std::prev(it);
+            return std::prev(std::upper_bound(segments.begin(), segments.begin() + segments_count(), key));
         }
 
         auto it = segments.begin() + *(levels_offsets.end() - 2);
@@ -151,8 +150,7 @@ protected:
             } else {
                 auto level_size = levels_offsets[l + 1] - levels_offsets[l] - 1;
                 auto hi = level_begin + PGM_ADD_EPS(pos, EpsilonRecursive, level_size);
-                it = std::upper_bound(lo, hi, key);
-                it = it == level_begin ? it : std::prev(it);
+                it = std::prev(std::upper_bound(lo, hi, key));
             }
         }
         return it;
