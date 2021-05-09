@@ -178,7 +178,7 @@ public:
     template<typename RandomIt>
     PGMIndex(RandomIt first, RandomIt last)
         : n(std::distance(first, last)),
-          first_key(n ? *first : 0),
+          first_key(n ? *first : K(0)),
           segments(),
           levels_offsets() {
         build(first, last, Epsilon, EpsilonRecursive, segments, levels_offsets);

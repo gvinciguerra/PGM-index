@@ -438,7 +438,7 @@ public:
     template<typename RandomIt>
     BucketingPGMIndex(RandomIt first, RandomIt last, size_t top_level_size)
         : n(std::distance(first, last)),
-          first_key(n ? *first : 0),
+          first_key(n ? *first : K(0)),
           segments(),
           top_level() {
         if (top_level_size == 0)
@@ -461,7 +461,7 @@ public:
     template<typename RandomIt>
     BucketingPGMIndex(RandomIt first, RandomIt last)
         : n(std::distance(first, last)),
-          first_key(n ? *first : 0),
+          first_key(n ? *first : K(0)),
           segments(),
           top_level() {
         if (n == 0)
@@ -566,7 +566,7 @@ public:
     template<typename RandomIt>
     EliasFanoPGMIndex(RandomIt first, RandomIt last)
         : n(std::distance(first, last)),
-          first_key(n ? *first : 0),
+          first_key(n ? *first : K(0)),
           segments(),
           ef() {
         if (n == 0)
