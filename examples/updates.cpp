@@ -30,14 +30,14 @@ int main() {
     dynamic_pgm.erase(4);
 
     // Query the container
+    std::cout << "Container size (data + index) = " << dynamic_pgm.size_in_bytes() << " bytes" << std::endl;
     std::cout << "find(4) = " << (dynamic_pgm.find(4) == dynamic_pgm.end() ? "not found" : "found") << std::endl;
     std::cout << "find(8)->second = " << dynamic_pgm.find(8)->second << std::endl;
 
     std::cout << "Range search [1, 10000) = ";
-    auto lo = dynamic_pgm.lower_bound(1);
-    auto hi = dynamic_pgm.lower_bound(10000);
-    for (auto it = lo; it != hi; ++it)
-        std::cout << "(" << it->first << "," << it->second << "), ";
+    auto result = dynamic_pgm.range(1, 10000);
+    for (auto[k, v] : result)
+        std::cout << "(" << k << "," << v << "), ";
 
     return 0;
 }
