@@ -293,6 +293,62 @@ public:
     }
 
     /**
+     * Returns all the elements with key between and including @p lo and @p hi.
+     * @param lo lower endpoint of the range query
+     * @param hi upper endpoint of the range query, must be greater than or equal to @p lo
+     * @return a vector of key-value pairs satisfying the range query
+     */
+    std::vector<std::pair<K, V>> range(const K &lo, const K &hi) const {
+        if (lo > hi)
+            throw std::invalid_argument("lo > hi");
+
+        Level tmp_a;
+        Level tmp_b;
+        auto alternate = true;
+
+        for (auto i = min_level; i < used_levels; ++i) {
+            if (level(i).empty())
+                continue;
+
+            auto lo_first = level(i).begin();
+            auto lo_last = level(i).end();
+            auto hi_first = level(i).begin();
+            auto hi_last = level(i).end();
+            if (i >= min_index_level) {
+                auto range = pgm(i).search(lo);
+                lo_first = level(i).begin() + range.lo;
+                lo_last = level(i).begin() + range.hi;
+                range = pgm(i).search(hi);
+                hi_first = level(i).begin() + range.lo;
+                hi_last = level(i).begin() + range.hi;
+            }
+
+            auto it_lo = std::lower_bound(lo_first, lo_last, lo);
+            auto it_hi = std::upper_bound(std::max(it_lo, hi_first), hi_last, hi);
+            auto range_size = std::distance(it_lo, it_hi);
+            if (range_size == 0)
+                continue;
+
+            auto tmp_size = (alternate ? tmp_a : tmp_b).size();
+            (alternate ? tmp_b : tmp_a).reserve(tmp_size + range_size);
+            auto tmp_it = alternate ? tmp_a.begin() : tmp_b.begin();
+            auto out_it = alternate ? tmp_b.begin() : tmp_a.begin();
+            tmp_size = std::distance(out_it, merge<false>(tmp_it, tmp_it + tmp_size, it_lo, it_hi, out_it));
+            (alternate ? tmp_b : tmp_a).resize(tmp_size);
+            alternate = !alternate;
+        }
+
+        std::vector<std::pair<K, V>> result;
+        result.reserve((alternate ? tmp_a : tmp_b).size());
+        auto first = (alternate ? tmp_a : tmp_b).begin();
+        auto last = (alternate ? tmp_a : tmp_b).end();
+        for (auto it = first; it != last; ++it)
+            if (!it->deleted())
+                result.emplace_back(it->first, it->second);
+        return result;
+    }
+
+    /**
      * Returns an iterator pointing to the first element that is not less than (i.e. greater or equal to) @p key.
      * @param key key value to compare the elements to
      * @return an iterator to an element with key not less than @p key. If no such element is found, end() is returned

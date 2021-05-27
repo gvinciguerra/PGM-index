@@ -228,6 +228,19 @@ TEMPLATE_TEST_CASE("Dynamic PGM-index", "", uint32_t*, uint32_t) {
         REQUIRE(it->second == v);
         ++it;
     }
+
+    // Test range
+    for (int i = 0; i < 10; ++i) {
+        auto lo = rand();
+        auto hi = lo + rand() / 2;
+        auto range_result = pgm.range(lo, hi);
+        auto map_it = map.lower_bound(lo);
+        for (auto[k, v] : range_result) {
+            REQUIRE(k == map_it->first);
+            REQUIRE(v == map_it->second);
+            ++map_it;
+        }
+    }
 }
 
 #ifdef MORTON_ND_BMI2_ENABLED
