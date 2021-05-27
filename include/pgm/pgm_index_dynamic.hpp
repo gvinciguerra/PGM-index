@@ -37,9 +37,8 @@ namespace pgm {
  * @tparam K the type of a key
  * @tparam V the type of a value
  * @tparam PGMType the type of @ref PGMIndex to use in the container
- * @tparam MinIndexedLevel the minimum level (of size 2^MinIndexedLevel) on which a @p PGMType index is constructed
  */
-template<typename K, typename V, typename PGMType = PGMIndex<K>, uint8_t MinIndexedLevel = 18>
+template<typename K, typename V, typename PGMType = PGMIndex<K, 16>>
 class DynamicPGMIndex {
     class ItemA;
     class ItemB;
@@ -48,26 +47,25 @@ class DynamicPGMIndex {
     template<typename T, typename A=std::allocator<T>>
     class DefaultInitAllocator;
 
-    constexpr static uint8_t min_level = 6; ///< 2^min_level-1 is the size of the sorted buffer for new items.
-    constexpr static uint8_t fully_allocated_levels = std::max(15, min_level + 1);
-    constexpr static size_t buffer_max_size = (1ull << (min_level + 1)) - 1;
-
-    static_assert(min_level < MinIndexedLevel);
-    static_assert(fully_allocated_levels > min_level);
-    static_assert(2 * PGMType::epsilon_value < 1ul << MinIndexedLevel);
-
     using Item = std::conditional_t<std::is_pointer_v<V> || std::is_arithmetic_v<V>, ItemA, ItemB>;
     using Level = std::vector<Item, DefaultInitAllocator<Item>>;
 
-    uint8_t used_levels;       ///< Equal to 1 + last level whose size is greater than 0, or = min_level if no data.
-    std::vector<Level> levels; ///< (i-min_level)th element is the data array on the ith level.
-    std::vector<PGMType> pgms; ///< (i-MinIndexedLevel)th element is the index on the ith level.
+    const uint8_t base;            ///< base^i is the maximum size of the ith level.
+    const uint8_t min_level;       ///< Levels 0..min_level are combined into one large level.
+    const uint8_t min_index_level; ///< Minimum level on which an index is constructed.
+    size_t buffer_max_size;        ///< Size of the combined upper levels, i.e. max_size(0) + ... + max_size(min_level).
+    uint8_t used_levels;           ///< Equal to 1 + last level whose size is greater than 0, or = min_level if no data.
+    std::vector<Level> levels;     ///< (i-min_level)th element is the data array at the ith level.
+    std::vector<PGMType> pgms;     ///< (i-min_index_level)th element is the index at the ith level.
 
     const Level &level(uint8_t level) const { return levels[level - min_level]; }
-    const PGMType &pgm(uint8_t level) const { return pgms[level - MinIndexedLevel]; }
+    const PGMType &pgm(uint8_t level) const { return pgms[level - min_index_level]; }
     Level &level(uint8_t level) { return levels[level - min_level]; }
-    PGMType &pgm(uint8_t level) { return pgms[level - MinIndexedLevel]; }
-    static uint8_t ceil_log2(size_t n) { return n <= 1 ? 0 : sizeof(unsigned long long) * 8 - __builtin_clzll(n - 1); }
+    PGMType &pgm(uint8_t level) { return pgms[level - min_index_level]; }
+    size_t max_size(uint8_t level) const { return size_t(1) << (level * ceil_log2(base)); }
+    uint8_t ceil_log_base(size_t n) const { return ceil_log2(n) / ceil_log2(base); }
+    uint8_t max_fully_allocated_level() const { return min_level + 2; }
+    constexpr static uint8_t ceil_log2(size_t n) { return n <= 1 ? 0 : sizeof(long long) * 8 - __builtin_clzll(n - 1); }
 
     template<bool SkipDeleted, typename In1, typename In2, typename OutIterator>
     static OutIterator merge(In1 first1, In1 last1, In2 first2, In2 last2, OutIterator result) {
@@ -98,26 +96,25 @@ class DynamicPGMIndex {
                         size_t size_hint,
                         typename Level::iterator insertion_point) {
         auto target = up_to_level + 1;
-        auto actual_size = size_t(1) << (1 + min_level);
-        assert((1ull << target) - level(target).size() >= actual_size);
+        auto actual_size = buffer_max_size + 1;
+        assert(max_size(target) - level(target).size() >= actual_size);
 
-        Level tmp_a(size_hint);
+        Level tmp_a(size_hint + level(target).size());
         Level tmp_b(size_hint + level(target).size());
 
         // Insert new_item in sorted order in the first level
         const auto tmp1 = tmp_a.begin();
         const auto tmp2 = tmp_b.begin();
-        const auto mod = (up_to_level - min_level) % 2;
+        auto alternate = true;
 
-        auto it = std::move(levels[0].begin(), insertion_point, mod ? tmp1 : tmp2);
+        auto it = std::move(levels[0].begin(), insertion_point, tmp1);
         *it = new_item;
         ++it;
         std::move(insertion_point, levels[0].end(), it);
 
         // Merge subsequent levels
         uint8_t limit = level(target).empty() ? up_to_level : up_to_level + 1;
-        for (uint8_t i = 1 + min_level; i <= limit; ++i) {
-            bool alternate = (i - min_level) % 2 == mod;
+        for (uint8_t i = 1 + min_level; i <= limit; ++i, alternate = !alternate) {
             auto tmp_it = alternate ? tmp1 : tmp2;
             auto out_it = alternate ? tmp2 : tmp1;
             decltype(out_it) out_end;
@@ -131,19 +128,18 @@ class DynamicPGMIndex {
 
             // Empty this level and the corresponding index
             level(i).clear();
-            if (i >= fully_allocated_levels)
+            if (i >= max_fully_allocated_level())
                 level(i).shrink_to_fit();
-            if (i >= MinIndexedLevel)
+            if (i >= min_index_level)
                 pgm(i) = PGMType();
         }
 
-        tmp_b.resize(actual_size);
-        target = std::max<uint8_t>(ceil_log2(actual_size), min_level + 1);
         levels[0].resize(0);
-        levels[target - min_level] = std::move(tmp_b);
+        levels[target - min_level] = std::move(alternate ? tmp_a : tmp_b);
+        levels[target - min_level].resize(actual_size);
 
         // Rebuild index, if needed
-        if (target >= MinIndexedLevel)
+        if (target >= min_index_level)
             pgm(target) = PGMType(level(target).begin(), level(target).end());
     }
 
@@ -163,22 +159,21 @@ class DynamicPGMIndex {
         size_t slots_required = buffer_max_size + 1;
         uint8_t i;
         for (i = min_level + 1; i < used_levels; ++i) {
-            size_t slots_left_in_level = (1ull << i) - level(i).size();
+            auto slots_left_in_level = max_size(i) - level(i).size();
             if (slots_required <= slots_left_in_level)
                 break;
             slots_required += level(i).size();
         }
 
-        auto insertion_idx = std::distance(levels[0].begin(), insertion_point);
         auto need_new_level = i == used_levels;
         if (need_new_level) {
             ++used_levels;
             levels.emplace_back();
-            if (i - MinIndexedLevel >= int(pgms.size()))
+            if (i - min_index_level >= int(pgms.size()))
                 pgms.emplace_back();
         }
 
-        pairwise_merge(new_item, i - 1, slots_required, levels[0].begin() + insertion_idx);
+        pairwise_merge(new_item, i - 1, slots_required, insertion_point);
     }
 
 public:
@@ -191,27 +186,47 @@ public:
 
     /**
      * Constructs an empty container.
+     * @param base determines the size of the ith level as base^i
+     * @param buffer_level determines the size of level 0, equal to the sum of base^i for i = 0, ..., buffer_level
+     * @param index_level the minimum level at which an index is constructed to speed up searches
      */
-    DynamicPGMIndex() : used_levels(min_level), levels(32 - min_level), pgms() {
+    DynamicPGMIndex(uint8_t base = 8, uint8_t buffer_level = 0, uint8_t index_level = 0)
+        : base(base),
+          min_level(buffer_level ? buffer_level : ceil_log_base(128) - (base == 2)),
+          min_index_level(std::max<size_t>(min_level + 1, index_level ? index_level : ceil_log_base(size_t(1) << 24))),
+          buffer_max_size(),
+          used_levels(min_level),
+          levels(),
+          pgms() {
+        if (base < 2 || (base & (base - 1u)) != 0)
+            throw std::invalid_argument("base must be a power of two");
+
+        for (auto j = 0; j <= min_level; ++j)
+            buffer_max_size += max_size(j);
+
+        levels.resize(32 - used_levels);
         level(min_level).reserve(buffer_max_size);
-        for (uint8_t i = min_level + 1; i < fully_allocated_levels; ++i)
-            level(i).reserve(1ull << i);
+        for (uint8_t i = min_level + 1; i < max_fully_allocated_level(); ++i)
+            level(i).reserve(max_size(i));
     }
 
     /**
      * Constructs the container on the sorted data in the range [first, last).
      * @tparam Iterator
      * @param first, last the range containing the sorted elements to be indexed
+     * @param base determines the size of the ith level as base^i
+     * @param buffer_level determines the size of level 0, equal to the sum of base^i for i = 0, ..., buffer_level
+     * @param index_level the minimum level at which an index is constructed to speed up searches
      */
     template<typename Iterator>
-    DynamicPGMIndex(Iterator first, Iterator last) {
+    DynamicPGMIndex(Iterator first, Iterator last, uint8_t base = 8, uint8_t buffer_level = 0, uint8_t index_level = 0)
+        : DynamicPGMIndex(base, buffer_level, index_level) {
         size_t n = std::distance(first, last);
-        used_levels = std::max<uint8_t>(ceil_log2(n), min_level) + 1;
-        levels = decltype(levels)(std::max<uint8_t>(used_levels, 32) - min_level + 1);
-
+        used_levels = std::max<uint8_t>(ceil_log_base(n), min_level) + 1;
+        levels.resize(std::max<uint8_t>(used_levels, 32) - min_level + 1);
         level(min_level).reserve(buffer_max_size);
-        for (uint8_t i = min_level + 1; i < fully_allocated_levels; ++i)
-            level(i).reserve(1ull << i);
+        for (uint8_t i = min_level + 1; i < max_fully_allocated_level(); ++i)
+            level(i).reserve(max_size(i));
 
         if (n == 0) {
             used_levels = min_level;
@@ -231,8 +246,8 @@ public:
         }
         target.resize(std::distance(target.begin(), out));
 
-        if (used_levels - 1 >= MinIndexedLevel) {
-            pgms = decltype(pgms)(used_levels - MinIndexedLevel);
+        if (used_levels - 1 >= min_index_level) {
+            pgms = decltype(pgms)(used_levels - min_index_level);
             pgm(used_levels - 1) = PGMType(target.begin(), target.end());
         }
     }
@@ -263,7 +278,7 @@ public:
 
             auto first = level(i).begin();
             auto last = level(i).end();
-            if (i >= MinIndexedLevel) {
+            if (i >= min_index_level) {
                 auto range = pgm(i).search(key);
                 first = level(i).begin() + range.lo;
                 last = level(i).begin() + range.hi;
@@ -294,18 +309,19 @@ public:
 
             auto first = level(i).begin();
             auto last = level(i).end();
-            if (i >= MinIndexedLevel) {
+            if (i >= min_index_level) {
                 auto range = pgm(i).search(key);
                 first = level(i).begin() + range.lo;
                 last = level(i).begin() + range.hi;
             }
 
-            auto it = std::lower_bound(first, last, key);
-            for (; it != level(i).end() && it->deleted(); ++it)
-                deleted.emplace(it->first);
-
-            for (; it != level(i).end(); ++it) {
-                if ((!lb_set || it->first < lb->first) && deleted.find(it->first) == deleted.end()) {
+            for (auto it = std::lower_bound(first, last, key);
+                 it != level(i).end() && (!lb_set || it->first < lb->first); ++it) {
+                if (it->deleted())
+                    deleted.emplace(it->first);
+                else if (deleted.find(it->first) == deleted.end()) {
+                    if (it->first == key)
+                        return iterator(this, i, it);
                     lb = it;
                     lb_level = i;
                     lb_set = true;
@@ -505,12 +521,12 @@ public:
 
 } // namespace internal
 
-template<typename K, typename V, typename PGMType, uint8_t MinIndexedLevel>
-class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::Iterator {
+template<typename K, typename V, typename PGMType>
+class DynamicPGMIndex<K, V, PGMType>::Iterator {
     friend class DynamicPGMIndex;
 
     using level_iterator = typename Level::const_iterator;
-    using dynamic_pgm_type = DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>;
+    using dynamic_pgm_type = DynamicPGMIndex<K, V, PGMType>;
 
     struct Cursor {
         uint8_t level_number;
@@ -539,7 +555,7 @@ class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::Iterator {
 
             size_t lo = 0;
             size_t hi = level.size();
-            if (i >= MinIndexedLevel) {
+            if (i >= super->min_index_level) {
                 auto range = super->pgm(i).search(current.iterator->first);
                 lo = range.lo;
                 hi = range.hi;
@@ -627,8 +643,8 @@ public:
 
 #pragma pack(push, 1)
 
-template<typename K, typename V, typename PGMType, uint8_t MinIndexedLevel>
-class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::ItemA {
+template<typename K, typename V, typename PGMType>
+class DynamicPGMIndex<K, V, PGMType>::ItemA {
     friend class DynamicPGMIndex;
     const static V tombstone;
 
@@ -654,11 +670,11 @@ public:
     operator K() const { return first; }
 };
 
-template<typename K, typename V, typename PGMType, uint8_t MinIndexedLevel>
-const V DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::ItemA::tombstone = get_tombstone<V>();
+template<typename K, typename V, typename PGMType>
+const V DynamicPGMIndex<K, V, PGMType>::ItemA::tombstone = get_tombstone<V>();
 
-template<typename K, typename V, typename PGMType, uint8_t MinIndexedLevel>
-class DynamicPGMIndex<K, V, PGMType, MinIndexedLevel>::ItemB {
+template<typename K, typename V, typename PGMType>
+class DynamicPGMIndex<K, V, PGMType>::ItemB {
     friend class DynamicPGMIndex;
     bool flag;
 

@@ -152,21 +152,19 @@ TEMPLATE_TEST_CASE_SIG("Mapped PGM-index", "", ((size_t E), E), 8, 32, 128) {
     std::remove(tmp_filename.c_str());
 }
 
-TEMPLATE_TEST_CASE_SIG("Dynamic PGM-index", "",
-                       ((typename V, uint8_t MinIndexedLevel), V, MinIndexedLevel),
-                       (uint32_t*, 8), (uint32_t, 12), (uint32_t*, 16), (uint32_t, 20)) {
-    V time = 0;
+TEMPLATE_TEST_CASE("Dynamic PGM-index", "", uint32_t*, uint32_t) {
+    TestType time = 0;
     auto rand = std::bind(std::uniform_int_distribution<uint32_t>(0, 1000000000), std::mt19937{42});
-    auto gen = [&] { return std::pair<uint32_t, V>{rand(), ++time}; };
+    auto gen = [&] { return std::pair<uint32_t, TestType>{rand(), ++time}; };
 
-    std::vector<std::pair<uint32_t, V>> bulk(GENERATE(0, 10, 1000, 100000));
+    std::vector<std::pair<uint32_t, TestType>> bulk(GENERATE(0, 10, 1000, 100000));
     std::generate(bulk.begin(), bulk.end(), gen);
     std::sort(bulk.begin(), bulk.end());
     bulk.erase(std::unique(bulk.begin(), bulk.end(), [](auto &a, auto &b) { return a.first == b.first; }), bulk.end());
 
     using PGMType = pgm::PGMIndex<uint32_t>;
-    pgm::DynamicPGMIndex<uint32_t, V, PGMType, MinIndexedLevel> pgm(bulk.begin(), bulk.end());
-    std::map<uint32_t, V> map(bulk.begin(), bulk.end());
+    pgm::DynamicPGMIndex<uint32_t, TestType, PGMType> pgm(bulk.begin(), bulk.end(), GENERATE(2, 4, 8));
+    std::map<uint32_t, TestType> map(bulk.begin(), bulk.end());
 
     // Test initial state
     auto it1 = pgm.begin();
