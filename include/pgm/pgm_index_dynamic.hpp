@@ -24,9 +24,9 @@
 #include <limits>
 #include <memory>
 #include <new>
+#include <set>
 #include <stdexcept>
 #include <type_traits>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -357,7 +357,7 @@ public:
         typename Level::const_iterator lb;
         auto lb_set = false;
         uint8_t lb_level;
-        std::unordered_set<K> deleted;
+        std::set<K> deleted;
 
         for (auto i = min_level; i < used_levels; ++i) {
             if (level(i).empty())
@@ -486,12 +486,10 @@ class LoserTree {
 
     struct Loser {
         T key;         ///< Copy of the current key in the sequence.
-        bool sup;      ///< true iff this is a supremum sentinel.
         Source source; ///< Index of the sequence.
     };
 
     Source k;                  ///< Smallest power of 2 greater than the number of nodes.
-    bool first_insert;         ///< true iff still have to construct keys.
     std::vector<Loser> losers; ///< Vector of size 2k containing loser tree nodes.
 
     static uint64_t next_pow2(uint64_t x) {
@@ -505,7 +503,7 @@ class LoserTree {
 
         auto left = init_winner(2 * root);
         auto right = init_winner(2 * root + 1);
-        if (losers[right].sup || (!losers[left].sup && losers[right].key >= losers[left].key)) {
+        if (losers[right].key >= losers[left].key) {
             losers[root] = losers[right];
             return left;
         } else {
@@ -518,55 +516,39 @@ public:
 
     LoserTree() = default;
 
-    explicit LoserTree(const Source &ik)
-        : k(next_pow2(ik)),
-          first_insert(true),
-          losers(2 * k) {
+    explicit LoserTree(const Source &ik) : k(next_pow2(ik)), losers(2 * k) {
         for (auto i = ik - 1u; i < k; ++i) {
-            losers[i + k].sup = true;
+            losers[i + k].key = std::numeric_limits<T>::max();
             losers[i + k].source = std::numeric_limits<Source>::max();
         }
     }
 
     /** Returns the index of the sequence with the smallest element. */
-    Source min_source() const { return losers[0].source; }
+    Source min_source() const {
+        assert(losers[0].source != std::numeric_limits<Source>::max());
+        return losers[0].source;
+    }
 
-    /** Inserts the initial element of the sequence source. If sup is true, a supremum sentinel is inserted. */
-    void insert_start(const T *key_ptr, const Source &source, bool sup) {
+    /** Inserts the initial element of the sequence source. */
+    void insert_start(const T *key_ptr, const Source &source) {
         Source pos = k + source;
         assert(pos < losers.size());
-        assert(sup == (key_ptr == nullptr));
-
-        losers[pos].sup = sup;
         losers[pos].source = source;
-
-        if (first_insert) {
-            for (auto i = 0u; i < k + k; ++i)
-                losers[i].key = key_ptr ? *key_ptr : T();
-            first_insert = false;
-        } else
-            losers[pos].key = key_ptr ? *key_ptr : T();
+        losers[pos].key = *key_ptr;
     }
 
     /** Deletes the smallest element and insert a new element in its place. */
-    void delete_min_insert(const T *key_ptr, bool sup) {
-        assert(sup == (key_ptr == nullptr));
+    void delete_min_insert(const T *key_ptr) {
         auto source = losers[0].source;
-        auto key = key_ptr ? *key_ptr : T();
-        auto pos = (k + source) / 2;
+        auto key = key_ptr ? *key_ptr : std::numeric_limits<T>::max();
 
-        while (pos > 0) {
-            if ((sup && (!losers[pos].sup || losers[pos].source < source))
-                || (!sup && !losers[pos].sup && (losers[pos].key < key
-                    || (key >= losers[pos].key && losers[pos].source < source)))) {
-                std::swap(losers[pos].sup, sup);
+        for (auto pos = (k + source) / 2; pos > 0; pos /= 2) {
+            if (losers[pos].key < key || (key >= losers[pos].key && losers[pos].source < source)) {
                 std::swap(losers[pos].source, source);
                 std::swap(losers[pos].key, key);
             }
-            pos /= 2;
         }
 
-        losers[0].sup = sup;
         losers[0].source = source;
         losers[0].key = key;
     }
@@ -624,7 +606,7 @@ class DynamicPGMIndex<K, V, PGMType>::Iterator {
 
         tree = decltype(tree)(iterators.size());
         for (size_t i = 0; i < iterators.size(); ++i)
-            tree.insert_start(&iterators[i].iterator->first, i, false);
+            tree.insert_start(&iterators[i].iterator->first, i);
         tree.init();
 
         initialized = true;
@@ -643,10 +625,10 @@ class DynamicPGMIndex<K, V, PGMType>::Iterator {
             auto result = it_min.iterator;
             ++it_min.iterator;
             if (it_min.iterator == super->level(level_number).end()) {
-                tree.delete_min_insert(nullptr, true);
+                tree.delete_min_insert(nullptr);
                 --unconsumed_count;
             } else
-                tree.delete_min_insert(&it_min.iterator->first, false);
+                tree.delete_min_insert(&it_min.iterator->first);
             return Cursor(level_number, result);
         };
 
@@ -663,7 +645,6 @@ class DynamicPGMIndex<K, V, PGMType>::Iterator {
             current = tmp;
     }
 
-    Iterator() = default;
     Iterator(const dynamic_pgm_type *p, uint8_t level_number, const level_iterator it)
         : super(p), current(level_number, it), initialized(), unconsumed_count(), tree(), iterators() {};
 
