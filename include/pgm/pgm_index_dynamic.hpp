@@ -44,11 +44,8 @@ class DynamicPGMIndex {
     class ItemB;
     class Iterator;
 
-    template<typename T, typename A=std::allocator<T>>
-    class DefaultInitAllocator;
-
     using Item = std::conditional_t<std::is_pointer_v<V> || std::is_arithmetic_v<V>, ItemA, ItemB>;
-    using Level = std::vector<Item, DefaultInitAllocator<Item>>;
+    using Level = std::vector<Item>;
 
     const uint8_t base;            ///< base^i is the maximum size of the ith level.
     const uint8_t min_level;       ///< Levels 0..min_level are combined into one large level.
@@ -96,35 +93,32 @@ class DynamicPGMIndex {
                         size_t size_hint,
                         typename Level::iterator insertion_point) {
         auto target = up_to_level + 1;
-        auto actual_size = buffer_max_size + 1;
-        assert(max_size(target) - level(target).size() >= actual_size);
-
         Level tmp_a(size_hint + level(target).size());
         Level tmp_b(size_hint + level(target).size());
 
         // Insert new_item in sorted order in the first level
-        const auto tmp1 = tmp_a.begin();
-        const auto tmp2 = tmp_b.begin();
         auto alternate = true;
-
-        auto it = std::move(levels[0].begin(), insertion_point, tmp1);
-        *it = new_item;
-        ++it;
-        std::move(insertion_point, levels[0].end(), it);
+        auto it = std::move(level(min_level).begin(), insertion_point, tmp_a.begin());
+        *it++ = new_item;
+        it = std::move(insertion_point, level(min_level).end(), it);
+        tmp_a.resize(std::distance(tmp_a.begin(), it));
 
         // Merge subsequent levels
-        uint8_t limit = level(target).empty() ? up_to_level : up_to_level + 1;
-        for (uint8_t i = 1 + min_level; i <= limit; ++i, alternate = !alternate) {
-            auto tmp_it = alternate ? tmp1 : tmp2;
-            auto out_it = alternate ? tmp2 : tmp1;
-            decltype(out_it) out_end;
+        uint8_t merge_limit = level(target).empty() ? up_to_level : up_to_level + 1;
+        for (uint8_t i = 1 + min_level; i <= merge_limit; ++i, alternate = !alternate) {
+            auto tmp_begin = (alternate ? tmp_a : tmp_b).begin();
+            auto tmp_end = (alternate ? tmp_a : tmp_b).end();
+            auto out_begin = (alternate ? tmp_b : tmp_a).begin();
+            decltype(out_begin) out_end;
 
-            bool can_delete_permanently = i == used_levels - 1;
+            auto can_delete_permanently = i == used_levels - 1;
             if (can_delete_permanently)
-                out_end = merge<true>(tmp_it, tmp_it + actual_size, level(i).begin(), level(i).end(), out_it);
+                out_end = merge<true>(tmp_begin, tmp_end, level(i).begin(), level(i).end(), out_begin);
             else
-                out_end = merge<false>(tmp_it, tmp_it + actual_size, level(i).begin(), level(i).end(), out_it);
-            actual_size = std::distance(out_it, out_end);
+                out_end = merge<false>(tmp_begin, tmp_end, level(i).begin(), level(i).end(), out_begin);
+
+            (alternate ? tmp_b : tmp_a).resize(std::distance(out_begin, out_end));
+            (alternate ? tmp_a : tmp_b).clear();
 
             // Empty this level and the corresponding index
             level(i).clear();
@@ -134,9 +128,8 @@ class DynamicPGMIndex {
                 pgm(i) = PGMType();
         }
 
-        levels[0].resize(0);
-        levels[target - min_level] = std::move(alternate ? tmp_a : tmp_b);
-        levels[target - min_level].resize(actual_size);
+        level(min_level).clear();
+        level(target) = std::move(alternate ? tmp_a : tmp_b);
 
         // Rebuild index, if needed
         if (target >= min_index_level)
@@ -144,14 +137,14 @@ class DynamicPGMIndex {
     }
 
     void insert(const Item &new_item) {
-        auto insertion_point = std::lower_bound(levels[0].begin(), levels[0].end(), new_item);
-        if (insertion_point != levels[0].end() && *insertion_point == new_item) {
+        auto insertion_point = std::lower_bound(level(min_level).begin(), level(min_level).end(), new_item);
+        if (insertion_point != level(min_level).end() && *insertion_point == new_item) {
             *insertion_point = new_item;
             return;
         }
 
-        if (levels[0].size() < buffer_max_size) {
-            levels[0].insert(insertion_point, new_item);
+        if (level(min_level).size() < buffer_max_size) {
+            level(min_level).insert(insertion_point, new_item);
             used_levels = used_levels == min_level ? min_level + 1 : used_levels;
             return;
         }
@@ -447,32 +440,6 @@ public:
             bytes += p.size_in_bytes();
         return bytes;
     }
-
-private:
-
-    // from: https://stackoverflow.com/a/21028912
-    template<typename T, typename A>
-    class DefaultInitAllocator : public std::allocator<T> {
-        typedef std::allocator_traits<A> a_t;
-
-    public:
-        template<typename U>
-        struct rebind {
-            using other = DefaultInitAllocator<U, typename a_t::template rebind_alloc<U> >;
-        };
-
-        using A::A;
-
-        template<typename U>
-        void construct(U *ptr) noexcept(std::is_nothrow_default_constructible_v<U>) {
-            ::new(static_cast<void *>(ptr)) U;
-        }
-
-        template<typename U, typename...Args>
-        void construct(U *ptr, Args &&... args) {
-            a_t::construct(static_cast<A &>(*this), ptr, std::forward<Args>(args)...);
-        }
-    };
 };
 
 namespace internal {
@@ -682,17 +649,7 @@ public:
 
 template<typename K, typename V, typename PGMType>
 class DynamicPGMIndex<K, V, PGMType>::ItemA {
-    friend class DynamicPGMIndex;
     const static V tombstone;
-
-    ItemA() = default;
-    explicit ItemA(const K &key) : first(key), second(tombstone) {}
-    explicit ItemA(const K &key, const V &value) : first(key), second(value) {
-        if (second == tombstone)
-            throw std::invalid_argument("The specified value is reserved and cannot be used.");
-    }
-
-    bool deleted() const { return this->second == tombstone; }
 
     template<typename T = V, std::enable_if_t<std::is_pointer_v<T>, int> = 0>
     static V get_tombstone() { return new std::remove_pointer_t<V>(); }
@@ -704,7 +661,15 @@ public:
     K first;
     V second;
 
+    ItemA() { /* do not (default-)initialize for a more efficient std::vector<ItemA>::resize */ }
+    explicit ItemA(const K &key) : first(key), second(tombstone) {}
+    explicit ItemA(const K &key, const V &value) : first(key), second(value) {
+        if (second == tombstone)
+            throw std::invalid_argument("The specified value is reserved and cannot be used.");
+    }
+
     operator K() const { return first; }
+    bool deleted() const { return this->second == tombstone; }
 };
 
 template<typename K, typename V, typename PGMType>
@@ -712,20 +677,18 @@ const V DynamicPGMIndex<K, V, PGMType>::ItemA::tombstone = get_tombstone<V>();
 
 template<typename K, typename V, typename PGMType>
 class DynamicPGMIndex<K, V, PGMType>::ItemB {
-    friend class DynamicPGMIndex;
     bool flag;
-
-    ItemB() = default;
-    explicit ItemB(const K &key) : flag(true), first(key), second() {}
-    explicit ItemB(const K &key, const V &value) : flag(false), first(key), second(value) {}
-
-    bool deleted() const { return flag; }
 
 public:
     K first;
     V second;
 
+    ItemB() { /* do not (default-)initialize for a more efficient std::vector<ItemB>::resize */ }
+    explicit ItemB(const K &key) : flag(true), first(key), second() {}
+    explicit ItemB(const K &key, const V &value) : flag(false), first(key), second(value) {}
+
     operator K() const { return first; }
+    bool deleted() const { return flag; }
 };
 
 #pragma pack(pop)
