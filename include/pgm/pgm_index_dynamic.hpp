@@ -60,8 +60,8 @@ class DynamicPGMIndex {
     Level &level(uint8_t level) { return levels[level - min_level]; }
     PGMType &pgm(uint8_t level) { return pgms[level - min_index_level]; }
     size_t max_size(uint8_t level) const { return size_t(1) << (level * ceil_log2(base)); }
-    uint8_t ceil_log_base(size_t n) const { return ceil_log2(n) / ceil_log2(base); }
     uint8_t max_fully_allocated_level() const { return min_level + 2; }
+    uint8_t ceil_log_base(size_t n) const { return (ceil_log2(n) + ceil_log2(base) - 1) / ceil_log2(base); }
     constexpr static uint8_t ceil_log2(size_t n) { return n <= 1 ? 0 : sizeof(long long) * 8 - __builtin_clzll(n - 1); }
 
     template<bool SkipDeleted, typename In1, typename In2, typename OutIterator>
