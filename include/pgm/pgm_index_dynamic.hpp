@@ -59,40 +59,16 @@ class DynamicPGMIndex {
     const PGMType &pgm(uint8_t level) const { return pgms[level - min_index_level]; }
     Level &level(uint8_t level) { return levels[level - min_level]; }
     PGMType &pgm(uint8_t level) { return pgms[level - min_index_level]; }
+    bool has_pgm(uint8_t level) const { return level >= min_index_level; }
     size_t max_size(uint8_t level) const { return size_t(1) << (level * ceil_log2(base)); }
     uint8_t max_fully_allocated_level() const { return min_level + 2; }
     uint8_t ceil_log_base(size_t n) const { return (ceil_log2(n) + ceil_log2(base) - 1) / ceil_log2(base); }
     constexpr static uint8_t ceil_log2(size_t n) { return n <= 1 ? 0 : sizeof(long long) * 8 - __builtin_clzll(n - 1); }
 
-    template<bool SkipDeleted, typename In1, typename In2, typename OutIterator>
-    static OutIterator merge(In1 first1, In1 last1, In2 first2, In2 last2, OutIterator result) {
-        while (first1 != last1 && first2 != last2) {
-            if (*first2 < *first1) {
-                *result = *first2;
-                ++first2;
-                ++result;
-            } else if (*first1 < *first2) {
-                *result = *first1;
-                ++first1;
-                ++result;
-            } else if (SkipDeleted && first1->deleted()) {
-                ++first1;
-                ++first2;
-            } else {
-                *result = *first1;
-                ++first1;
-                ++first2;
-                ++result;
-            }
-        }
-        return std::copy(first2, last2, std::copy(first1, last1, result));
-    }
-
     void pairwise_merge(const Item &new_item,
-                        uint8_t up_to_level,
+                        uint8_t target,
                         size_t size_hint,
                         typename Level::iterator insertion_point) {
-        auto target = up_to_level + 1;
         Level tmp_a(size_hint + level(target).size());
         Level tmp_b(size_hint + level(target).size());
 
@@ -104,7 +80,7 @@ class DynamicPGMIndex {
         tmp_a.resize(std::distance(tmp_a.begin(), it));
 
         // Merge subsequent levels
-        uint8_t merge_limit = level(target).empty() ? up_to_level : up_to_level + 1;
+        uint8_t merge_limit = level(target).empty() ? target - 1 : target;
         for (uint8_t i = 1 + min_level; i <= merge_limit; ++i, alternate = !alternate) {
             auto tmp_begin = (alternate ? tmp_a : tmp_b).begin();
             auto tmp_end = (alternate ? tmp_a : tmp_b).end();
@@ -124,7 +100,7 @@ class DynamicPGMIndex {
             level(i).clear();
             if (i >= max_fully_allocated_level())
                 level(i).shrink_to_fit();
-            if (i >= min_index_level)
+            if (has_pgm(i))
                 pgm(i) = PGMType();
         }
 
@@ -132,12 +108,12 @@ class DynamicPGMIndex {
         level(target) = std::move(alternate ? tmp_a : tmp_b);
 
         // Rebuild index, if needed
-        if (target >= min_index_level)
+        if (has_pgm(target))
             pgm(target) = PGMType(level(target).begin(), level(target).end());
     }
 
     void insert(const Item &new_item) {
-        auto insertion_point = std::lower_bound(level(min_level).begin(), level(min_level).end(), new_item);
+        auto insertion_point = lower_bound_bl(level(min_level).begin(), level(min_level).end(), new_item);
         if (insertion_point != level(min_level).end() && *insertion_point == new_item) {
             *insertion_point = new_item;
             return;
@@ -166,7 +142,7 @@ class DynamicPGMIndex {
                 pgms.emplace_back();
         }
 
-        pairwise_merge(new_item, i - 1, slots_required, insertion_point);
+        pairwise_merge(new_item, i, slots_required, insertion_point);
     }
 
 public:
@@ -239,7 +215,7 @@ public:
         }
         target.resize(std::distance(target.begin(), out));
 
-        if (used_levels - 1 >= min_index_level) {
+        if (has_pgm(used_levels - 1)) {
             pgms = decltype(pgms)(used_levels - min_index_level);
             pgm(used_levels - 1) = PGMType(target.begin(), target.end());
         }
@@ -271,13 +247,13 @@ public:
 
             auto first = level(i).begin();
             auto last = level(i).end();
-            if (i >= min_index_level) {
+            if (has_pgm(i)) {
                 auto range = pgm(i).search(key);
                 first = level(i).begin() + range.lo;
                 last = level(i).begin() + range.hi;
             }
 
-            auto it = std::lower_bound(first, last, key);
+            auto it = lower_bound_bl(first, last, key);
             if (it != level(i).end() && it->first == key)
                 return it->deleted() ? end() : iterator(this, i, it);
         }
@@ -307,7 +283,7 @@ public:
             auto lo_last = level(i).end();
             auto hi_first = level(i).begin();
             auto hi_last = level(i).end();
-            if (i >= min_index_level) {
+            if (has_pgm(i)) {
                 auto range = pgm(i).search(lo);
                 lo_first = level(i).begin() + range.lo;
                 lo_last = level(i).begin() + range.hi;
@@ -316,7 +292,7 @@ public:
                 hi_last = level(i).begin() + range.hi;
             }
 
-            auto it_lo = std::lower_bound(lo_first, lo_last, lo);
+            auto it_lo = lower_bound_bl(lo_first, lo_last, lo);
             auto it_hi = std::upper_bound(std::max(it_lo, hi_first), hi_last, hi);
             auto range_size = std::distance(it_lo, it_hi);
             if (range_size == 0)
@@ -324,8 +300,8 @@ public:
 
             auto tmp_size = (alternate ? tmp_a : tmp_b).size();
             (alternate ? tmp_b : tmp_a).reserve(tmp_size + range_size);
-            auto tmp_it = alternate ? tmp_a.begin() : tmp_b.begin();
-            auto out_it = alternate ? tmp_b.begin() : tmp_a.begin();
+            auto tmp_it = (alternate ? tmp_a : tmp_b).begin();
+            auto out_it = (alternate ? tmp_b : tmp_a).begin();
             tmp_size = std::distance(out_it, merge<false>(tmp_it, tmp_it + tmp_size, it_lo, it_hi, out_it));
             (alternate ? tmp_b : tmp_a).resize(tmp_size);
             alternate = !alternate;
@@ -358,13 +334,13 @@ public:
 
             auto first = level(i).begin();
             auto last = level(i).end();
-            if (i >= min_index_level) {
+            if (has_pgm(i)) {
                 auto range = pgm(i).search(key);
                 first = level(i).begin() + range.lo;
                 last = level(i).begin() + range.hi;
             }
 
-            for (auto it = std::lower_bound(first, last, key);
+            for (auto it = lower_bound_bl(first, last, key);
                  it != level(i).end() && (!lb_set || it->first < lb->first); ++it) {
                 if (it->deleted())
                     deleted.emplace(it->first);
@@ -439,6 +415,47 @@ public:
         for (auto &p: pgms)
             bytes += p.size_in_bytes();
         return bytes;
+    }
+
+private:
+
+    template<bool SkipDeleted, typename In1, typename In2, typename OutIterator>
+    static OutIterator merge(In1 first1, In1 last1, In2 first2, In2 last2, OutIterator result) {
+        while (first1 != last1 && first2 != last2) {
+            if (*first2 < *first1) {
+                *result = *first2;
+                ++first2;
+                ++result;
+            } else if (*first1 < *first2) {
+                *result = *first1;
+                ++first1;
+                ++result;
+            } else if (SkipDeleted && first1->deleted()) {
+                ++first1;
+                ++first2;
+            } else {
+                *result = *first1;
+                ++first1;
+                ++first2;
+                ++result;
+            }
+        }
+        return std::copy(first2, last2, std::copy(first1, last1, result));
+    }
+
+    template<class RandomIt>
+    static RandomIt lower_bound_bl(RandomIt first, RandomIt last, const K &x) {
+        if (first == last)
+            return first;
+        auto n = std::distance(first, last);
+        while (n > 1) {
+            auto half = n / 2;
+            __builtin_prefetch(&*(first + half / 2), 0, 0);
+            __builtin_prefetch(&*(first + half + half / 2), 0, 0);
+            first = first[half] < x ? first + half : first;
+            n -= half;
+        }
+        return first + (*first < x);
     }
 };
 
@@ -560,7 +577,7 @@ class DynamicPGMIndex<K, V, PGMType>::Iterator {
 
             size_t lo = 0;
             size_t hi = level.size();
-            if (i >= super->min_index_level) {
+            if (super->has_pgm(i)) {
                 auto range = super->pgm(i).search(current.iterator->first);
                 lo = range.lo;
                 hi = range.hi;
