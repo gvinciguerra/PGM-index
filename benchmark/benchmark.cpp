@@ -22,13 +22,16 @@
 #include <functional>
 #include <utility>
 
-#define FOR_EACH_EPSILON(C, K) C<K, 8>, C<K, 16>, C<K, 32>, C<K, 64>, C<K, 128>, C<K, 256>, \
-                               C<K, 512>, C<K, 1024>, C<K, 2048>, C<K, 4096>
+#define FOR_EACH_EPS(C, K) C<K, 8>, C<K, 16>, C<K, 32>, C<K, 64>, C<K, 128>, C<K, 256>,  C<K, 512>, C<K, 1024>
+#define FOR_EACH_EPS_2(C, K, D) C<K, 8, D>, C<K, 16, D>, C<K, 32, D>, C<K, 64, D>, C<K, 128, D>, C<K, 256, D>, \
+                                C<K, 512, D>, C<K, 1024, D>
 
-#define PGM_CLASSES(K) FOR_EACH_EPSILON(pgm::PGMIndex, K)
-#define BPGM_CLASSES(K) FOR_EACH_EPSILON(pgm::BucketingPGMIndex, K)
-#define EFPGM_CLASSES(K) FOR_EACH_EPSILON(pgm::EliasFanoPGMIndex, K)
-#define CPGM_CLASSES(K) FOR_EACH_EPSILON(pgm::CompressedPGMIndex, K)
+#define FOR_EACH_BPGM(C, K) FOR_EACH_EPS_2(C, K, 1 << 16), FOR_EACH_EPS_2(C, K, 1 << 20), FOR_EACH_EPS_2(C, K, 1 << 24)
+
+#define PGM_CLASSES(K) FOR_EACH_EPS(pgm::PGMIndex, K)
+#define BPGM_CLASSES(K) FOR_EACH_BPGM(pgm::BucketingPGMIndex, K)
+#define EFPGM_CLASSES(K) FOR_EACH_EPS(pgm::EliasFanoPGMIndex, K)
+#define CPGM_CLASSES(K) FOR_EACH_EPS(pgm::CompressedPGMIndex, K)
 
 #define ALL_CLASSES(K) PGM_CLASSES(K), BPGM_CLASSES(K), EFPGM_CLASSES(K), CPGM_CLASSES(K)
 

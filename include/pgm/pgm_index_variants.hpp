@@ -354,51 +354,60 @@ struct CompressedPGMIndex<K, Epsilon, EpsilonRecursive, Floating>::CompressedLev
 };
 
 /**
- * A simple variant of @ref OneLevelPGMIndex that builds a top-level lookup table to speed up the search on the
- * segments.
+ * A simple variant of @ref OneLevelPGMIndex that uses length reduction to speed up the search on the segments.
  *
- * The size of the top-level table is specified as a constructor argument. Additionally, the @p TopLevelBitSize template
- * argument allows to specify the bit-size of the memory cells in the top-level table. It can be set either to a power
- * of two or to 0. If set to 0, the bit-size of the cells will be determined dynamically so that the table is
- * bit-compressed.
+ * Segments are assigned to a number of buckets specified with the @p TopLevelSize template argument. A top-level table
+ * of size @p TopLevelSize stores the position of the first segment in each bucket. The @p TopLevelBitSize template
+ * argument allows to specify the bit-size of the memory cells in the top-level table. If set to 0, the bit-size of the
+ * cells will be determined dynamically so that the table is bit-compressed.
  *
  * @tparam K the type of the indexed keys
  * @tparam Epsilon controls the size of the returned search range
- * @tparam TopLevelBitSize the bit-size of the cells in the top-level table, must be either 0 or a power of two
+ * @tparam TopLevelSize the number of cells allocated for the top-level table
+ * @tparam TopLevelBitSize the bit-size of the cells in the top-level table
  * @tparam Floating the floating-point type to use for slopes
  */
-template<typename K, size_t Epsilon = 64, uint8_t TopLevelBitSize = 32, typename Floating = float>
+template<typename K, size_t Epsilon, size_t TopLevelSize, uint8_t TopLevelBitSize = 32, typename Floating = float>
 class BucketingPGMIndex {
 protected:
-    static_assert(Epsilon > 0);
-    static_assert(TopLevelBitSize == 0 || (TopLevelBitSize & (TopLevelBitSize - 1u)) == 0);
+    static_assert(Epsilon > 0 && TopLevelSize > 0);
 
     using Segment = typename PGMIndex<K, Epsilon, 0, Floating>::Segment;
+    static constexpr bool pow_two_top_level = (TopLevelSize & (TopLevelSize - 1u)) == 0;
 
     size_t n;                                     ///< The number of elements this index was built on.
     K first_key;                                  ///< The smallest element.
+    K last_key;                                   ///< The largest element.
     std::vector<Segment> segments;                ///< The segments composing the index.
     sdsl::int_vector<TopLevelBitSize> top_level;  ///< The structure on the segment.
     K step;
 
-    template<typename RandomIt>
-    void build_top_level(RandomIt, RandomIt last, size_t top_level_size) {
+    void build_top_level() {
+        // Compute the size of the partitioned universe
+        size_t actual_top_level_size = TopLevelSize + 2;
+        if constexpr (pow_two_top_level) {
+            step = K(1) << (sizeof(K) * CHAR_BIT - BIT_WIDTH(TopLevelSize) + 1);
+            actual_top_level_size = CEIL_INT_DIV(last_key - first_key, step) + 2;
+        } else
+            step = std::max<K>(CEIL_INT_DIV(last_key - first_key, TopLevelSize), 1);
+
+        // Allocate the top-level table
         auto log_segments = (size_t) BIT_WIDTH(segments.size());
         if constexpr (TopLevelBitSize == 0)
-            top_level = sdsl::int_vector<>(top_level_size, segments.size(), log_segments);
+            top_level = sdsl::int_vector<>(actual_top_level_size, 0, log_segments);
         else {
-            if (log_segments > TopLevelBitSize)
-                throw std::invalid_argument("The value TopLevelBitSize=" + std::to_string(TopLevelBitSize) +
-                    " is too low. Try to set it to " + std::to_string(TopLevelBitSize << 1));
-            top_level = sdsl::int_vector<TopLevelBitSize>(top_level_size, segments.size(), TopLevelBitSize);
+            if (TopLevelBitSize < log_segments)
+                throw std::invalid_argument("TopLevelBitSize must be >=" + std::to_string(log_segments));
+            top_level = sdsl::int_vector<TopLevelBitSize>(actual_top_level_size, 0, TopLevelBitSize);
         }
 
-        step = std::max<K>(CEIL_INT_DIV(*std::prev(last) - first_key, top_level_size), 1);
-        for (auto i = 0ull, k = 1ull; i < top_level_size - 1; ++i) {
-            while (k < segments.size() && (segments[k].key - first_key) < K(i + 1) * step)
+        // Fill the top-level table
+        for (auto i = 1ull, k = 1ull; i < actual_top_level_size - 1; ++i) {
+            while (k < segments.size() && (segments[k].key - first_key) < K(i) * step)
                 ++k;
             top_level[i] = k;
         }
+        top_level[actual_top_level_size - 1] = segments.size();
     }
 
     /**
@@ -407,10 +416,13 @@ protected:
      * @return an iterator to the segment responsible for the given key
      */
     auto segment_for_key(const K &key) const {
-        auto k = key - first_key;
-        auto j = std::min<size_t>(k / step, top_level.size() - 1);
-        auto first = segments.begin() + (k < step ? 1 : top_level[j - 1]);
-        auto last = segments.begin() + top_level[j];
+        size_t j;
+        if constexpr (pow_two_top_level)
+            j = (key - first_key) >> (sizeof(K) * CHAR_BIT - BIT_WIDTH(TopLevelSize) + 1);
+        else
+            j = (key - first_key) / step;
+        auto first = segments.begin() + top_level[j];
+        auto last = segments.begin() + top_level[j + 1];
         return std::prev(std::upper_bound(first, last, key));
     }
 
@@ -424,54 +436,27 @@ public:
     BucketingPGMIndex() = default;
 
     /**
-     * Constructs the index on the given sorted vector, with the specified top level size.
-     * @param data the vector of keys, must be sorted
-     * @param top_level_size the number of cells allocated for the top-level table
-     */
-    BucketingPGMIndex(const std::vector<K> &data, size_t top_level_size)
-        : BucketingPGMIndex(data.begin(), data.end(), top_level_size) {}
-
-    /**
-     * Constructs the index on the sorted keys in the range [first, last), with the specified top level size.
-     * @param first, last the range containing the sorted keys to be indexed
-     * @param top_level_size the number of cells allocated for the top-level table
-     */
-    template<typename RandomIt>
-    BucketingPGMIndex(RandomIt first, RandomIt last, size_t top_level_size)
-        : n(std::distance(first, last)),
-          first_key(n ? *first : K(0)),
-          segments(),
-          top_level() {
-        if (top_level_size == 0)
-            throw std::invalid_argument("top_level_size == 0");
-        if (n == 0)
-            return;
-        std::vector<size_t> offsets;
-        PGMIndex<K, Epsilon, 0, Floating>::build(first, last, Epsilon, 0, segments, offsets);
-        build_top_level(first, last, top_level_size);
-    }
-
-    /**
-     * Constructs the index on the given sorted vector, with a dynamically-set top level size.
+     * Constructs the index on the given sorted vector.
      * @param data the vector of keys, must be sorted
      */
     BucketingPGMIndex(const std::vector<K> &data) : BucketingPGMIndex(data.begin(), data.end()) {}
 
     /**
-     * Constructs the index on the sorted keys in the range [first, last), with a dynamically-set top level size.
+     * Constructs the index on the sorted keys in the range [first, last).
      * @param first, last the range containing the sorted keys to be indexed
      */
     template<typename RandomIt>
     BucketingPGMIndex(RandomIt first, RandomIt last)
         : n(std::distance(first, last)),
           first_key(n ? *first : K(0)),
+          last_key(n ? *(last - 1) : K(0)),
           segments(),
           top_level() {
         if (n == 0)
             return;
         std::vector<size_t> offsets;
         PGMIndex<K, Epsilon, 0, Floating>::build(first, last, Epsilon, 0, segments, offsets);
-        build_top_level(first, last, segments.size() / 2);
+        build_top_level();
     }
 
     /**
@@ -480,9 +465,12 @@ public:
      * @return a struct with the approximate position and bounds of the range
      */
     ApproxPos search(const K &key) const {
-        auto k = std::max(first_key, key);
-        auto it = segment_for_key(k);
-        auto pos = std::min<size_t>((*it)(k), std::next(it)->intercept);
+        if (__builtin_expect(key < first_key, 0))
+            return {0, 0, 0};
+        if (__builtin_expect(key > last_key, 0))
+            return {n, n, n};
+        auto it = segment_for_key(key);
+        auto pos = std::min<size_t>((*it)(key), std::next(it)->intercept);
         auto lo = PGM_SUB_EPS(pos, Epsilon);
         auto hi = PGM_ADD_EPS(pos, Epsilon, n);
         return {pos, lo, hi};

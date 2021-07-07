@@ -99,23 +99,17 @@ TEMPLATE_TEST_CASE_SIG("Compressed PGM-index", "", ((size_t E), E), 8, 32, 128) 
     test_index(index, data);
 }
 
-TEMPLATE_TEST_CASE_SIG("Bucketing PGM-index", "", ((size_t E), E), 8, 32, 128) {
+TEMPLATE_TEST_CASE_SIG("Bucketing PGM-index", "",
+                       ((size_t E, size_t S), E, S), (4, 128), (8, 100), (4, 512), (8, 550)) {
     auto data = generate_data<uint32_t>(2000000);
-    auto top_level_size = GENERATE(1024, 4096);
-    pgm::BucketingPGMIndex<uint32_t, E> index(data.begin(), data.end(), top_level_size);
+    pgm::BucketingPGMIndex<uint32_t, E, S> index(data.begin(), data.end());
     test_index(index, data);
 }
 
-TEMPLATE_TEST_CASE_SIG("Bucketing PGM-index auto-size", "", ((size_t E), E), 8, 32, 128) {
-    auto data = generate_data<uint32_t>(2000000);
-    pgm::BucketingPGMIndex<uint32_t, E> index(data.begin(), data.end());
-    test_index(index, data);
-}
-
-TEST_CASE("Bucketing PGM-index edge case", "") {
+TEMPLATE_TEST_CASE_SIG("Bucketing PGM-index edge case", "",
+                       ((size_t E, size_t S), E, S), (4, 128), (8, 100), (4, 512), (8, 550)) {
     std::vector<uint32_t> data(2000000);
-    auto top_level_size = GENERATE(256, 1024, 4096);
-    pgm::BucketingPGMIndex<uint32_t, 16> index(data.begin(), data.end(), top_level_size);
+    pgm::BucketingPGMIndex<uint32_t, E, S> index(data.begin(), data.end());
     test_index(index, data);
 }
 

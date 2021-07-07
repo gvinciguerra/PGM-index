@@ -64,7 +64,7 @@ struct ApproxPos {
 template<typename K, size_t Epsilon = 64, size_t EpsilonRecursive = 4, typename Floating = float>
 class PGMIndex {
 protected:
-    template<typename, size_t, uint8_t, typename>
+    template<typename, size_t, size_t, uint8_t, typename>
     friend class BucketingPGMIndex;
 
     template<typename, size_t, typename>
