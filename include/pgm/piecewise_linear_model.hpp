@@ -29,6 +29,7 @@
 #include <omp.h>
 #else
 #pragma message ("Compilation with -fopenmp is optional but recommended")
+#define omp_get_num_procs() 1
 #define omp_get_max_threads() 1
 #endif
 
@@ -301,7 +302,7 @@ size_t make_segmentation(size_t n, size_t epsilon, Fin in, Fout out) {
 
 template<typename Fin, typename Fout>
 size_t make_segmentation_par(size_t n, size_t epsilon, Fin in, Fout out) {
-    auto parallelism = std::min(omp_get_max_threads(), 20);
+    auto parallelism = std::min(std::min(omp_get_num_procs(), omp_get_max_threads()), 20);
     auto chunk_size = n / parallelism;
     auto c = 0ull;
 
