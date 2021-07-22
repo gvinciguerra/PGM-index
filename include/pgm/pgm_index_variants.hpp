@@ -965,62 +965,84 @@ public:
      */
     iterator range(const value_type &min, const value_type &max) { return iterator(this, min, max); }
     
-    auto knn(const value_type &p, uint32_t k){
+    /**
+     * (approximate) k-nearest neighbor query.
+     * Returns @p k nearest points from query point @p p.
+     * 
+     * @param p the query point.
+     * @param k the number of nearest points.
+     * @return a vector of k nearest points.
+     */
+    std::vector<value_type> knn(const value_type &p, uint32_t k){
+        // to access coordinate of point dynamically
+        using swallow = int[];
+        auto sequence = std::make_index_sequence<Dimensions>{};
+
+        // return euclidean distance between given point and query point p
+        auto dist_from_p = [&]<std::size_t... indices>(value_type point, std::index_sequence<indices...>){
+            uint64_t squared_sum = 0;
+            squared_sum = (std::pow((int64_t)std::get<indices>(point) - (int64_t)std::get<indices>(p), 2) + ... );
+            return std::sqrt(squared_sum);
+        };
+
+        // return first point of range query for knn query
+        auto k_range_first = [&]<std::size_t... indices>(uint64_t dist, std::index_sequence<indices...>) -> value_type{
+            value_type point;
+            swallow{
+                (std::get<indices>(point) = std::max<int64_t>((int64_t)std::get<indices>(p) - dist, 0), 0)...
+            };
+            return point;
+        };
+
+        // return end point of range query for knn query
+        auto k_range_end = [&]<std::size_t... indices>(uint64_t dist, std::index_sequence<indices...>) -> value_type{
+            value_type point;
+            swallow{
+                (std::get<indices>(point) = std::min(std::get<indices>(p) + dist, this->data.size()), 0)...
+            };
+            return point;
+        };
+
+        // for debug
+        auto print_point = [&]<std::size_t... indices>(value_type point, std::index_sequence<indices...>){
+            std::cout << "(";
+            swallow{
+                (std::cout << std::get<indices>(point) << " , ", 0)...
+            };
+            std::cout << ")";
+        };
+
+        // get 2k points around zp to make temporary answer
         auto zp = encode(p);
         auto range = pgm.search(zp);
         auto it = std::lower_bound(data.begin() + range.lo, data.begin() + range.hi, zp);
 
         std::vector<value_type> tmp_ans;
-        for (auto i = it - k >= data.begin() ? it - k : data.begin(); i != it + k && i != data.end(); ++i){
+        for (auto i = it - k >= data.begin() ? it - k : data.begin(); i != it + k && i != data.end(); ++i)
             tmp_ans.push_back(morton::Decode(*i));
-        }
-
-        auto dist_from_p = [&]<std::size_t... indices>(value_type point, std::index_sequence<indices...>){
-            auto squared_sum = 0;
-            using swallow = int[];
-            (void)swallow{
-                (squared_sum += std::pow(std::get<indices>(point) - std::get<indices>(p), 2))...
-            };
-            return std::sqrt(squared_sum);
-        };
 
         std::sort(tmp_ans.begin(), tmp_ans.end(), [&](auto const& lhs, auto const& rhs) {
-            double dist_l = dist_from_p(lhs, std::make_index_sequence<Dimensions>{});
-            double dist_r = dist_from_p(rhs, std::make_index_sequence<Dimensions>{});
+            double dist_l = dist_from_p(lhs, sequence);
+            double dist_r = dist_from_p(rhs, sequence);
+            return dist_l < dist_r;
+        });
+
+        // calc distance of k nearest point in tmp_ans, and get a range(hyperrectangle) that contains more than k points around p
+        uint64_t k_range_dist = dist_from_p(tmp_ans[k - 1], sequence) + 1;
+        value_type first = k_range_first(k_range_dist, sequence);
+        value_type end = k_range_end(k_range_dist, sequence);
+        
+        // execute range query and get k nearest points
+        std::vector<value_type> ans;
+        for (auto it = this->range(first, end); it != this->end(); ++it)
+            ans.push_back(*it);
+
+        std::sort(ans.begin(), ans.end(), [&](auto const& lhs, auto const& rhs) {
+            double dist_l = dist_from_p(lhs, sequence);
+            double dist_r = dist_from_p(rhs, sequence);
             return dist_l < dist_r;
         });
         
-        auto k_range_first = [&]<std::size_t... indices>(uint64_t dist, std::index_sequence<indices...>) -> value_type{
-            value_type point;
-            using swallow = int[];
-            (void)swallow{
-                (std::get<indices>(point) = std::max<int64_t>((int64_t)std::get<indices>(p) - dist, 0))...
-            };       
-            return point;
-        };
-        auto k_range_end = [&]<std::size_t... indices>(uint64_t dist, std::index_sequence<indices...>) -> value_type{
-            value_type point;
-            using swallow = int[];
-            (void)swallow{
-                (std::get<indices>(point) = std::min(std::get<indices>(p) + dist, this->data.size()))...
-            };            
-            return point;
-        };
-
-        uint64_t k_range_dist = dist_from_p(tmp_ans[k - 1], std::make_index_sequence<Dimensions>{}) + 1;
-        value_type first = k_range_first(k_range_dist, std::make_index_sequence<Dimensions>{});
-        value_type end = k_range_end(k_range_dist, std::make_index_sequence<Dimensions>{});
-
-        std::vector<value_type> ans;
-        for (auto it = this->range(first, end); it != this->end(); ++it)
-                ans.push_back(*it);
-
-        std::sort(ans.begin(), ans.end(), [&](auto const& lhs, auto const& rhs) {
-            double dist_l = dist_from_p(lhs, std::make_index_sequence<Dimensions>{});
-            double dist_r = dist_from_p(rhs, std::make_index_sequence<Dimensions>{});
-            return dist_l < dist_r;
-        });
-
         return std::vector<value_type> {ans.begin(), ans.begin() + k};
     }
 
