@@ -33,5 +33,11 @@ int main() {
     auto count = std::distance(pgm_3d.range({0, 0, 0}, {5, 10, 15}), pgm_3d.end());
     std::cout << "points in range({0,0,0}, {5,10,15}) = " << count << std::endl;
 
+    auto knn = pgm_3d.knn({4, 1, 2}, 5);
+    std::cout << "5 nearest points from {4,1,2} = ";
+    for (auto point : knn){
+        std::cout << "(" << std::get<0>(point) << "," << std::get<1>(point) << "," << std::get<2>(point) << ") ";
+    }
+    std::cout << std::endl;
     return 0;
 }
