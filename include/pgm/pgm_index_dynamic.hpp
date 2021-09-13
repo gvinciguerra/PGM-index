@@ -77,24 +77,22 @@ class DynamicPGMIndex {
         auto it = std::move(level(min_level).begin(), insertion_point, tmp_a.begin());
         *it++ = new_item;
         it = std::move(insertion_point, level(min_level).end(), it);
-        tmp_a.resize(std::distance(tmp_a.begin(), it));
+        auto tmp_size = std::distance(tmp_a.begin(), it);
 
         // Merge subsequent levels
         uint8_t merge_limit = level(target).empty() ? target - 1 : target;
         for (uint8_t i = 1 + min_level; i <= merge_limit; ++i, alternate = !alternate) {
             auto tmp_begin = (alternate ? tmp_a : tmp_b).begin();
-            auto tmp_end = (alternate ? tmp_a : tmp_b).end();
+            auto tmp_end = tmp_begin + tmp_size;
             auto out_begin = (alternate ? tmp_b : tmp_a).begin();
             decltype(out_begin) out_end;
 
             auto can_delete_permanently = i == used_levels - 1;
             if (can_delete_permanently)
-                out_end = merge<true>(tmp_begin, tmp_end, level(i).begin(), level(i).end(), out_begin);
+                out_end = merge<true, true>(tmp_begin, tmp_end, level(i).begin(), level(i).end(), out_begin);
             else
-                out_end = merge<false>(tmp_begin, tmp_end, level(i).begin(), level(i).end(), out_begin);
-
-            (alternate ? tmp_b : tmp_a).resize(std::distance(out_begin, out_end));
-            (alternate ? tmp_a : tmp_b).clear();
+                out_end = merge<false, true>(tmp_begin, tmp_end, level(i).begin(), level(i).end(), out_begin);
+            tmp_size = std::distance(out_begin, out_end);
 
             // Empty this level and the corresponding index
             level(i).clear();
@@ -106,6 +104,7 @@ class DynamicPGMIndex {
 
         level(min_level).clear();
         level(target) = std::move(alternate ? tmp_a : tmp_b);
+        level(target).resize(tmp_size);
 
         // Rebuild index, if needed
         if (has_pgm(target))
@@ -262,7 +261,7 @@ public:
     }
 
     /**
-     * Returns all the elements with key between and including @p lo and @p hi.
+     * Returns a copy of the elements with key between and including @p lo and @p hi.
      * @param lo lower endpoint of the range query
      * @param hi upper endpoint of the range query, must be greater than or equal to @p lo
      * @return a vector of key-value pairs satisfying the range query
@@ -299,10 +298,10 @@ public:
                 continue;
 
             auto tmp_size = (alternate ? tmp_a : tmp_b).size();
-            (alternate ? tmp_b : tmp_a).reserve(tmp_size + range_size);
+            (alternate ? tmp_b : tmp_a).resize(tmp_size + range_size);
             auto tmp_it = (alternate ? tmp_a : tmp_b).begin();
             auto out_it = (alternate ? tmp_b : tmp_a).begin();
-            tmp_size = std::distance(out_it, merge<false>(tmp_it, tmp_it + tmp_size, it_lo, it_hi, out_it));
+            tmp_size = std::distance(out_it, merge<false, false>(tmp_it, tmp_it + tmp_size, it_lo, it_hi, out_it));
             (alternate ? tmp_b : tmp_a).resize(tmp_size);
             alternate = !alternate;
         }
@@ -419,27 +418,32 @@ public:
 
 private:
 
-    template<bool SkipDeleted, typename In1, typename In2, typename OutIterator>
+    template<bool SkipDeleted, bool Move, typename In1, typename In2, typename OutIterator>
     static OutIterator merge(In1 first1, In1 last1, In2 first2, In2 last2, OutIterator result) {
         while (first1 != last1 && first2 != last2) {
             if (*first2 < *first1) {
-                *result = *first2;
+                if constexpr (Move) *result = std::move(*first2);
+                else *result = *first2;
                 ++first2;
                 ++result;
             } else if (*first1 < *first2) {
-                *result = *first1;
+                if constexpr (Move) *result = std::move(*first1);
+                else *result = *first1;
                 ++first1;
                 ++result;
             } else if (SkipDeleted && first1->deleted()) {
                 ++first1;
                 ++first2;
             } else {
-                *result = *first1;
+                if constexpr (Move) *result = std::move(*first1);
+                else *result = *first1;
                 ++first1;
                 ++first2;
                 ++result;
             }
         }
+        if constexpr (Move)
+            return std::move(first2, last2, std::move(first1, last1, result));
         return std::copy(first2, last2, std::copy(first1, last1, result));
     }
 
@@ -700,7 +704,7 @@ public:
     K first;
     V second;
 
-    ItemB() { /* do not (default-)initialize for a more efficient std::vector<ItemB>::resize */ }
+    ItemB() = default;
     explicit ItemB(const K &key) : flag(true), first(key), second() {}
     explicit ItemB(const K &key, const V &value) : flag(false), first(key), second(value) {}
 

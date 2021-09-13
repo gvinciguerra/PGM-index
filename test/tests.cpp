@@ -146,10 +146,19 @@ TEMPLATE_TEST_CASE_SIG("Mapped PGM-index", "", ((size_t E), E), 8, 32, 128) {
     std::remove(tmp_filename.c_str());
 }
 
-TEMPLATE_TEST_CASE("Dynamic PGM-index", "", uint32_t*, uint32_t) {
-    TestType time = 0;
-    auto rand = std::bind(std::uniform_int_distribution<uint32_t>(0, 1000000000), std::mt19937{42});
-    auto gen = [&] { return std::pair<uint32_t, TestType>{rand(), ++time}; };
+TEMPLATE_TEST_CASE("Dynamic PGM-index", "", uint32_t*, uint32_t, std::string) {
+    using time_type = uint32_t;
+    auto make_key = std::bind(std::uniform_int_distribution<uint32_t>(0, 1000000000), std::mt19937{42});
+    auto make_value = [&] {
+        static time_type time = 0;
+        if constexpr (std::is_same_v<TestType, std::string>) return std::to_string(++time);
+        else return reinterpret_cast<TestType>(++time);
+    };
+    auto get_value = [](auto x) {
+        if constexpr (std::is_same_v<TestType, std::string>) return (time_type) std::stoll(x);
+        else return x;
+    };
+    auto gen = [&] { return std::pair<uint32_t, TestType>{make_key(), make_value()}; };
 
     std::vector<std::pair<uint32_t, TestType>> bulk(GENERATE(0, 10, 1000, 100000));
     std::generate(bulk.begin(), bulk.end(), gen);
@@ -170,7 +179,7 @@ TEMPLATE_TEST_CASE("Dynamic PGM-index", "", uint32_t*, uint32_t) {
 
     // Test lower bound
     for (size_t i = 0; i < std::min<size_t>(1000, bulk.size()); ++i) {
-        auto q = bulk[rand() % bulk.size()];
+        auto q = bulk[make_key() % bulk.size()];
         auto c = pgm.count(q.first);
         auto it = pgm.lower_bound(q.first);
         REQUIRE(c == 1);
@@ -178,10 +187,10 @@ TEMPLATE_TEST_CASE("Dynamic PGM-index", "", uint32_t*, uint32_t) {
     }
 
     // Overwrite some elements
-    ++time;
-    for (size_t i = 0; i < std::min<size_t>(10000, bulk.size()); ++i, ++time) {
-        pgm.insert_or_assign(bulk[i].first, time);
-        map.insert_or_assign(bulk[i].first, time);
+    for (size_t i = 0; i < std::min<size_t>(10000, bulk.size()); ++i) {
+        auto v = make_value();
+        pgm.insert_or_assign(bulk[i].first, v);
+        map.insert_or_assign(bulk[i].first, v);
     }
 
     // Insert new elements
@@ -197,7 +206,7 @@ TEMPLATE_TEST_CASE("Dynamic PGM-index", "", uint32_t*, uint32_t) {
         auto q = bulk[i];
         auto it = pgm.lower_bound(q.first);
         REQUIRE(it->first == q.first);
-        REQUIRE(it->second > q.second);
+        REQUIRE(get_value(it->second) > get_value(q.second));
         REQUIRE(it->second == map.lower_bound(q.first)->second);
     }
 
@@ -225,8 +234,8 @@ TEMPLATE_TEST_CASE("Dynamic PGM-index", "", uint32_t*, uint32_t) {
 
     // Test range
     for (int i = 0; i < 10; ++i) {
-        auto lo = rand();
-        auto hi = lo + rand() / 2;
+        auto lo = make_key();
+        auto hi = lo + make_key() / 2;
         auto range_result = pgm.range(lo, hi);
         auto map_it = map.lower_bound(lo);
         for (auto[k, v] : range_result) {
