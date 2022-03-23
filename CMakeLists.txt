@@ -6,6 +6,7 @@ project(PiecewiseGeometricModelIndex
 option(BUILD_EXAMPLES "Build the examples" ON)
 option(BUILD_PGM_TUNER "Build the tuner target" ON)
 option(BUILD_PGM_BENCHMARK "Build the benchmark target" ON)
+option(BUILD_KV_TEST "Build the kv test" ON)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -33,6 +34,10 @@ endif ()
 
 if (BUILD_EXAMPLES)
     add_subdirectory(examples)
+endif ()
+
+if (BUILD_KV_TEST)
+    add_subdirectory(kv_test)
 endif ()
 
 if (BUILD_PGM_BENCHMARK)
