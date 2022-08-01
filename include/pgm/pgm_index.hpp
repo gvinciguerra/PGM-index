@@ -96,7 +96,7 @@ protected:
 
         auto build_level = [&](auto epsilon, auto in_fun, auto out_fun) {
             auto n_segments = internal::make_segmentation_par(last_n, epsilon, in_fun, out_fun);
-            if (segments.back().slope == 0 && last_n > 1) {
+            if (last_n > 1 && segments.back().slope == 0) {
                 // Here we need to ensure that keys > *(last-1) are approximated to a position == prev_level_size
                 segments.emplace_back(*std::prev(last) + 1, 0, last_n);
                 ++n_segments;
