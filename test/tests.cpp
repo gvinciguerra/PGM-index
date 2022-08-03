@@ -274,3 +274,11 @@ TEMPLATE_TEST_CASE_SIG("Multidimensional PGM-index", "",
 }
 
 #endif
+
+TEST_CASE("PGM-index out of bonds", "[tmg]")
+{
+    std::vector<uint32_t> data { std::numeric_limits<uint32_t>::max() };
+    
+    pgm::PGMIndex<uint32_t> index(data.begin(), data.end());
+    REQUIRE ( index.segments_count()==0 );
+}
