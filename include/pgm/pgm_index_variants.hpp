@@ -625,19 +625,27 @@ private:
 
         auto high_val = (i >> (ef.wl));
         auto sel_high = ef.high_0_select(high_val + 1);
-        auto rank_low = sel_high - high_val;
-        if (0 == rank_low)
+        auto rank_hi = sel_high - high_val;
+        if (0 == rank_hi)
             return {0, ef.low[0] + (high_val << ef.wl)};
 
+        auto rank_lo = high_val == 0 ? 0 : ef.high_0_select(high_val) - high_val + 1;
         auto val_low = i & sdsl::bits::lo_set[ef.wl];
-        do {
-            if (!sel_high)
-                return {0, ef.low[rank_low] + (high_val < ef.wl)};
-            --sel_high;
-            --rank_low;
-        } while (ef.high[sel_high] and ef.low[rank_low] >= val_low);
-        auto h = ef.high[sel_high] ? high_val : sdsl::bits::prev(ef.high.data(), sel_high) - rank_low;
-        return {rank_low, ef.low[rank_low] + (h << ef.wl)};
+        auto count = rank_hi - rank_lo;
+        while (count > 0) {
+            auto step = count / 2;
+            auto mid = rank_lo + step;
+            if (ef.low[mid] < val_low) {
+                rank_lo = mid + 1;
+                count -= step + 1;
+            } else {
+                count = step;
+            }
+        }
+        --rank_lo;
+        sel_high -= rank_hi - rank_lo;
+        auto h = ef.high[sel_high] ? high_val : sdsl::bits::prev(ef.high.data(), sel_high) - rank_lo;
+        return {rank_lo, ef.low[rank_lo] + (h << ef.wl)};
     }
 };
 
