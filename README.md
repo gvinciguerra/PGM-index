@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://pgm.di.unipi.it/images/logo.svg" alt="The PGM-index" style="width: 565px">
+  <img src="https://pgm.di.unipi.it/images/logo.svg" alt="The PGM-index" style="width: 300px">
 </p>
 
 <p align="center">The Piecewise Geometric Model index (PGM-index) is a data structure that enables fast lookup, predecessor, range searches and updates in arrays of billions of items using orders of magnitude less space than traditional indexes while providing the same worst-case query time guarantees.</p>
@@ -14,8 +14,7 @@
 </p>
 
 <p align="center">
-    <a href="https://github.com/gvinciguerra/PGM-index/actions?query=workflow%3Abuild"><img src="https://img.shields.io/github/workflow/status/gvinciguerra/PGM-index/build" alt="GitHub Workflow Status"></a>
-    <a href="https://lgtm.com/projects/g/gvinciguerra/PGM-index/context:cpp"><img alt="Language grade: C/C++" src="https://img.shields.io/lgtm/grade/cpp/github/gvinciguerra/PGM-index?label=code%20quality"/></a>
+    <a href="https://github.com/gvinciguerra/PGM-index/actions?query=workflow%3Abuild"><img src="https://img.shields.io/github/actions/workflow/status/gvinciguerra/PGM-index/build.yml" alt="GitHub Workflow Status"></a>
     <a href="https://github.com/gvinciguerra/PGM-index/blob/master/LICENSE"><img src="https://img.shields.io/github/license/gvinciguerra/PGM-index" alt="License"></a>
     <a href="https://github.com/gvinciguerra/PGM-index/stargazers"><img src="https://img.shields.io/github/stars/gvinciguerra/PGM-index" alt="GitHub stars"></a>
     <a href="https://github.com/gvinciguerra/PGM-index/network/members"><img alt="GitHub forks" src="https://img.shields.io/github/forks/gvinciguerra/PGM-index"></a>
