@@ -41,12 +41,12 @@ struct ApproxPos {
 };
 
 /**
- * A space-efficient index that enables fast search operations on a sorted sequence of @c n numbers.
+ * A space-efficient index that enables fast search operations on a sorted sequence of numbers.
  *
  * A search returns a struct @ref ApproxPos containing an approximate position of the sought key in the sequence and
- * the bounds of a range of size 2*Epsilon+1 where the sought key is guaranteed to be found if present.
- * If the key is not present, the range is guaranteed to contain a key that is not less than (i.e. greater or equal to)
- * the sought key, or @c n if no such key is found.
+ * the bounds of a range where the sought key is guaranteed to be found if present.
+ * If the key is not present, a @ref std::lower_bound search on the range finds a key that is greater or equal to the
+ * sought key, if any.
  * In the case of repeated keys, the index finds the position of the first occurrence of a key.
  *
  * The @p Epsilon template parameter should be set according to the desired space-time trade-off. A smaller value
