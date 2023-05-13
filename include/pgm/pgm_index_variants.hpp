@@ -1006,7 +1006,7 @@ public:
         auto k_range_end = [&]<std::size_t... indices>(uint64_t dist, std::index_sequence<indices...>) -> value_type{
             value_type point;
             swallow{
-                (std::get<indices>(point) = std::min(std::get<indices>(p) + dist, this->data.size()), 0)...
+                (std::get<indices>(point) = std::min<uint64_t>(std::get<indices>(p) + dist, this->data.size()), 0)...
             };
             return point;
         };
