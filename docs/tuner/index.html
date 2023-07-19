@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>Using the tuner - The PGM-index</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link rel="icon" href="https://pgm.di.unipi.it/favicon.png">
+
+  
+  
+  <link rel="stylesheet" href="/css/style.min.6ac69e29ffc4779f1d12d173a6fa6bd92fc7d9452461a1279b51006a4098841a.css">
+  
+
+  
+
+</head>
+
+<body class='page page-default-single'>
+  <div id="main-menu-mobile" class="main-menu-mobile">
+  <ul>
+    
+    
+    <li class="menu-item-home">
+      <a href="/">
+        <span>Home</span>
+      </a>
+    </li>
+    
+    <li class="menu-item-docs">
+      <a href="/docs/">
+        <span>Docs</span>
+      </a>
+    </li>
+    
+  </ul>
+</div>
+  <div class="wrapper">
+    <div class='header'>
+  <div class="container">
+    <div class="logo">
+      <a href="https://pgm.di.unipi.it">The PGM-index</a>
+    </div>
+    <div class="logo-mobile">
+      <a href="https://pgm.di.unipi.it">The PGM-index</a>
+    </div>
+    <div id="main-menu" class="main-menu">
+  <ul>
+    
+    
+    <li class="menu-item-home">
+      <a href="/">
+        <span>Home</span>
+      </a>
+    </li>
+    
+    <li class="menu-item-docs">
+      <a href="/docs/">
+        <span>Docs</span>
+      </a>
+    </li>
+    
+  </ul>
+</div>
+    <button id="toggle-main-menu-mobile" class="hamburger hamburger--slider" type="button">
+  <span class="hamburger-box">
+    <span class="hamburger-inner"></span>
+  </span>
+</button>
+  </div>
+</div>
+
+
+    
+    
+    
+    
+    
+    
+
+    
+    <div class="container pt-2 pt-md-6 pb-3 pb-md-6">
+      <div class="row">
+        <div class="col-12 col-md-3 mb-3">
+          <div class="sidebar">
+            
+<div class="docs-menu">
+  <h4>Docs</h4>
+  <ul>
+    
+    <li class="">
+      <a href="https://pgm.di.unipi.it/docs/building-the-code/">Building the code</a>
+    </li>
+    
+    <li class="active ">
+      <a href="https://pgm.di.unipi.it/docs/tuner/">Using the tuner</a>
+    </li>
+    
+    <li class="">
+      <a href="https://pgm.di.unipi.it/docs/benchmark/">Using the benchmark</a>
+    </li>
+    
+    <li class="">
+      <a href="https://pgm.di.unipi.it/docs/cpp-reference/">C&#43;&#43; Reference</a>
+    </li>
+    
+    <li class="">
+      <a href="https://pgm.di.unipi.it/docs/python-reference/">Python Reference</a>
+    </li>
+    
+    <li class="">
+      <a href="https://pgm.di.unipi.it/docs/computational-complexities/">Computational complexity</a>
+    </li>
+    
+  </ul>
+</div>
+
+          </div>
+        </div>
+        <div class="col-12 col-md-9">
+          
+<h1 class="title">Using the tuner</h1>
+<div class="content anchor-link-enabled">
+  <p>The PGM-index can auto-tune itself to match any given application constraint, either in query time or in space occupancy.</p>
+<p>Once you <a href="/docs/building-the-code">have built</a> the project, you can run the command-line tuner that finds the optimal value for the epsilon parameter when <a href="/docs/cpp-reference/#classpgm_1_1_p_g_m_index">creating the PGM-index</a>.</p>
+<p>For example, to get the fastest PGM-index configuration occupying 3 megabytes of space, you would run:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl">./tuner -s3000000 -U file.bin
+</span></span></code></pre></div><p>Instead, if you need a PGM-index that answers queries in 700±1% nanoseconds and that occupies the least amount of space, you would run:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl">./tuner -t700 -o0.01 -U file.bin
+</span></span></code></pre></div><p>The input data must be provided as a binary file containing a <em>sorted</em> sequence of signed or unsigned 32- or 64-bit integers. The integer type must be specified with the options <code>-U</code>, <code>-I</code>, <code>-u</code>, <code>-i</code>, that corresponds to the types <code>uint64</code>, <code>int64</code>, <code>uint32</code>, <code>int32</code>, respectively.</p>
+<p>The input file can be prepared for instance in Python by calling <code>np.sort(a).astype('uint64').tofile('file.bin')</code> on a NumPy array <code>a</code> containing your data. The following Python code for example converts a text file containing newline-separated positive integers to the binary format required by the tuner:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+</span></span><span class="line"><span class="cl"><span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;my_data.txt&#39;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">.</span><span class="n">tofile</span><span class="p">(</span><span class="s1">&#39;file.bin&#39;</span><span class="p">)</span>
+</span></span></code></pre></div><h2 id="tuner-c-api">Tuner C++ API</h2>
+<p>If you need to use the tuner from your code, have a look at the functions <code>minimize_space_given_time</code> and <code>minimize_time_given_space</code> in <a href="https://github.com/gvinciguerra/PGM-index/blob/master/tuner/tuner.hpp">tuner.hpp</a>.</p>
+<h2 id="program-manual">Program manual</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">tuner file {OPTIONS}
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">Space-time trade-off tuner for the PGM-index.
+</span></span><span class="line"><span class="cl">This program lets you specify a maximum space and get the PGM-index minimising
+</span></span><span class="line"><span class="cl">the query time within that space. Or, it lets you specify a maximum query time
+</span></span><span class="line"><span class="cl">and get the PGM-index minimising the space.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">OPTIONS:
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  -h, --help             Display this help menu
+</span></span><span class="line"><span class="cl">  -o[float], --tol=[float]
+</span></span><span class="line"><span class="cl">                         Tolerance between 0 and 1 on the constraint (default
+</span></span><span class="line"><span class="cl">                         0.01)
+</span></span><span class="line"><span class="cl">  -r[ratio], --ratio=[ratio]
+</span></span><span class="line"><span class="cl">                         Ratio of lookups in the query workload (default 0.33)
+</span></span><span class="line"><span class="cl">  -v, --verbose          Show additional logging info
+</span></span><span class="line"><span class="cl">  OPERATION MODES:
+</span></span><span class="line"><span class="cl">    -t[ns], --time=[ns]    Specify a time to minimise the space
+</span></span><span class="line"><span class="cl">    -s[bytes], --space=[bytes]
+</span></span><span class="line"><span class="cl">                           Specify a space to minimise the time
+</span></span><span class="line"><span class="cl">  INPUT DATA OPTIONS:
+</span></span><span class="line"><span class="cl">    -U, --u64              Input file contains unsigned 64-bit ints
+</span></span><span class="line"><span class="cl">    -I, --i64              Input file contains signed 64-bit ints
+</span></span><span class="line"><span class="cl">    -u, --u32              Input file contains unsigned 32-bit ints
+</span></span><span class="line"><span class="cl">    -i, --i32              Input file contains signed 32-bit ints
+</span></span><span class="line"><span class="cl">  file                   The file containing the input data
+</span></span><span class="line"><span class="cl">  &#34;--&#34; can be used to terminate flag options and force all following arguments
+</span></span><span class="line"><span class="cl">  to be treated as positional options
+</span></span></code></pre></div>
+</div>
+</div>
+
+        </div>
+      </div>
+    </div>
+    
+  </div>
+
+  <div class="footer">
+  Made with 👼 at <a href="https://www.di.unipi.it/en/">University of Pisa</a> by the <a
+    href="http://acube.di.unipi.it">A³ Lab</a><br>
+  This library was supported by the Italian Ministry of University and Research &ldquo;Progetti di Rilevante Interesse Nazionale&rdquo; project: &ldquo;<a href="http://learned.di.unipi.it">Multicriteria data structures and algorithms</a>&rdquo; (grant n. 2017WR7SHH).  </p>
+</div>
+<link rel="stylesheet" href="/js/katex/katex.min.css">
+<script defer src="/js/katex/katex.min.js"></script>
+<script defer src="/js/katex/auto-render.min.js" onload="renderMathInElement(document.body, { macros: { '\\Oh': '\\mathcal{O}' }, delimiters: [
+  {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}] });"></script>
+
+  
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/scripts.min.302a6fc365d5139fb98cf60bdb8f715d96257ea189161d36c190ccfa8182e569.js"></script>
+  
+
+  
+  
+  
+    
+  
+
+
+</body>
+
+</html>

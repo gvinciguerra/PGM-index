@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Overview on The PGM-index</title>
+    <link>https://pgm.di.unipi.it/docs/</link>
+    <description>Recent content in Overview on The PGM-index</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 22 Mar 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://pgm.di.unipi.it/docs/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Building the code</title>
+      <link>https://pgm.di.unipi.it/docs/building-the-code/</link>
+      <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
+      
+      <guid>https://pgm.di.unipi.it/docs/building-the-code/</guid>
+      <description>Instructions on how to build the source code of the PGM-index.</description>
+    </item>
+    
+    <item>
+      <title>Using the tuner</title>
+      <link>https://pgm.di.unipi.it/docs/tuner/</link>
+      <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
+      
+      <guid>https://pgm.di.unipi.it/docs/tuner/</guid>
+      <description>User manual for the multicriteria tuner.</description>
+    </item>
+    
+    <item>
+      <title>Using the benchmark</title>
+      <link>https://pgm.di.unipi.it/docs/benchmark/</link>
+      <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
+      
+      <guid>https://pgm.di.unipi.it/docs/benchmark/</guid>
+      <description>User manual for the benchmark program.</description>
+    </item>
+    
+    <item>
+      <title>C&#43;&#43; Reference</title>
+      <link>https://pgm.di.unipi.it/docs/cpp-reference/</link>
+      <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
+      
+      <guid>https://pgm.di.unipi.it/docs/cpp-reference/</guid>
+      <description>C++ API reference for the PGM-index.</description>
+    </item>
+    
+    <item>
+      <title>Python Reference</title>
+      <link>https://pgm.di.unipi.it/docs/python-reference/</link>
+      <pubDate>Sun, 12 Jul 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://pgm.di.unipi.it/docs/python-reference/</guid>
+      <description>Python API reference for the PyGM package.</description>
+    </item>
+    
+    <item>
+      <title>Computational complexity</title>
+      <link>https://pgm.di.unipi.it/docs/computational-complexities/</link>
+      <pubDate>Sun, 07 Feb 2021 00:00:00 +0000</pubDate>
+      
+      <guid>https://pgm.di.unipi.it/docs/computational-complexities/</guid>
+      <description>Discussion on the space and time complexity of the PGM-index.</description>
+    </item>
+    
+  </channel>
+</rss>
