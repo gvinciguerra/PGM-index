@@ -153,8 +153,8 @@ public:
         return *this;
     }
 
-    reference operator*() { return *reinterpret_cast<const T *>(ptr); }
-    reference operator[](difference_type i) { return *reinterpret_cast<const T *>(ptr + i * step); }
+    reference operator*() const { return *reinterpret_cast<const T *>(ptr); }
+    reference operator[](difference_type i) const { return *reinterpret_cast<const T *>(ptr + i * step); }
 
     RecordIterator &operator++() {
         ptr += step;
@@ -164,7 +164,6 @@ public:
     RecordIterator &operator--() {
         ptr -= step;
         return *this;
-
     }
 
     RecordIterator operator++(int) {
