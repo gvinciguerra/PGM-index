@@ -17,11 +17,13 @@
 
 #include "piecewise_linear_model.hpp"
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
 #include <limits>
 #include <stdexcept>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -29,6 +31,26 @@ namespace pgm {
 
 #define PGM_SUB_EPS(x, epsilon) ((x) <= (epsilon) ? 0 : ((x) - (epsilon)))
 #define PGM_ADD_EPS(x, epsilon, size) ((x) + (epsilon) + 2 >= (size) ? (size) : (x) + (epsilon) + 2)
+
+namespace internal {
+    template<typename K, typename RandomIt>
+    auto first_level_in_fun(RandomIt first, size_t n) {
+        return [=](size_t i) {
+            auto x = first[i];
+            // Here there is an adjustment for inputs with duplicate keys: at the end of a run of duplicate keys equal
+            // to x=first[i] such that x+1!=first[i+1], we map the values x+1,...,first[i+1]-1 to their correct rank i.
+            // For floating-point keys, the value x+1 above is replaced by the next representable value following x.
+            if constexpr (std::is_floating_point_v<K>) {
+                K next;
+                constexpr auto infinity = std::numeric_limits<K>::infinity();
+                auto flag = i - 1u < n - 2u && x == first[i - 1] && (next = std::nextafter(x, infinity)) < first[i + 1];
+                return std::pair<K, size_t>(flag ? next : x, i);
+            }
+            auto flag = i - 1u < n - 2u && x == first[i - 1] && x + 1 < first[i + 1];
+            return std::pair<K, size_t>(x + flag, i);
+        };
+    }
+}
 
 /**
  * A struct that stores the result of a query to a @ref PGMIndex, that is, a range [@ref lo, @ref hi)
@@ -106,13 +128,7 @@ protected:
         };
 
         // Build first level
-        auto in_fun = [&](auto i) {
-            auto x = first[i];
-            // Here there is an adjustment for inputs with duplicate keys: at the end of a run of duplicate keys equal
-            // to x=first[i] such that x+1!=first[i+1], we map the values x+1,...,first[i+1]-1 to their correct rank i
-            auto flag = i > 0 && i + 1u < n && x == first[i - 1] && x != first[i + 1] && x + 1 != first[i + 1];
-            return std::pair<K, size_t>(x + flag, i);
-        };
+        auto in_fun = internal::first_level_in_fun<K, decltype(first)>(first, n);
         auto out_fun = [&](auto cs) { segments.emplace_back(cs); };
         last_n = build_level(epsilon, in_fun, out_fun);
         levels_offsets.push_back(levels_offsets.back() + last_n + 1);

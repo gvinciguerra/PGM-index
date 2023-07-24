@@ -115,11 +115,7 @@ public:
         last -= ignore_last;
 
         // Build first level
-        auto in_fun = [&](auto i) {
-            auto x = first[i];
-            auto flag = i > 0 && i + 1u < n && x == first[i - 1] && x != first[i + 1] && x + 1 != first[i + 1];
-            return std::pair<K, size_t>(x + flag, i);
-        };
+        auto in_fun = internal::first_level_in_fun<K, decltype(first)>(first, n);
         auto out_fun = [&](auto cs) { segments.emplace_back(cs); };
         last_n = internal::make_segmentation_par(last_n, Epsilon, in_fun, out_fun);
         levels_offsets.push_back(levels_offsets.back() + last_n);
