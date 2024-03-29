@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="322px" height="178px" viewBox="0 0 322 178" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 55.1 (78136) - https://sketchapp.com -->
+    <title>PGM-index</title>
+    <desc>Created with Sketch.</desc>
+    <g id="PGM-index" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <rect id="Rectangle" stroke="#2D2D2D" stroke-width="5" fill="#FFFFFF" stroke-linecap="round" stroke-linejoin="round" x="2.5" y="152.5" width="317" height="22" rx="4"></rect>
+        <path d="M174,155 L174,172" id="Line-2" stroke="#C6DBEF" stroke-width="13"></path>
+        <path d="M96,155 L96,172" id="Line-2" stroke="#C6DBEF" stroke-width="13"></path>
+        <path d="M161,155 L161,172" id="Line-2" stroke="#9ECAE1" stroke-width="13"></path>
+        <path d="M109,155 L109,172" id="Line-2" stroke="#9ECAE1" stroke-width="13"></path>
+        <path d="M148,155 L148,172" id="Line-2" stroke="#6BAED6" stroke-width="13"></path>
+        <path d="M122,155 L122,172" id="Line-2" stroke="#6BAED6" stroke-width="13"></path>
+        <path d="M135,155 L135,172" id="Line-2" stroke="#3182BD" stroke-width="13"></path>
+        <path d="M160.235784,18 C171.097276,30.3750543 179.685348,41.7058871 186,51.9924983 C186,77.506573 152.73612,56.7393029 152.73612,84.1539537 C152.73612,111.568605 116,95.589859 116,116.90876 C116,116.90876 122.929714,129.60584 136.789141,155" id="Path-3" stroke="#3182BD" stroke-width="3" stroke-dasharray="6,6,6"></path>
+        <circle id="Oval" stroke="#2D2D2D" stroke-width="5" fill="#FFFFFF" cx="160.5" cy="14.5" r="10.5"></circle>
+        <path d="M111.5,53.2083333 L211.5,53.2083333" id="Line" stroke="#2D2D2D" stroke-width="5" stroke-linecap="square"></path>
+        <circle id="Oval" stroke="#2D2D2D" stroke-width="5" fill="#FFFFFF" cx="209" cy="53" r="8"></circle>
+        <circle id="Oval" stroke="#2D2D2D" stroke-width="5" fill="#FFFFFF" cx="152" cy="53" r="8"></circle>
+        <circle id="Oval" stroke="#2D2D2D" stroke-width="5" fill="#FFFFFF" cx="110" cy="53" r="8"></circle>
+        <path d="M86.5,86.2013889 L242.5,86.2013889" id="Line" stroke="#2D2D2D" stroke-width="5" stroke-linecap="square"></path>
+        <circle id="Oval" stroke="#2D2D2D" stroke-width="5" fill="#FFFFFF" cx="243" cy="85" r="7"></circle>
+        <circle id="Oval" stroke="#2D2D2D" stroke-width="5" fill="#FFFFFF" cx="182" cy="85" r="7"></circle>
+        <circle id="Oval" stroke="#2D2D2D" stroke-width="5" fill="#FFFFFF" cx="126" cy="85" r="7"></circle>
+        <circle id="Oval" stroke="#2D2D2D" stroke-width="5" fill="#FFFFFF" cx="75" cy="86" r="7"></circle>
+        <path d="M46.5,119.201389 L274.5,119.201389" id="Line" stroke="#2D2D2D" stroke-width="5" stroke-linecap="square"></path>
+        <circle id="Oval" stroke="#2D2D2D" stroke-width="5" fill="#FFFFFF" cx="278" cy="119" r="6"></circle>
+        <circle id="Oval" stroke="#2D2D2D" stroke-width="5" fill="#FFFFFF" cx="240" cy="119" r="6"></circle>
+        <circle id="Oval" stroke="#2D2D2D" stroke-width="5" fill="#FFFFFF" cx="182" cy="119" r="6"></circle>
+        <circle id="Oval" stroke="#2D2D2D" stroke-width="5" fill="#FFFFFF" cx="135" cy="119" r="6"></circle>
+        <circle id="Oval" stroke="#2D2D2D" stroke-width="5" fill="#FFFFFF" cx="97" cy="119" r="6"></circle>
+        <circle id="Oval" stroke="#2D2D2D" stroke-width="5" fill="#FFFFFF" cx="42" cy="119" r="6"></circle>
+        <rect id="Rectangle" stroke="#2D2D2D" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" x="2.5" y="152.5" width="317" height="22" rx="4"></rect>
+    </g>
+</svg>

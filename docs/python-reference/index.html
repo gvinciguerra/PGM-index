@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>Python Reference - The PGM-index</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link rel="icon" href="https://pgm.di.unipi.it/favicon.png">
+
+  
+  
+  <link rel="stylesheet" href="/css/style.min.47b485d84ade20739e6d7876653baf13d09ef0ece9625f11c9f5c627ed07eda4.css">
+  
+
+  
+
+</head>
+
+<body class='page page-default-single'>
+  <div id="main-menu-mobile" class="main-menu-mobile">
+  <ul>
+    
+    
+    <li class="menu-item-home">
+      <a href="/">
+        <span>Home</span>
+      </a>
+    </li>
+    
+    <li class="menu-item-docs">
+      <a href="/docs/">
+        <span>Docs</span>
+      </a>
+    </li>
+    
+  </ul>
+</div>
+  <div class="wrapper">
+    <div class='header'>
+  <div class="container">
+    <div class="logo">
+      <a href="https://pgm.di.unipi.it/">The PGM-index</a>
+    </div>
+    <div class="logo-mobile">
+      <a href="https://pgm.di.unipi.it/">The PGM-index</a>
+    </div>
+    <div id="main-menu" class="main-menu">
+  <ul>
+    
+    
+    <li class="menu-item-home">
+      <a href="/">
+        <span>Home</span>
+      </a>
+    </li>
+    
+    <li class="menu-item-docs">
+      <a href="/docs/">
+        <span>Docs</span>
+      </a>
+    </li>
+    
+  </ul>
+</div>
+    <button id="toggle-main-menu-mobile" class="hamburger hamburger--slider" type="button">
+  <span class="hamburger-box">
+    <span class="hamburger-inner"></span>
+  </span>
+</button>
+  </div>
+</div>
+
+
+    
+    
+    
+    
+    
+    
+
+    
+    <div class="container pt-2 pt-md-6 pb-3 pb-md-6">
+      <div class="row">
+        <div class="col-12 col-md-3 mb-3">
+          <div class="sidebar">
+            
+<div class="docs-menu">
+  <h4>Docs</h4>
+  <ul>
+    
+    <li class="">
+      <a href="https://pgm.di.unipi.it/docs/building-the-code/">Building the code</a>
+    </li>
+    
+    <li class="">
+      <a href="https://pgm.di.unipi.it/docs/tuner/">Using the tuner</a>
+    </li>
+    
+    <li class="">
+      <a href="https://pgm.di.unipi.it/docs/benchmark/">Using the benchmark</a>
+    </li>
+    
+    <li class="">
+      <a href="https://pgm.di.unipi.it/docs/cpp-reference/">C&#43;&#43; Reference</a>
+    </li>
+    
+    <li class="active ">
+      <a href="https://pgm.di.unipi.it/docs/python-reference/">Python Reference</a>
+    </li>
+    
+    <li class="">
+      <a href="https://pgm.di.unipi.it/docs/computational-complexities/">Computational complexity</a>
+    </li>
+    
+  </ul>
+</div>
+
+          </div>
+        </div>
+        <div class="col-12 col-md-9">
+          
+<h1 class="title">Python Reference</h1>
+<div class="content anchor-link-enabled">
+  <p>This is the documentation for <a href="https://github.com/gvinciguerra/PyGM">PyGM</a> (v1.0), a Python library of sorted containers powered by the PGM‑index.</p>
+<style type="text/css" scoped>
+  code { padding: 0 !important; } 
+  .content > h4 { margin-top: 40px !important; }
+  h2 + h4 { margin-top: 0px !important; }
+  dd { margin-left: 15px; text-align: justify; -moz-hyphens: auto; -ms-hyphens: auto; -webkit-hyphens: auto; hyphens: auto; }
+  dl { margin-bottom: 30px; }
+  a.headerlink { visibility: hidden; }
+  h1:hover > a.headerlink,
+  h2:hover > a.headerlink,
+  h3:hover > a.headerlink,
+  h4:hover > a.headerlink,
+  h5:hover > a.headerlink,
+  h6:hover > a.headerlink,
+  dt:hover > a.headerlink,
+  caption:hover > a.headerlink,
+  p.caption:hover > a.headerlink,
+  div.code-block-caption:hover > a.headerlink {
+      visibility: visible;
+  }
+</style>
+<div class="content">
+<!-- begin sphinx code-->
+<section id="summary">
+<h1>Summary<a class="headerlink" href="#summary" title="Link to this heading">¶</a></h1>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pygm.SortedList" title="pygm.SortedList"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pygm.SortedList</span></code></a></p></td>
+<td><p>A sorted list with efficient query performance and memory usage.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pygm.SortedSet" title="pygm.SortedSet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pygm.SortedSet</span></code></a></p></td>
+<td><p>A sorted set with efficient query performance and memory usage.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="sortedlist">
+<h1>SortedList<a class="headerlink" href="#sortedlist" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="pygm.SortedList">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pygm.</span></span><span class="sig-name descname"><span class="pre">SortedList</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typecode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">64</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList" title="Link to this definition">¶</a></dt>
+<dd><p>A sorted list with efficient query performance and memory usage.</p>
+<p>The list is initialised with the content of the provided iterable <code class="docutils literal notranslate"><span class="pre">arg</span></code>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">typecode</span></code> argument is a single character that restricts the
+type of the stored elements. Type codes are defined in the
+<a class="reference external" href="https://docs.python.org/3/library/array.html">array</a> module of the
+standard library.  If no type code is specified, the type is inferred
+from the contents of <code class="docutils literal notranslate"><span class="pre">arg</span></code>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">epsilon</span></code> argument allows to trade off memory usage with query
+performance. The default value is adequate in most cases.</p>
+<p>Methods for adding and removing elements:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#pygm.SortedList.__add__" title="pygm.SortedList.__add__"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.__add__()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedList.__sub__" title="pygm.SortedList.__sub__"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.__sub__()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedList.drop_duplicates" title="pygm.SortedList.drop_duplicates"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.drop_duplicates()</span></code></a></p></li>
+</ul>
+<p>Methods for accessing and querying elements:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#pygm.SortedList.__getitem__" title="pygm.SortedList.__getitem__"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.__getitem__()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedList.__contains__" title="pygm.SortedList.__contains__"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.__contains__()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedList.bisect_left" title="pygm.SortedList.bisect_left"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.bisect_left()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedList.bisect_right" title="pygm.SortedList.bisect_right"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.bisect_right()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedList.count" title="pygm.SortedList.count"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.count()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedList.find_ge" title="pygm.SortedList.find_ge"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.find_ge()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedList.find_gt" title="pygm.SortedList.find_gt"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.find_gt()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedList.find_le" title="pygm.SortedList.find_le"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.find_le()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedList.find_lt" title="pygm.SortedList.find_lt"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.find_lt()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedList.index" title="pygm.SortedList.index"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.index()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedList.rank" title="pygm.SortedList.rank"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.rank()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedList.approximate_rank" title="pygm.SortedList.approximate_rank"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.approximate_rank()</span></code></a></p></li>
+</ul>
+<p>Methods for iterating elements:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#pygm.SortedList.range" title="pygm.SortedList.range"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.range()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedList.__iter__" title="pygm.SortedList.__iter__"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.__iter__()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedList.__reversed__" title="pygm.SortedList.__reversed__"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.__reversed__()</span></code></a></p></li>
+</ul>
+<p>Methods for lexicographical comparisons:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#pygm.SortedList.__eq__" title="pygm.SortedList.__eq__"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.__eq__()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedList.__ne__" title="pygm.SortedList.__ne__"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.__ne__()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedList.__ge__" title="pygm.SortedList.__ge__"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.__ge__()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedList.__gt__" title="pygm.SortedList.__gt__"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.__gt__()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedList.__le__" title="pygm.SortedList.__le__"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.__le__()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedList.__lt__" title="pygm.SortedList.__lt__"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.__lt__()</span></code></a></p></li>
+</ul>
+<p>Other methods:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#pygm.SortedList.copy" title="pygm.SortedList.copy"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.copy()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedList.stats" title="pygm.SortedList.stats"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.stats()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedList.segment" title="pygm.SortedList.segment"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.segment()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedList.__repr__" title="pygm.SortedList.__repr__"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedList.__repr__()</span></code></a></p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arg</strong> (<em>iterable</em><em>, </em><em>optional</em>) – initial elements. Defaults to None.</p></li>
+<li><p><strong>typecode</strong> (<em>char</em><em>, </em><em>optional</em>) – type of the stored elements. Defaults
+to None.</p></li>
+<li><p><strong>epsilon</strong> (<em>int</em><em>, </em><em>optional</em>) – space-time trade-off parameter. Defaults
+to 64.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pygm</span> <span class="kn">import</span> <span class="n">SortedList</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span> <span class="o">=</span> <span class="n">SortedList</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">34</span><span class="p">,</span> <span class="mi">144</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">55</span><span class="p">,</span> <span class="mi">233</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="mi">89</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">13</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span>
+<span class="go">SortedList([0, 1, 1, ..., 144, 233])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">find_gt</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>                                   <span class="c1"># smallest element &gt; 9</span>
+<span class="go">13</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>                                     <span class="c1"># number of elements == 1</span>
+<span class="go">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="mi">42</span> <span class="ow">in</span> <span class="n">sl</span>                                        <span class="c1"># membership test</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">sl</span><span class="o">.</span><span class="n">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="n">inclusive</span><span class="o">=</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">)))</span>  <span class="c1"># elements 0 &lt; x &lt;= 21</span>
+<span class="go">[1, 1, 2, 3, 5, 8, 13, 21]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="mi">10</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>                                      <span class="c1"># slicing syntax support</span>
+<span class="go">SortedList([1, 5, 21])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">sl</span> <span class="o">+</span> <span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">rank</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>                     <span class="c1"># number of elements &lt;= 0</span>
+<span class="go">4</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.__add__">
+<span class="sig-name descname"><span class="pre">__add__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.__add__" title="Link to this definition">¶</a></dt>
+<dd><p>Return a new <code class="docutils literal notranslate"><span class="pre">SortedList</span></code> by merging the elements of <code class="docutils literal notranslate"><span class="pre">self</span></code>
+with <code class="docutils literal notranslate"><span class="pre">other</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__add__(other)</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">self</span> <span class="pre">+</span> <span class="pre">other</span></code></p>
+<p>Values in <code class="docutils literal notranslate"><span class="pre">other</span></code> do not need to be in sorted order.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<em>iterable</em>) – a sequence of values</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>new list with the merged elements</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pygm.SortedList" title="pygm.SortedList">SortedList</a></p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.__class_getitem__">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__class_getitem__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.__class_getitem__" title="Link to this definition">¶</a></dt>
+<dd><p>Represent a PEP 585 generic type</p>
+<p>E.g. for t = list[int], t.__origin__ is list and t.__args__ is (int,).</p>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.__contains__">
+<span class="sig-name descname"><span class="pre">__contains__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.__contains__" title="Link to this definition">¶</a></dt>
+<dd><p>Check whether <code class="docutils literal notranslate"><span class="pre">self</span></code> contains the given value <code class="docutils literal notranslate"><span class="pre">x</span></code> or not.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__repr__(x)</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">in</span> <span class="pre">self</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – value to search</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">True</span></code> if an element equal to <code class="docutils literal notranslate"><span class="pre">x</span></code> is found, <code class="docutils literal notranslate"><span class="pre">False</span></code></dt><dd><p>otherwise</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.__copy__">
+<span class="sig-name descname"><span class="pre">__copy__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.__copy__" title="Link to this definition">¶</a></dt>
+<dd><p>Return a copy of <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>new list with the same elements of <code class="docutils literal notranslate"><span class="pre">self</span></code></p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#pygm.SortedList" title="pygm.SortedList">SortedList</a></p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.__eq__">
+<span class="sig-name descname"><span class="pre">__eq__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.__eq__" title="Link to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal notranslate"><span class="pre">True</span></code> if and only if <code class="docutils literal notranslate"><span class="pre">self</span></code> is equal to <code class="docutils literal notranslate"><span class="pre">other</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__eq__(other)</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">self</span> <span class="pre">==</span> <span class="pre">other</span></code></p>
+<p>Comparisons use the <a class="reference external" href="https://docs.python.org/3/tutorial/datastructures.html#comparing-sequences-and-other-types">lexicographical order</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<em>iterable</em>) – a sequence of values</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if sorted list is equal to <cite>other</cite></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.__ge__">
+<span class="sig-name descname"><span class="pre">__ge__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.__ge__" title="Link to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal notranslate"><span class="pre">True</span></code> if and only if <code class="docutils literal notranslate"><span class="pre">self</span></code> is greater than or equal to <code class="docutils literal notranslate"><span class="pre">other</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__ge__(other)</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">self</span> <span class="pre">&gt;=</span> <span class="pre">other</span></code></p>
+<p>Comparisons use the <a class="reference external" href="https://docs.python.org/3/tutorial/datastructures.html#comparing-sequences-and-other-types">lexicographical order</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<em>iterable</em>) – a sequence of values</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if sorted list is greater than or equal to <cite>other</cite></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.__getitem__" title="Link to this definition">¶</a></dt>
+<dd><p>Return the element at position <code class="docutils literal notranslate"><span class="pre">i</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__getitem__(i)</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">self[i]</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>i</strong> (<em>int</em><em> or </em><em>slice</em>) – index of the element</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>element at position <code class="docutils literal notranslate"><span class="pre">i</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.__gt__">
+<span class="sig-name descname"><span class="pre">__gt__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.__gt__" title="Link to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal notranslate"><span class="pre">True</span></code> if and only if <code class="docutils literal notranslate"><span class="pre">self</span></code> is greater than <code class="docutils literal notranslate"><span class="pre">other</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__gt__(other)</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">self</span> <span class="pre">&gt;</span> <span class="pre">other</span></code></p>
+<p>Comparisons use the <a class="reference external" href="https://docs.python.org/3/tutorial/datastructures.html#comparing-sequences-and-other-types">lexicographical order</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<em>iterable</em>) – a sequence of values</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if sorted list is greater than <cite>other</cite></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pygm.SortedList.__hash__">
+<span class="sig-name descname"><span class="pre">__hash__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#pygm.SortedList.__hash__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typecode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">64</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.__init__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.__iter__">
+<span class="sig-name descname"><span class="pre">__iter__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.__iter__" title="Link to this definition">¶</a></dt>
+<dd><p>Return an iterator over the elements of <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__iter__()</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">iter(self)</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>iterator over the elements</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>iterator</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.__le__">
+<span class="sig-name descname"><span class="pre">__le__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.__le__" title="Link to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal notranslate"><span class="pre">True</span></code> if and only if <code class="docutils literal notranslate"><span class="pre">self</span></code> is less than or equal to <code class="docutils literal notranslate"><span class="pre">other</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__le__(other)</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">self</span> <span class="pre">&lt;=</span> <span class="pre">other</span></code></p>
+<p>Comparisons use the <a class="reference external" href="https://docs.python.org/3/tutorial/datastructures.html#comparing-sequences-and-other-types">lexicographical order</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<em>iterable</em>) – a sequence of values</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if sorted list is less than or equal to <cite>other</cite></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.__len__">
+<span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.__len__" title="Link to this definition">¶</a></dt>
+<dd><p>Return the number of elements in <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__len__()</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">len(self)</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>number of elements</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.__lt__">
+<span class="sig-name descname"><span class="pre">__lt__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.__lt__" title="Link to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal notranslate"><span class="pre">True</span></code> if and only if <code class="docutils literal notranslate"><span class="pre">self</span></code> is less than <code class="docutils literal notranslate"><span class="pre">other</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__lt__(other)</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">self</span> <span class="pre">&lt;</span> <span class="pre">other</span></code></p>
+<p>Comparisons use the <a class="reference external" href="https://docs.python.org/3/tutorial/datastructures.html#comparing-sequences-and-other-types">lexicographical order</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<em>iterable</em>) – a sequence of values</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if sorted list is less than <cite>other</cite></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.__ne__">
+<span class="sig-name descname"><span class="pre">__ne__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.__ne__" title="Link to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal notranslate"><span class="pre">True</span></code> if and only if <code class="docutils literal notranslate"><span class="pre">self</span></code> is not equal to <code class="docutils literal notranslate"><span class="pre">other</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__ne__(other)</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">self</span> <span class="pre">!=</span> <span class="pre">other</span></code></p>
+<p>Comparisons use the <a class="reference external" href="https://docs.python.org/3/tutorial/datastructures.html#comparing-sequences-and-other-types">lexicographical order</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<em>iterable</em>) – a sequence of values</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if sorted list is not equal to <cite>other</cite></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.__repr__">
+<span class="sig-name descname"><span class="pre">__repr__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.__repr__" title="Link to this definition">¶</a></dt>
+<dd><p>Return a string representation of self.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__repr__()</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">repr(self)</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>repr(self)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.__reversed__">
+<span class="sig-name descname"><span class="pre">__reversed__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.__reversed__" title="Link to this definition">¶</a></dt>
+<dd><p>Return a reverse iterator over the elements of <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__iter__()</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">iter(self)</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>reverse iterator over the elements</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>iterator</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.__sub__">
+<span class="sig-name descname"><span class="pre">__sub__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.__sub__" title="Link to this definition">¶</a></dt>
+<dd><p>Return a new <code class="docutils literal notranslate"><span class="pre">SortedList</span></code> by removing from <code class="docutils literal notranslate"><span class="pre">self</span></code> the elements
+found in <code class="docutils literal notranslate"><span class="pre">other</span></code>.</p>
+<p>Equivalent elements are treated individually, that is, if some element
+is found m times in <code class="docutils literal notranslate"><span class="pre">self</span></code> and n times in <code class="docutils literal notranslate"><span class="pre">other</span></code>, it will appear
+max(m-n, 0) times in the result.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__sub__(other)</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">self</span> <span class="pre">-</span> <span class="pre">other</span></code></p>
+<p>Values in <code class="docutils literal notranslate"><span class="pre">other</span></code> do not need to be in sorted order.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<em>iterable</em>) – a sequence of values</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>new list with the elements in the difference</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pygm.SortedList" title="pygm.SortedList">SortedList</a></p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.approximate_rank">
+<span class="sig-name descname"><span class="pre">approximate_rank</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.approximate_rank" title="Link to this definition">¶</a></dt>
+<dd><p>Return an approximate rank and the range where <code class="docutils literal notranslate"><span class="pre">x</span></code> can be found.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – value to compare the elements to</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>the approximate rank, the lower bound</dt><dd><p>(inclusive) and the upper bound (exclusive) of the range where
+<code class="docutils literal notranslate"><span class="pre">x</span></code> can be found</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[int, int, int]</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.bisect_left">
+<span class="sig-name descname"><span class="pre">bisect_left</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.bisect_left" title="Link to this definition">¶</a></dt>
+<dd><p>Locate the insertion point for <code class="docutils literal notranslate"><span class="pre">x</span></code> to maintain sorted order.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">x</span></code> is already present, the insertion point will be before (to
+the left of) any existing entries.</p>
+<p>Similar to the <a class="reference external" href="https://docs.python.org/3/library/bisect.html">bisect</a>
+module in the standard library.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – value to compare the elements to</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>insertion index in sorted list</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.bisect_right">
+<span class="sig-name descname"><span class="pre">bisect_right</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.bisect_right" title="Link to this definition">¶</a></dt>
+<dd><p>Locate the insertion point for <code class="docutils literal notranslate"><span class="pre">x</span></code> to maintain sorted order.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">x</span></code> is already present, the insertion point will be after (to the
+right of) any existing entries.</p>
+<p>Similar to the <a class="reference external" href="https://docs.python.org/3/library/bisect.html">bisect</a>
+module in the standard library.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – value to compare the elements to</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>insertion index in sorted list</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.copy">
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.copy" title="Link to this definition">¶</a></dt>
+<dd><p>Return a copy of <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>new list with the same elements of <code class="docutils literal notranslate"><span class="pre">self</span></code></p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#pygm.SortedList" title="pygm.SortedList">SortedList</a></p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.count">
+<span class="sig-name descname"><span class="pre">count</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.count" title="Link to this definition">¶</a></dt>
+<dd><p>Return the number of elements equal to <code class="docutils literal notranslate"><span class="pre">x</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – value to count</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>number of elements <code class="docutils literal notranslate"><span class="pre">==</span> <span class="pre">x</span></code></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.drop_duplicates">
+<span class="sig-name descname"><span class="pre">drop_duplicates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.drop_duplicates" title="Link to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal notranslate"><span class="pre">self</span></code> with duplicate elements removed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>new list without duplicates</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#pygm.SortedList" title="pygm.SortedList">SortedList</a></p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.find_ge">
+<span class="sig-name descname"><span class="pre">find_ge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.find_ge" title="Link to this definition">¶</a></dt>
+<dd><p>Find the leftmost element greater than or equal to <code class="docutils literal notranslate"><span class="pre">x</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – value to compare the elements to</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>value of the leftmost element <code class="docutils literal notranslate"><span class="pre">&gt;=</span> <span class="pre">x</span></code>, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if no such
+element is found</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.find_gt">
+<span class="sig-name descname"><span class="pre">find_gt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.find_gt" title="Link to this definition">¶</a></dt>
+<dd><p>Find the leftmost element greater than <code class="docutils literal notranslate"><span class="pre">x</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – value to compare the elements to</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>value of the leftmost element <code class="docutils literal notranslate"><span class="pre">&gt;</span> <span class="pre">x</span></code>, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if no such
+element is found</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.find_le">
+<span class="sig-name descname"><span class="pre">find_le</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.find_le" title="Link to this definition">¶</a></dt>
+<dd><p>Find the rightmost element less than or equal to <code class="docutils literal notranslate"><span class="pre">x</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – value to compare the elements to</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>value of the rightmost element <code class="docutils literal notranslate"><span class="pre">&lt;=</span> <span class="pre">x</span></code>, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if no such
+element is found</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.find_lt">
+<span class="sig-name descname"><span class="pre">find_lt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.find_lt" title="Link to this definition">¶</a></dt>
+<dd><p>Find the rightmost element less than <code class="docutils literal notranslate"><span class="pre">x</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – value to compare the elements to</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>value of the rightmost element <code class="docutils literal notranslate"><span class="pre">&lt;</span> <span class="pre">x</span></code>, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if no such
+element is found</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.index">
+<span class="sig-name descname"><span class="pre">index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.index" title="Link to this definition">¶</a></dt>
+<dd><p>Return the first index of <code class="docutils literal notranslate"><span class="pre">x</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> – element in the sorted list</p></li>
+<li><p><strong>start</strong> (<em>int</em><em>, </em><em>optional</em>) – restrict the search to the elements from
+this position onwards. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code></p></li>
+<li><p><strong>stop</strong> (<em>int</em><em>, </em><em>optional</em>) – restrict the search to the elements before
+this position. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>first index of <code class="docutils literal notranslate"><span class="pre">x</span></code></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – if <code class="docutils literal notranslate"><span class="pre">x</span></code> is not present</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.range">
+<span class="sig-name descname"><span class="pre">range</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inclusive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(True,</span> <span class="pre">True)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.range" title="Link to this definition">¶</a></dt>
+<dd><p>Return an iterator over elements between <code class="docutils literal notranslate"><span class="pre">a</span></code> and <code class="docutils literal notranslate"><span class="pre">b</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>a</strong> – lower bound value</p></li>
+<li><p><strong>b</strong> – upper bound value</p></li>
+<li><p><strong>inclusive</strong> (<em>tuple</em><em>[</em><em>bool</em><em>, </em><em>bool</em><em>]</em><em>, </em><em>optional</em>) – a pair of boolean
+indicating whether the bounds are inclusive (<code class="docutils literal notranslate"><span class="pre">True</span></code>) or
+exclusive (<code class="docutils literal notranslate"><span class="pre">False</span></code>). Defaults to <code class="docutils literal notranslate"><span class="pre">(True,</span> <span class="pre">True)</span></code></p></li>
+<li><p><strong>reverse</strong> (<em>bool</em><em>, </em><em>optional</em>) – if <code class="docutils literal notranslate"><span class="pre">True</span></code> return an reverse iterator.
+Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>iterator over the elements between the given bounds</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.rank">
+<span class="sig-name descname"><span class="pre">rank</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.rank" title="Link to this definition">¶</a></dt>
+<dd><p>Return the number of elements less than or equal to <code class="docutils literal notranslate"><span class="pre">x</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – value to compare the elements to</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>number of elements <code class="docutils literal notranslate"><span class="pre">&lt;=</span> <span class="pre">x</span></code></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.segment">
+<span class="sig-name descname"><span class="pre">segment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level_num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segment_num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.segment" title="Link to this definition">¶</a></dt>
+<dd><p>Return a segment from the index data structure.</p>
+<p>The segment is represented as a dict with keys:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'key'</span></code> the key of the segment</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'slope'</span></code> the slope of the segment</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'intercept'</span></code> the intercept of the segment</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>level_num</strong> (<em>int</em>) – the level number of the segment</p></li>
+<li><p><strong>segment_num</strong> (<em>int</em>) – the segment number within the level</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the segment data</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict[str, object]</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedList.stats">
+<span class="sig-name descname"><span class="pre">stats</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedList.stats" title="Link to this definition">¶</a></dt>
+<dd><p>Return a dict containing statistics about <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p>
+<p>The keys are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'data</span> <span class="pre">size'</span></code> size of the elements in bytes</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'index</span> <span class="pre">size'</span></code> size of the index in bytes</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'segment</span> <span class="pre">size'</span></code> size of a segment in bytes</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'leaf</span> <span class="pre">segments'</span></code> number of segments in the last level of the index</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'segments</span> <span class="pre">counts'</span></code> number of segments in each level of the index</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'height'</span></code> number of levels of the index</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'epsilon'</span></code> error bound for the last level of the index</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'epsilon</span> <span class="pre">recursive'</span></code> error bound for the upper levels of the index</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'typecode'</span></code> type of the elements</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>a dictionary with stats about <code class="docutils literal notranslate"><span class="pre">self</span></code></p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict[str, object]</p>
+</dd>
+</dl>
+</dd></dl>
+</dd></dl>
+</section>
+<section id="sortedset">
+<h1>SortedSet<a class="headerlink" href="#sortedset" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="pygm.SortedSet">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pygm.</span></span><span class="sig-name descname"><span class="pre">SortedSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typecode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">64</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet" title="Link to this definition">¶</a></dt>
+<dd><p>A sorted set with efficient query performance and memory usage.</p>
+<p>The set is initialised with the content of the provided iterable <code class="docutils literal notranslate"><span class="pre">arg</span></code>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">typecode</span></code> argument is a single character that restricts the
+type of the stored elements. Type codes are defined in the
+<a class="reference external" href="https://docs.python.org/3/library/array.html">array</a> module of the
+standard library.  If no type code is specified, the type is inferred
+from the contents of <code class="docutils literal notranslate"><span class="pre">arg</span></code>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">epsilon</span></code> argument allows to trade off memory usage with query
+performance. The default value is adequate in most cases.</p>
+<p>Methods for set operations:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#pygm.SortedSet.difference" title="pygm.SortedSet.difference"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.difference()</span></code></a> (alias for <code class="docutils literal notranslate"><span class="pre">set</span> <span class="pre">-</span> <span class="pre">other</span></code>)</p></li>
+<li><p><a class="reference internal" href="#pygm.SortedSet.intersection" title="pygm.SortedSet.intersection"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.intersection()</span></code></a> (alias for <code class="docutils literal notranslate"><span class="pre">set</span> <span class="pre">&amp;</span> <span class="pre">other</span></code>)</p></li>
+<li><p><a class="reference internal" href="#pygm.SortedSet.union" title="pygm.SortedSet.union"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.union()</span></code></a> (alias for <code class="docutils literal notranslate"><span class="pre">set</span> <span class="pre">|</span> <span class="pre">other</span></code>)</p></li>
+<li><p><a class="reference internal" href="#pygm.SortedSet.symmetric_difference" title="pygm.SortedSet.symmetric_difference"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.symmetric_difference()</span></code></a> (alias for <code class="docutils literal notranslate"><span class="pre">set</span> <span class="pre">^</span> <span class="pre">other</span></code>)</p></li>
+</ul>
+<p>Methods for accessing and querying elements:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#pygm.SortedSet.__getitem__" title="pygm.SortedSet.__getitem__"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.__getitem__()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedSet.__contains__" title="pygm.SortedSet.__contains__"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.__contains__()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedSet.bisect_left" title="pygm.SortedSet.bisect_left"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.bisect_left()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedSet.bisect_right" title="pygm.SortedSet.bisect_right"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.bisect_right()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedSet.count" title="pygm.SortedSet.count"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.count()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedSet.find_ge" title="pygm.SortedSet.find_ge"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.find_ge()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedSet.find_gt" title="pygm.SortedSet.find_gt"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.find_gt()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedSet.find_le" title="pygm.SortedSet.find_le"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.find_le()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedSet.find_lt" title="pygm.SortedSet.find_lt"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.find_lt()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedSet.index" title="pygm.SortedSet.index"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.index()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedSet.rank" title="pygm.SortedSet.rank"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.rank()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedSet.approximate_rank" title="pygm.SortedSet.approximate_rank"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.approximate_rank()</span></code></a></p></li>
+</ul>
+<p>Methods for set comparisons:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#pygm.SortedSet.__eq__" title="pygm.SortedSet.__eq__"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.__eq__()</span></code></a> (set equality)</p></li>
+<li><p><a class="reference internal" href="#pygm.SortedSet.__ne__" title="pygm.SortedSet.__ne__"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.__ne__()</span></code></a> (set inequality)</p></li>
+<li><p><a class="reference internal" href="#pygm.SortedSet.__ge__" title="pygm.SortedSet.__ge__"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.__ge__()</span></code></a> (superset)</p></li>
+<li><p><a class="reference internal" href="#pygm.SortedSet.__gt__" title="pygm.SortedSet.__gt__"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.__gt__()</span></code></a> (proper superset)</p></li>
+<li><p><a class="reference internal" href="#pygm.SortedSet.__le__" title="pygm.SortedSet.__le__"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.__le__()</span></code></a> (subset)</p></li>
+<li><p><a class="reference internal" href="#pygm.SortedSet.__lt__" title="pygm.SortedSet.__lt__"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.__lt__()</span></code></a> (proper subset)</p></li>
+</ul>
+<p>Methods for iterating elements:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#pygm.SortedSet.range" title="pygm.SortedSet.range"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.range()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedSet.__iter__" title="pygm.SortedSet.__iter__"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.__iter__()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedSet.__reversed__" title="pygm.SortedSet.__reversed__"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.__reversed__()</span></code></a></p></li>
+</ul>
+<p>Other methods:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#pygm.SortedSet.copy" title="pygm.SortedSet.copy"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.copy()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedSet.stats" title="pygm.SortedSet.stats"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.stats()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedSet.segment" title="pygm.SortedSet.segment"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.segment()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pygm.SortedSet.__repr__" title="pygm.SortedSet.__repr__"><code class="xref py py-func docutils literal notranslate"><span class="pre">SortedSet.__repr__()</span></code></a></p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arg</strong> (<em>iterable</em><em>, </em><em>optional</em>) – initial elements. Defaults to None.</p></li>
+<li><p><strong>typecode</strong> (<em>char</em><em>, </em><em>optional</em>) – type of the stored elements. Defaults
+to None.</p></li>
+<li><p><strong>epsilon</strong> (<em>int</em><em>, </em><em>optional</em>) – space-time trade-off parameter. Defaults
+to 64.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.__class_getitem__">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__class_getitem__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.__class_getitem__" title="Link to this definition">¶</a></dt>
+<dd><p>Represent a PEP 585 generic type</p>
+<p>E.g. for t = list[int], t.__origin__ is list and t.__args__ is (int,).</p>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.__contains__">
+<span class="sig-name descname"><span class="pre">__contains__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.__contains__" title="Link to this definition">¶</a></dt>
+<dd><p>Check whether <code class="docutils literal notranslate"><span class="pre">self</span></code> contains the given value <code class="docutils literal notranslate"><span class="pre">x</span></code> or not.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__repr__(x)</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">in</span> <span class="pre">self</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – value to search</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">True</span></code> if an element equal to <code class="docutils literal notranslate"><span class="pre">x</span></code> is found, <code class="docutils literal notranslate"><span class="pre">False</span></code></dt><dd><p>otherwise</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.__copy__">
+<span class="sig-name descname"><span class="pre">__copy__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.__copy__" title="Link to this definition">¶</a></dt>
+<dd><p>Return a copy of <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>new set with the same elements of <code class="docutils literal notranslate"><span class="pre">self</span></code></p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#pygm.SortedSet" title="pygm.SortedSet">SortedSet</a></p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.__eq__">
+<span class="sig-name descname"><span class="pre">__eq__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.__eq__" title="Link to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal notranslate"><span class="pre">True</span></code> if and only if <code class="docutils literal notranslate"><span class="pre">self</span></code> is equal to <code class="docutils literal notranslate"><span class="pre">other</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__eq__(other)</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">self</span> <span class="pre">==</span> <span class="pre">other</span></code></p>
+<p>Comparisons use <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#set">set</a>
+semantics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<a class="reference internal" href="#pygm.SortedSet" title="pygm.SortedSet"><em>SortedSet</em></a><em> or </em><em>set</em>) – a sequence of values</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if sorted set is equal to <code class="docutils literal notranslate"><span class="pre">other</span></code></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.__ge__">
+<span class="sig-name descname"><span class="pre">__ge__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.__ge__" title="Link to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal notranslate"><span class="pre">True</span></code> if and only if <code class="docutils literal notranslate"><span class="pre">self</span></code> is a superset of <code class="docutils literal notranslate"><span class="pre">other</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__ge__(other)</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">self</span> <span class="pre">&gt;=</span> <span class="pre">other</span></code> &lt;==&gt;
+<code class="docutils literal notranslate"><span class="pre">self.issuperset(other)</span></code></p>
+<p>Comparisons use <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#set">set</a>
+semantics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<a class="reference internal" href="#pygm.SortedSet" title="pygm.SortedSet"><em>SortedSet</em></a><em> or </em><em>set</em>) – a sequence of values</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if sorted set is a superset of <code class="docutils literal notranslate"><span class="pre">other</span></code></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.__getitem__" title="Link to this definition">¶</a></dt>
+<dd><p>Return the element at position <code class="docutils literal notranslate"><span class="pre">i</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__getitem__(i)</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">self[i]</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>i</strong> (<em>int</em><em> or </em><em>slice</em>) – index of the element</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>element at position <code class="docutils literal notranslate"><span class="pre">i</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.__gt__">
+<span class="sig-name descname"><span class="pre">__gt__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.__gt__" title="Link to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal notranslate"><span class="pre">True</span></code> if and only if <code class="docutils literal notranslate"><span class="pre">self</span></code> is a proper superset of <code class="docutils literal notranslate"><span class="pre">other</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__gt__(other)</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">self</span> <span class="pre">&gt;</span> <span class="pre">other</span></code></p>
+<p>Comparisons use <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#set">set</a>
+semantics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<a class="reference internal" href="#pygm.SortedSet" title="pygm.SortedSet"><em>SortedSet</em></a><em> or </em><em>set</em>) – a sequence of values</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if sorted set is a proper superset of <code class="docutils literal notranslate"><span class="pre">other</span></code></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pygm.SortedSet.__hash__">
+<span class="sig-name descname"><span class="pre">__hash__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#pygm.SortedSet.__hash__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typecode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">64</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.__init__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.__iter__">
+<span class="sig-name descname"><span class="pre">__iter__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.__iter__" title="Link to this definition">¶</a></dt>
+<dd><p>Return an iterator over the elements of <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__iter__()</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">iter(self)</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>iterator over the elements</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>iterator</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.__le__">
+<span class="sig-name descname"><span class="pre">__le__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.__le__" title="Link to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal notranslate"><span class="pre">True</span></code> if and only if <code class="docutils literal notranslate"><span class="pre">self</span></code> is a subset of <code class="docutils literal notranslate"><span class="pre">other</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__le__(other)</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">self</span> <span class="pre">&lt;=</span> <span class="pre">other</span></code> &lt;==&gt;
+<code class="docutils literal notranslate"><span class="pre">self.issubset(other)</span></code></p>
+<p>Comparisons use <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#set">set</a>
+semantics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<a class="reference internal" href="#pygm.SortedSet" title="pygm.SortedSet"><em>SortedSet</em></a><em> or </em><em>set</em>) – a sequence of values</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if sorted set is a subset of <code class="docutils literal notranslate"><span class="pre">other</span></code></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.__len__">
+<span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.__len__" title="Link to this definition">¶</a></dt>
+<dd><p>Return the number of elements in <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__len__()</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">len(self)</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>number of elements</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.__lt__">
+<span class="sig-name descname"><span class="pre">__lt__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.__lt__" title="Link to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal notranslate"><span class="pre">True</span></code> if and only if <code class="docutils literal notranslate"><span class="pre">self</span></code> is a proper subset of <code class="docutils literal notranslate"><span class="pre">other</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__lt__(other)</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">self</span> <span class="pre">&lt;</span> <span class="pre">other</span></code></p>
+<p>Comparisons use <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#set">set</a>
+semantics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<a class="reference internal" href="#pygm.SortedSet" title="pygm.SortedSet"><em>SortedSet</em></a><em> or </em><em>set</em>) – a sequence of values</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if sorted set is a proper subset of <code class="docutils literal notranslate"><span class="pre">other</span></code></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.__ne__">
+<span class="sig-name descname"><span class="pre">__ne__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.__ne__" title="Link to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal notranslate"><span class="pre">True</span></code> if and only if <code class="docutils literal notranslate"><span class="pre">self</span></code> is not equal to <code class="docutils literal notranslate"><span class="pre">other</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__eq__(other)</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">self</span> <span class="pre">!=</span> <span class="pre">other</span></code></p>
+<p>Comparisons use <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#set">set</a>
+semantics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<a class="reference internal" href="#pygm.SortedSet" title="pygm.SortedSet"><em>SortedSet</em></a><em> or </em><em>set</em>) – a sequence of values</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if sorted set is not equal to <code class="docutils literal notranslate"><span class="pre">other</span></code></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.__repr__">
+<span class="sig-name descname"><span class="pre">__repr__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.__repr__" title="Link to this definition">¶</a></dt>
+<dd><p>Return a string representation of self.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__repr__()</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">repr(self)</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>repr(self)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.__reversed__">
+<span class="sig-name descname"><span class="pre">__reversed__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.__reversed__" title="Link to this definition">¶</a></dt>
+<dd><p>Return a reverse iterator over the elements of <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__iter__()</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">iter(self)</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>reverse iterator over the elements</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>iterator</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.approximate_rank">
+<span class="sig-name descname"><span class="pre">approximate_rank</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.approximate_rank" title="Link to this definition">¶</a></dt>
+<dd><p>Return an approximate rank and the range where <code class="docutils literal notranslate"><span class="pre">x</span></code> can be found.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – value to compare the elements to</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>the approximate rank, the lower bound</dt><dd><p>(inclusive) and the upper bound (exclusive) of the range where
+<code class="docutils literal notranslate"><span class="pre">x</span></code> can be found</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[int, int, int]</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.bisect_left">
+<span class="sig-name descname"><span class="pre">bisect_left</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.bisect_left" title="Link to this definition">¶</a></dt>
+<dd><p>Locate the insertion point for <code class="docutils literal notranslate"><span class="pre">x</span></code> to maintain sorted order.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">x</span></code> is already present, the insertion point will be before (to
+the left of) any existing entries.</p>
+<p>Similar to the <a class="reference external" href="https://docs.python.org/3/library/bisect.html">bisect</a>
+module in the standard library.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – value to compare the elements to</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>insertion index in sorted list</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.bisect_right">
+<span class="sig-name descname"><span class="pre">bisect_right</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.bisect_right" title="Link to this definition">¶</a></dt>
+<dd><p>Locate the insertion point for <code class="docutils literal notranslate"><span class="pre">x</span></code> to maintain sorted order.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">x</span></code> is already present, the insertion point will be after (to the
+right of) any existing entries.</p>
+<p>Similar to the <a class="reference external" href="https://docs.python.org/3/library/bisect.html">bisect</a>
+module in the standard library.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – value to compare the elements to</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>insertion index in sorted list</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.copy">
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.copy" title="Link to this definition">¶</a></dt>
+<dd><p>Return a copy of <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>new set with the same elements of <code class="docutils literal notranslate"><span class="pre">self</span></code></p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#pygm.SortedSet" title="pygm.SortedSet">SortedSet</a></p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.count">
+<span class="sig-name descname"><span class="pre">count</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.count" title="Link to this definition">¶</a></dt>
+<dd><p>Return the number of elements equal to <code class="docutils literal notranslate"><span class="pre">x</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – value to count</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>number of elements <code class="docutils literal notranslate"><span class="pre">==</span> <span class="pre">x</span></code></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.difference">
+<span class="sig-name descname"><span class="pre">difference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.difference" title="Link to this definition">¶</a></dt>
+<dd><p>Return a <code class="docutils literal notranslate"><span class="pre">SortedSet</span></code> with the elements of <code class="docutils literal notranslate"><span class="pre">self</span></code> not found in
+<code class="docutils literal notranslate"><span class="pre">other</span></code>.</p>
+<p>Values in <code class="docutils literal notranslate"><span class="pre">other</span></code> do not need to be in sorted order.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.difference(other)</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">self.__sub__(other)</span></code> &lt;==&gt;
+<code class="docutils literal notranslate"><span class="pre">self</span> <span class="pre">-</span> <span class="pre">other</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<em>iterable</em>) – a sequence of values</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>new set with the elements in the difference</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pygm.SortedSet" title="pygm.SortedSet">SortedSet</a></p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.find_ge">
+<span class="sig-name descname"><span class="pre">find_ge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.find_ge" title="Link to this definition">¶</a></dt>
+<dd><p>Find the leftmost element greater than or equal to <code class="docutils literal notranslate"><span class="pre">x</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – value to compare the elements to</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>value of the leftmost element <code class="docutils literal notranslate"><span class="pre">&gt;=</span> <span class="pre">x</span></code>, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if no such
+element is found</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.find_gt">
+<span class="sig-name descname"><span class="pre">find_gt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.find_gt" title="Link to this definition">¶</a></dt>
+<dd><p>Find the leftmost element greater than <code class="docutils literal notranslate"><span class="pre">x</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – value to compare the elements to</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>value of the leftmost element <code class="docutils literal notranslate"><span class="pre">&gt;</span> <span class="pre">x</span></code>, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if no such
+element is found</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.find_le">
+<span class="sig-name descname"><span class="pre">find_le</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.find_le" title="Link to this definition">¶</a></dt>
+<dd><p>Find the rightmost element less than or equal to <code class="docutils literal notranslate"><span class="pre">x</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – value to compare the elements to</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>value of the rightmost element <code class="docutils literal notranslate"><span class="pre">&lt;=</span> <span class="pre">x</span></code>, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if no such
+element is found</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.find_lt">
+<span class="sig-name descname"><span class="pre">find_lt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.find_lt" title="Link to this definition">¶</a></dt>
+<dd><p>Find the rightmost element less than <code class="docutils literal notranslate"><span class="pre">x</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – value to compare the elements to</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>value of the rightmost element <code class="docutils literal notranslate"><span class="pre">&lt;</span> <span class="pre">x</span></code>, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if no such
+element is found</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.index">
+<span class="sig-name descname"><span class="pre">index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.index" title="Link to this definition">¶</a></dt>
+<dd><p>Return the first index of <code class="docutils literal notranslate"><span class="pre">x</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> – element in the sorted list</p></li>
+<li><p><strong>start</strong> (<em>int</em><em>, </em><em>optional</em>) – restrict the search to the elements from
+this position onwards. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code></p></li>
+<li><p><strong>stop</strong> (<em>int</em><em>, </em><em>optional</em>) – restrict the search to the elements before
+this position. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>first index of <code class="docutils literal notranslate"><span class="pre">x</span></code></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – if <code class="docutils literal notranslate"><span class="pre">x</span></code> is not present</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.intersection">
+<span class="sig-name descname"><span class="pre">intersection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.intersection" title="Link to this definition">¶</a></dt>
+<dd><p>Return a <code class="docutils literal notranslate"><span class="pre">SortedSet</span></code> with the elements found in both <code class="docutils literal notranslate"><span class="pre">self</span></code> and
+<code class="docutils literal notranslate"><span class="pre">other</span></code>.</p>
+<p>Values in <code class="docutils literal notranslate"><span class="pre">other</span></code> do not need to be in sorted order.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.intersection(other)</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">self.__and__(other)</span></code> &lt;==&gt;
+<code class="docutils literal notranslate"><span class="pre">self</span> <span class="pre">&amp;</span> <span class="pre">other</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<em>iterable</em>) – a sequence of values</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>new set with the elements in the intersection</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pygm.SortedSet" title="pygm.SortedSet">SortedSet</a></p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.isdisjoint">
+<span class="sig-name descname"><span class="pre">isdisjoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.isdisjoint" title="Link to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal notranslate"><span class="pre">True</span></code> if and only if the set has no elements in common
+with <code class="docutils literal notranslate"><span class="pre">other</span></code>.</p>
+<p>Sets are disjoint if and only if their intersection is the empty set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<em>iterable</em>) – a sequence of values</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if <code class="docutils literal notranslate"><span class="pre">self</span></code> is disjoint from <code class="docutils literal notranslate"><span class="pre">other</span></code></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.issubset">
+<span class="sig-name descname"><span class="pre">issubset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.issubset" title="Link to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal notranslate"><span class="pre">True</span></code> if and only if <code class="docutils literal notranslate"><span class="pre">self</span></code> is a subset of <code class="docutils literal notranslate"><span class="pre">other</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__le__(other)</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">self</span> <span class="pre">&lt;=</span> <span class="pre">other</span></code> &lt;==&gt;
+<code class="docutils literal notranslate"><span class="pre">self.issubset(other)</span></code></p>
+<p>Comparisons use <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#set">set</a>
+semantics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<a class="reference internal" href="#pygm.SortedSet" title="pygm.SortedSet"><em>SortedSet</em></a><em> or </em><em>set</em>) – a sequence of values</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if sorted set is a subset of <code class="docutils literal notranslate"><span class="pre">other</span></code></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.issuperset">
+<span class="sig-name descname"><span class="pre">issuperset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.issuperset" title="Link to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal notranslate"><span class="pre">True</span></code> if and only if <code class="docutils literal notranslate"><span class="pre">self</span></code> is a superset of <code class="docutils literal notranslate"><span class="pre">other</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.__ge__(other)</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">self</span> <span class="pre">&gt;=</span> <span class="pre">other</span></code> &lt;==&gt;
+<code class="docutils literal notranslate"><span class="pre">self.issuperset(other)</span></code></p>
+<p>Comparisons use <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#set">set</a>
+semantics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<a class="reference internal" href="#pygm.SortedSet" title="pygm.SortedSet"><em>SortedSet</em></a><em> or </em><em>set</em>) – a sequence of values</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if sorted set is a superset of <code class="docutils literal notranslate"><span class="pre">other</span></code></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.range">
+<span class="sig-name descname"><span class="pre">range</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inclusive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(True,</span> <span class="pre">True)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.range" title="Link to this definition">¶</a></dt>
+<dd><p>Return an iterator over elements between <code class="docutils literal notranslate"><span class="pre">a</span></code> and <code class="docutils literal notranslate"><span class="pre">b</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>a</strong> – lower bound value</p></li>
+<li><p><strong>b</strong> – upper bound value</p></li>
+<li><p><strong>inclusive</strong> (<em>tuple</em><em>[</em><em>bool</em><em>, </em><em>bool</em><em>]</em><em>, </em><em>optional</em>) – a pair of boolean
+indicating whether the bounds are inclusive (<code class="docutils literal notranslate"><span class="pre">True</span></code>) or
+exclusive (<code class="docutils literal notranslate"><span class="pre">False</span></code>). Defaults to <code class="docutils literal notranslate"><span class="pre">(True,</span> <span class="pre">True)</span></code></p></li>
+<li><p><strong>reverse</strong> (<em>bool</em><em>, </em><em>optional</em>) – if <code class="docutils literal notranslate"><span class="pre">True</span></code> return an reverse iterator.
+Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>iterator over the elements between the given bounds</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.rank">
+<span class="sig-name descname"><span class="pre">rank</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.rank" title="Link to this definition">¶</a></dt>
+<dd><p>Return the number of elements less than or equal to <code class="docutils literal notranslate"><span class="pre">x</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – value to compare the elements to</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>number of elements <code class="docutils literal notranslate"><span class="pre">&lt;=</span> <span class="pre">x</span></code></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.segment">
+<span class="sig-name descname"><span class="pre">segment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level_num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segment_num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.segment" title="Link to this definition">¶</a></dt>
+<dd><p>Return a segment from the index data structure.</p>
+<p>The segment is represented as a dict with keys:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'key'</span></code> the key of the segment</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'slope'</span></code> the slope of the segment</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'intercept'</span></code> the intercept of the segment</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>level_num</strong> (<em>int</em>) – the level number of the segment</p></li>
+<li><p><strong>segment_num</strong> (<em>int</em>) – the segment number within the level</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the segment data</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict[str, object]</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.stats">
+<span class="sig-name descname"><span class="pre">stats</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.stats" title="Link to this definition">¶</a></dt>
+<dd><p>Return a dict containing statistics about <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p>
+<p>The keys are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'data</span> <span class="pre">size'</span></code> size of the elements in bytes</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'index</span> <span class="pre">size'</span></code> size of the index in bytes</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'segment</span> <span class="pre">size'</span></code> size of a segment in bytes</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'leaf</span> <span class="pre">segments'</span></code> number of segments in the last level of the index</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'segments</span> <span class="pre">counts'</span></code> number of segments in each level of the index</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'height'</span></code> number of levels of the index</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'epsilon'</span></code> error bound for the last level of the index</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'epsilon</span> <span class="pre">recursive'</span></code> error bound for the upper levels of the index</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'typecode'</span></code> type of the elements</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>a dictionary with stats about <code class="docutils literal notranslate"><span class="pre">self</span></code></p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict[str, object]</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.symmetric_difference">
+<span class="sig-name descname"><span class="pre">symmetric_difference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.symmetric_difference" title="Link to this definition">¶</a></dt>
+<dd><p>Return a <code class="docutils literal notranslate"><span class="pre">SortedSet</span></code> with the elements found in either <code class="docutils literal notranslate"><span class="pre">self</span></code> or
+<code class="docutils literal notranslate"><span class="pre">other</span></code> but not in both of them.</p>
+<p>Values in <code class="docutils literal notranslate"><span class="pre">other</span></code> do not need to be in sorted order.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.symmetric_difference(other)</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">self.__xor__(other)</span></code> &lt;==&gt;
+<code class="docutils literal notranslate"><span class="pre">self</span> <span class="pre">^</span> <span class="pre">other</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<em>iterable</em>) – a sequence of values</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>new set with the elements in the symmetric difference</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pygm.SortedSet" title="pygm.SortedSet">SortedSet</a></p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pygm.SortedSet.union">
+<span class="sig-name descname"><span class="pre">union</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pygm.SortedSet.union" title="Link to this definition">¶</a></dt>
+<dd><p>Return a new <code class="docutils literal notranslate"><span class="pre">SortedSet</span></code> with the elements in one or both <code class="docutils literal notranslate"><span class="pre">self</span></code>
+and <code class="docutils literal notranslate"><span class="pre">other</span></code>.</p>
+<p>Values in <code class="docutils literal notranslate"><span class="pre">other</span></code> do not need to be in sorted order.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.union(other)</span></code> &lt;==&gt; <code class="docutils literal notranslate"><span class="pre">self</span> <span class="pre">|</span> <span class="pre">other</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<em>iterable</em>) – a sequence of values</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>new set with the elements in the union</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pygm.SortedSet" title="pygm.SortedSet">SortedSet</a></p>
+</dd>
+</dl>
+</dd></dl>
+</dd></dl>
+</section>
+<!-- end sphinx code-->
+</div>
+</div>
+</div>
+
+        </div>
+      </div>
+    </div>
+    
+  </div>
+
+  <div class="footer">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        Made with 👼 at <a href="https://www.di.unipi.it/en/">University of Pisa</a> by the <a
+          href="http://acube.di.unipi.it">A³ Lab</a><br>
+        This library was supported by the Italian Ministry of University and Research &ldquo;Progetti di Rilevante Interesse Nazionale&rdquo; project: &ldquo;<a href="http://learned.di.unipi.it">Multicriteria data structures and algorithms</a>&rdquo; (grant n. 2017WR7SHH), and by the European Union H2020 project &ldquo;<a href="http://www.sobigdata.eu">SoBigData++: European Integrated Infrastructure for Social Mining and Big Data Analytics</a>&rdquo; (grant n. 871042) 
+      </div>
+    </div>
+  </div>
+</div>
+<link rel="stylesheet" href="/js/katex/katex.min.css">
+<script defer src="/js/katex/katex.min.js"></script>
+<script defer src="/js/katex/auto-render.min.js" onload="renderMathInElement(document.body, { macros: { '\\Oh': '\\mathcal{O}' }, delimiters: [
+  {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}] });"></script>
+
+  
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/scripts.min.302a6fc365d5139fb98cf60bdb8f715d96257ea189161d36c190ccfa8182e569.js"></script>
+  
+
+  
+  
+  
+    
+  
+
+
+</body>
+
+</html>

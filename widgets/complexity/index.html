@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>Computational complexity - The PGM-index</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link rel="icon" href="https://pgm.di.unipi.it/favicon.png">
+
+  
+  
+  <link rel="stylesheet" href="/css/style.min.47b485d84ade20739e6d7876653baf13d09ef0ece9625f11c9f5c627ed07eda4.css">
+  
+
+  
+
+</head>
+
+<body class='page page-default-single'>
+  <div id="main-menu-mobile" class="main-menu-mobile">
+  <ul>
+    
+    
+    <li class="menu-item-home">
+      <a href="/">
+        <span>Home</span>
+      </a>
+    </li>
+    
+    <li class="menu-item-docs">
+      <a href="/docs/">
+        <span>Docs</span>
+      </a>
+    </li>
+    
+  </ul>
+</div>
+  <div class="wrapper">
+    <div class='header'>
+  <div class="container">
+    <div class="logo">
+      <a href="https://pgm.di.unipi.it/">The PGM-index</a>
+    </div>
+    <div class="logo-mobile">
+      <a href="https://pgm.di.unipi.it/">The PGM-index</a>
+    </div>
+    <div id="main-menu" class="main-menu">
+  <ul>
+    
+    
+    <li class="menu-item-home">
+      <a href="/">
+        <span>Home</span>
+      </a>
+    </li>
+    
+    <li class="menu-item-docs">
+      <a href="/docs/">
+        <span>Docs</span>
+      </a>
+    </li>
+    
+  </ul>
+</div>
+    <button id="toggle-main-menu-mobile" class="hamburger hamburger--slider" type="button">
+  <span class="hamburger-box">
+    <span class="hamburger-inner"></span>
+  </span>
+</button>
+  </div>
+</div>
+
+
+    
+    
+    
+    
+
+    
+    
+<h1 class="title">Computational complexity</h1>
+<div class="content anchor-link-enabled">
+  <p>Let $n$ be the number of keys, and $B$ be the page size of the machine.</p>
+<div class="table-responsive">
+<table>
+<thead>
+<tr>
+<th></th>
+<th>PGM-index</th>
+<th>B-tree</th>
+<th>Self-balancing BST<sup>†</sup></th>
+<th>Skip list</th>
+<th>Sorted array</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Predecessor query<sup>§</sup><br>(static case)</td>
+<td>$\Oh(\log_B n)$</td>
+<td>$\Oh(\log_B n)$</td>
+<td>$\Oh(\log n)$</td>
+<td>$\Oh(\log n)$ w.h.p.</td>
+<td>$\Oh(\log n)$</td>
+</tr>
+<tr>
+<td>Predecessor query<br>(dynamic case<sup>#</sup>)</td>
+<td>$\Oh(\log^2_B n)$</td>
+<td>$\Oh(\log_B n)$</td>
+<td>$\Oh(\log n)$</td>
+<td>$\Oh(\log n)$ w.h.p.</td>
+<td>$\Oh(\log n)$</td>
+</tr>
+<tr>
+<td>Insert/delete</td>
+<td>$\Oh(\log_B n)$ amortised</td>
+<td>$\Oh(\log_B n)$</td>
+<td>$\Oh(\log n)$</td>
+<td>$\Oh(\log n)$ w.h.p.</td>
+<td>$\Oh(n)$</td>
+</tr>
+<tr>
+<td>Index space in words</td>
+<td>$\Oh(\frac{n}{B^2})$ w.h.p.<sup>‡</sup></td>
+<td>$\Oh(\frac{n}{B})$</td>
+<td>$\Oh(n)$</td>
+<td>$\Oh(n)$ w.h.p.</td>
+<td>$\Oh(1)$</td>
+</tr>
+</tbody>
+</table>
+</div>
+<small>
+<ul style="list-style:none; padding: 0 1em; text-indent: -0.75em;">
+  <li><sup>&sect;</sup> Given a key $q$, a <em>predecessor query</em> returns the maximum key $k$ in the input set such that $k \leq q$. This is a more powerful operation than the basic <em>lookup</em> (aka membership query), which only aims to find whether a key belongs to the input set or not.</li>
+  <li><sup>&#35;</sup> The dynamic case corresponds to a PGM-index that support both predecessor queries and inserts/deletes.</li>
+  <li><sup>&dagger;</sup> C++'s std::set and std::map are often implemented as self-balancing binary search trees (e.g. red-black trees or AVL trees).</li>
+  <li><sup>&Dagger;</sup> Assuming the gaps between consecutive input keys taken in sorted order have finite mean and variance.</li>
+</ul>
+</small>
+<p>For more information, visit the <a href="https://pgm.di.unipi.it/docs/computational-complexities/">computational complexity page</a>.</p>
+
+</div>
+</div>
+
+    
+  </div>
+
+  <div class="footer">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        Made with 👼 at <a href="https://www.di.unipi.it/en/">University of Pisa</a> by the <a
+          href="http://acube.di.unipi.it">A³ Lab</a><br>
+        This library was supported by the Italian Ministry of University and Research &ldquo;Progetti di Rilevante Interesse Nazionale&rdquo; project: &ldquo;<a href="http://learned.di.unipi.it">Multicriteria data structures and algorithms</a>&rdquo; (grant n. 2017WR7SHH), and by the European Union H2020 project &ldquo;<a href="http://www.sobigdata.eu">SoBigData++: European Integrated Infrastructure for Social Mining and Big Data Analytics</a>&rdquo; (grant n. 871042) 
+      </div>
+    </div>
+  </div>
+</div>
+<link rel="stylesheet" href="/js/katex/katex.min.css">
+<script defer src="/js/katex/katex.min.js"></script>
+<script defer src="/js/katex/auto-render.min.js" onload="renderMathInElement(document.body, { macros: { '\\Oh': '\\mathcal{O}' }, delimiters: [
+  {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}] });"></script>
+
+  
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/scripts.min.302a6fc365d5139fb98cf60bdb8f715d96257ea189161d36c190ccfa8182e569.js"></script>
+  
+
+  
+  
+  
+    
+  
+
+
+</body>
+
+</html>

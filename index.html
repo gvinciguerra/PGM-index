@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta name="generator" content="Hugo 0.124.1">
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>The PGM-index</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+<meta name="description" content="The Piecewise Geometric Model index (PGM-index) is a data structure that enables fast point and range searches in arrays of billions of items using orders of magnitude less space than traditional indexes." />
+<meta property="og:title" content="The PGM-index" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://pgm.di.unipi.it" />
+<meta property="og:image" content="https://pgm.di.unipi.it/images/logo_raster.png" />
+<meta property="og:description" content="The Piecewise Geometric Model index (PGM-index) is a data structure that enables fast point and range searches in arrays of billions of items using orders of magnitude less space than traditional indexes." />
+<meta name="twitter:card" content="" />
+<meta name="twitter:site" content="" />
+<meta name="twitter:creator" content="" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vivus/0.4.5/vivus.min.js"
+  integrity="sha256-EQbVGDv8AeB/IA3V0dU2OSI1PDKb8wEG3sRDAdkgoGc=" crossorigin="anonymous"></script>
+
+
+  <link rel="icon" href="https://pgm.di.unipi.it/favicon.png">
+
+  
+  
+  <link rel="stylesheet" href="/css/style.min.47b485d84ade20739e6d7876653baf13d09ef0ece9625f11c9f5c627ed07eda4.css">
+  
+
+  
+
+</head>
+
+<body class='page '>
+  <div id="main-menu-mobile" class="main-menu-mobile">
+  <ul>
+    
+    
+    <li class="menu-item-home">
+      <a href="/">
+        <span>Home</span>
+      </a>
+    </li>
+    
+    <li class="menu-item-docs">
+      <a href="/docs/">
+        <span>Docs</span>
+      </a>
+    </li>
+    
+  </ul>
+</div>
+  <div class="wrapper">
+    <div class='header'>
+  <div class="container">
+    <div class="logo">
+      <a href="https://pgm.di.unipi.it/">The PGM-index</a>
+    </div>
+    <div class="logo-mobile">
+      <a href="https://pgm.di.unipi.it/">The PGM-index</a>
+    </div>
+    <div id="main-menu" class="main-menu">
+  <ul>
+    
+    
+    <li class="menu-item-home">
+      <a href="/">
+        <span>Home</span>
+      </a>
+    </li>
+    
+    <li class="menu-item-docs">
+      <a href="/docs/">
+        <span>Docs</span>
+      </a>
+    </li>
+    
+  </ul>
+</div>
+    <button id="toggle-main-menu-mobile" class="hamburger hamburger--slider" type="button">
+  <span class="hamburger-box">
+    <span class="hamburger-inner"></span>
+  </span>
+</button>
+  </div>
+</div>
+
+
+    
+    
+    
+    
+
+    
+    
+
+<div class="strip ">
+  <div class="container pt-4">
+    <div class="row">
+      <div class="col-12 center page-home ">
+        <object id="logo-svg" type="image/svg+xml" data="images/logo.svg" style="height: 120px; width: auto;"
+          class="mb-2"></object>
+        <script>
+          
+          
+          
+          
+          
+          new Vivus("logo-svg", { duration: 600, type: "oneByOne", reverseStack: true, animTimingFunction: Vivus.EASE_OUT });
+        </script>
+
+        <h1 class="title">The PGM-index</h1>
+        <div class="content">
+          
+          <p>The <em>Piecewise Geometric Model index</em> (PGM-index) is a data structure that enables fast lookup, predecessor, range searches and updates in arrays of billions of items using orders of magnitude less space than traditional indexes while providing the same worst-case query time guarantees.</p>
+<p>
+  <a class="button button-primary col-md-auto p-1 mr-1 mb-1" href="https://github.com/gvinciguerra/PGM-index">
+    <img src="images/cpp.svg" style="height: 1.3rem; vertical-align: text-bottom; padding-right: 3px;">
+    Source
+  </a>
+  <a class="button button-primary col-md-auto p-1 mr-1 mb-1" href="https://github.com/gvinciguerra/PyGM">
+    <img src="images/python.svg" style="height: 1.3rem; vertical-align: text-bottom; padding-right: 3px;">
+    PyGM
+  </a>
+  <a class="button button-primary col-md-auto p-1 mr-1 mb-1" href="docs">
+    <img src="images/info.svg" style="height: 1.3rem; vertical-align: text-bottom; padding-right: 3px;">
+    Docs
+  </a>
+  <a class="button button-primary col-md-auto p-1 mr-1 mb-1" href="#Publications">
+    <img src="images/paper.svg" style="height: 1.3rem; vertical-align: text-bottom; padding-right: 3px;">
+    Papers
+  </a>
+</p>
+
+          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="pt-2" style=" background:rgb(247, 247, 247); ">
+  <div class="container pt-4 pb-4">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="content">
+          
+          <style>
+.news {
+/* text-align: center; */
+font-size: 85% !important;
+margin-bottom: 2.5em;
+}
+.badge {
+color: #fff;
+background-color: #FF4E4E;
+display: inline-block;
+padding: .25em .4em;
+font-size: 85%;
+margin: 0 0.3em 0 0;
+font-weight: 700;
+line-height: 1;
+text-align: center;
+white-space: nowrap;
+vertical-align: top;
+border-radius: .25rem;
+}
+.news a {
+color: #383f45;
+text-decoration-style: dotted;
+}
+</style>
+<div class="row news justify-content-center">
+  <div class="col-md-9 col-lg-7 col-xl-6">
+    <span class="badge">New</span> The PGM-index now supports <a href="/docs/cpp-reference/#classpgm_1_1_multidimensional_p_g_m_index">orthogonal range queries in k-dimensions</a>!
+  </div>
+  <!-- <div class="w-100 mb-1"></div>
+  <div class="col-md-9 col-lg-7 col-xl-6">
+    <span class="badge">New</span> Added a page discussing the <a href="/docs/computational-complexities/  ">computational complexity</a>
+  </div> -->
+</div>
+<p style="text-align: justify; -webkit-hyphens: auto; -ms-hyphens: auto; hyphens: auto;">Unlike traditional tree-based indexes that are blind to the possible regularity present in the input data, the PGM-index exploits a learned mapping between the indexed keys and their location in memory. The succinctness of this mapping, coupled with a peculiar recursive construction algorithm, makes the PGM-index a data structure that dominates traditional indexes by orders of magnitude in space while still offering the best query and update time performance.</p>
+<p style="text-align: justify; -webkit-hyphens: auto; -ms-hyphens: auto; hyphens: auto;">In addition to that, the PGM-index offers <strong>compression</strong>, <strong>distribution-awareness</strong>, and <strong>multi-criteria</strong> adaptability, thus resulting suitable for addressing the increasing demand for big data systems that adapt to the rapidly changing constraints imposed by the wide range of modern devices and applications.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="pt-2" style="">
+  <div class="container pt-4 pb-4">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="content">
+          
+          <h1 id="Features">Features</h1>
+          
+          <div class="row">
+  <div class="col mb-2">
+    <div class="feature">
+      <div class="feature-image"><img alt="Learned" src="images/ai.svg"></div> 
+      <h2 class="feature-title">Learned</h2>
+      <div class="feature-content">It is one of the first results on learned indexes which achieves astonishing performance by capturing the distribution of the input data.</div>
+    </div>
+  </div>
+  <div class="col mb-2">
+    <div class="feature">
+      <div class="feature-image"><img alt="Optimal" src="images/optimal.svg"></div> 
+      <h2 class="feature-title">Optimal</h2>
+      <div class="feature-content">It is the first learned index with provably optimal time and space complexity guarantees. This makes it resistant to adversarial inputs and queries.</div>
+    </div>
+  </div>
+  <div class="col mb-2">
+    <div class="feature">
+      <div class="feature-image"><img alt="Memory efficient" src="images/memory.svg"></div> 
+      <h2 class="feature-title">Memory efficient</h2>
+      <div class="feature-content">It always consumes less space than traditional tree-based indexes, often orders of magnitude less. If this is not enough, there is even a compressed version.</div>
+    </div>
+  </div>
+  <div class="w-100"></div>
+  <div class="col mb-2">
+    <div class="feature">
+      <div class="feature-image"><img alt="Fast construction" src="images/fast.svg"></div> 
+      <h2 class="feature-title">Fast construction</h2>
+      <div class="feature-content">Its construction, based on a single scan of the input data, matches the efficiency of traditional indexes even on gigabytes of data.</div>
+    </div>
+  </div>
+  <div class="col mb-2">
+    <div class="feature">
+      <div class="feature-image"><img alt="Tunable page size" src="images/settings.svg"></div> 
+      <h2 class="feature-title">Tunable</h2>
+      <div class="feature-content">It can be tailored to various storage devices and memory hierarchies and auto-tuned to any given constraints on memory usage and query time.</div>
+    </div>
+  </div>
+  <div class="col mb-2">
+    <div class="feature">
+      <div class="feature-image"><img alt="Flexible" src="images/flexible.svg"></div> 
+      <h2 class="feature-title">Flexible</h2>
+      <div class="feature-content">It can be beneficial in various applications, from databases to geographic information systems and search engines, as it supports several kinds of queries, from point to multidimensional.</div>
+    </div>
+  </div>
+</div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="pt-2" style=" background:rgb(247, 247, 247); ">
+  <div class="container pt-4 pb-4">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="content">
+          
+          <h1 id="Computational complexity">Computational complexity</h1>
+          
+          <p>Let $n$ be the number of keys, and $B$ be the page size of the machine.</p>
+<div class="table-responsive">
+<table>
+<thead>
+<tr>
+<th></th>
+<th>PGM-index</th>
+<th>B-tree</th>
+<th>Self-balancing BST<sup>†</sup></th>
+<th>Skip list</th>
+<th>Sorted array</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Predecessor query<sup>§</sup><br>(static case)</td>
+<td>$\Oh(\log_B n)$</td>
+<td>$\Oh(\log_B n)$</td>
+<td>$\Oh(\log n)$</td>
+<td>$\Oh(\log n)$ w.h.p.</td>
+<td>$\Oh(\log n)$</td>
+</tr>
+<tr>
+<td>Predecessor query<br>(dynamic case<sup>#</sup>)</td>
+<td>$\Oh(\log^2_B n)$</td>
+<td>$\Oh(\log_B n)$</td>
+<td>$\Oh(\log n)$</td>
+<td>$\Oh(\log n)$ w.h.p.</td>
+<td>$\Oh(\log n)$</td>
+</tr>
+<tr>
+<td>Insert/delete</td>
+<td>$\Oh(\log_B n)$ amortised</td>
+<td>$\Oh(\log_B n)$</td>
+<td>$\Oh(\log n)$</td>
+<td>$\Oh(\log n)$ w.h.p.</td>
+<td>$\Oh(n)$</td>
+</tr>
+<tr>
+<td>Index space in words</td>
+<td>$\Oh(\frac{n}{B^2})$ w.h.p.<sup>‡</sup></td>
+<td>$\Oh(\frac{n}{B})$</td>
+<td>$\Oh(n)$</td>
+<td>$\Oh(n)$ w.h.p.</td>
+<td>$\Oh(1)$</td>
+</tr>
+</tbody>
+</table>
+</div>
+<small>
+<ul style="list-style:none; padding: 0 1em; text-indent: -0.75em;">
+  <li><sup>&sect;</sup> Given a key $q$, a <em>predecessor query</em> returns the maximum key $k$ in the input set such that $k \leq q$. This is a more powerful operation than the basic <em>lookup</em> (aka membership query), which only aims to find whether a key belongs to the input set or not.</li>
+  <li><sup>&#35;</sup> The dynamic case corresponds to a PGM-index that support both predecessor queries and inserts/deletes.</li>
+  <li><sup>&dagger;</sup> C++'s std::set and std::map are often implemented as self-balancing binary search trees (e.g. red-black trees or AVL trees).</li>
+  <li><sup>&Dagger;</sup> Assuming the gaps between consecutive input keys taken in sorted order have finite mean and variance.</li>
+</ul>
+</small>
+<p>For more information, visit the <a href="https://pgm.di.unipi.it/docs/computational-complexities/">computational complexity page</a>.</p>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="pt-2" style="">
+  <div class="container pt-4 pb-4">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="content">
+          
+          <h1 id="Running example">Running example</h1>
+          
+          <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&lt;vector&gt;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&lt;cstdlib&gt;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&lt;iostream&gt;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&lt;algorithm&gt;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;pgm/pgm_index.hpp&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// Generate some random data
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">data</span><span class="p">(</span><span class="mi">1000000</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">std</span><span class="o">::</span><span class="n">generate</span><span class="p">(</span><span class="n">data</span><span class="p">.</span><span class="n">begin</span><span class="p">(),</span> <span class="n">data</span><span class="p">.</span><span class="n">end</span><span class="p">(),</span> <span class="n">std</span><span class="o">::</span><span class="n">rand</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">data</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="mi">42</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">std</span><span class="o">::</span><span class="n">sort</span><span class="p">(</span><span class="n">data</span><span class="p">.</span><span class="n">begin</span><span class="p">(),</span> <span class="n">data</span><span class="p">.</span><span class="n">end</span><span class="p">());</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// Construct the PGM-index
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">const</span> <span class="kt">int</span> <span class="n">epsilon</span> <span class="o">=</span> <span class="mi">128</span><span class="p">;</span> <span class="c1">// space-time trade-off parameter
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">pgm</span><span class="o">::</span><span class="n">PGMIndex</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">&gt;</span> <span class="n">index</span><span class="p">(</span><span class="n">data</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// Query the PGM-index
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">auto</span> <span class="n">q</span> <span class="o">=</span> <span class="mi">42</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">auto</span> <span class="n">range</span> <span class="o">=</span> <span class="n">index</span><span class="p">.</span><span class="n">search</span><span class="p">(</span><span class="n">q</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">auto</span> <span class="n">lo</span> <span class="o">=</span> <span class="n">data</span><span class="p">.</span><span class="n">begin</span><span class="p">()</span> <span class="o">+</span> <span class="n">range</span><span class="p">.</span><span class="n">lo</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">auto</span> <span class="n">hi</span> <span class="o">=</span> <span class="n">data</span><span class="p">.</span><span class="n">begin</span><span class="p">()</span> <span class="o">+</span> <span class="n">range</span><span class="p">.</span><span class="n">hi</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="o">*</span><span class="n">std</span><span class="o">::</span><span class="n">lower_bound</span><span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">,</span> <span class="n">q</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>Read more about the C++ API <a href="/docs/cpp-reference/">here</a>.</p>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="pt-2" style=" background:rgb(247, 247, 247); ">
+  <div class="container pt-4 pb-4">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="content">
+          
+          <h1 id="Publications">Publications</h1>
+          
+          <style>
+.btn {
+padding: .05rem .4rem .05rem .4rem;
+font-size: .8rem;
+border-radius: .3rem;
+margin-right: .1rem !important;
+margin-bottom: 10rem;
+color: #3182BD;
+border: 1px solid #3182BD;
+text-decoration: none !important;
+}
+.btn:hover {
+color: #fff;
+background-color: #3182BD;
+border-color: #3182BD;
+}
+</style>
+<ol>
+<li>Paolo Ferragina and Giorgio Vinciguerra. The PGM-index: a fully-dynamic compressed learned index with provable worst-case bounds. PVLDB, 13(8): 1162-1175, 2020. <p><a class="btn" href="http://www.vldb.org/pvldb/vol13/p1162-ferragina.pdf">PDF</a> <a class="btn" href="https://www.youtube.com/watch?v=gCKJ29RaggU">Video</a> <a class="btn" href="slides-pgm-index-vldb.pdf">Slides</a> <a class="btn" href="https://doi.org/10.14778/3389133.3389135">DOI</a></p></li>
+<li>Paolo Ferragina, Fabrizio Lillo, and Giorgio Vinciguerra. Why are learned indexes so effective?. In: Proceedings of the 37th International Conference on Machine Learning (ICML 2020). <p><a class="btn" href="http://learned.di.unipi.it/publication/learned-indexes-effectiveness/learned-indexes-effectiveness.pdf">PDF</a> <a class="btn" href="https://icml.cc/virtual/2020/poster/5873">Video</a> <a class="btn" href="slides-learned-indexes-effectiveness.pdf">Slides</a></p></li>
+<li>Paolo Ferragina, Fabrizio Lillo, and Giorgio Vinciguerra. On the performance of learned data structures. Theoretical Computer Science, 2021. <p><a class="btn" href="https://www.sciencedirect.com/science/article/pii/S0304397521002334/pdfft">PDF</a> <a class="btn" href="https://doi.org/10.1016/j.tcs.2021.04.015">DOI</a></p></li>
+</ol>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="pt-2" style="">
+  <div class="container pt-4 pb-4">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="content">
+          
+          <h1 id="Cite us">Cite us</h1>
+          
+          <p>If you use the library please put a link to this website and cite the following paper:</p>
+<p style="font-size:0.85rem;padding:0 10px">Paolo Ferragina and Giorgio Vinciguerra. The PGM-index: a fully-dynamic compressed learned index with provable worst-case bounds. PVLDB, 13(8): 1162-1175, 2020.</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-tex" data-lang="tex"><span class="line"><span class="cl">@article<span class="nb">{</span>Ferragina:2020pgm,
+</span></span><span class="line"><span class="cl">  Author = <span class="nb">{</span>Paolo Ferragina and Giorgio Vinciguerra<span class="nb">}</span>,
+</span></span><span class="line"><span class="cl">  Title = <span class="nb">{</span>The <span class="nb">{</span>PGM-index<span class="nb">}</span>: a fully-dynamic compressed learned index with provable worst-case bounds<span class="nb">}</span>,
+</span></span><span class="line"><span class="cl">  Year = <span class="nb">{</span>2020<span class="nb">}</span>,
+</span></span><span class="line"><span class="cl">  Volume = <span class="nb">{</span>13<span class="nb">}</span>,
+</span></span><span class="line"><span class="cl">  Number = <span class="nb">{</span>8<span class="nb">}</span>,
+</span></span><span class="line"><span class="cl">  Pages = <span class="nb">{</span>1162--1175<span class="nb">}</span>,
+</span></span><span class="line"><span class="cl">  Doi = <span class="nb">{</span>10.14778/3389133.3389135<span class="nb">}</span>,
+</span></span><span class="line"><span class="cl">  Url = <span class="nb">{</span>https://pgm.di.unipi.it<span class="nb">}</span>,
+</span></span><span class="line"><span class="cl">  Issn = <span class="nb">{</span>2150-8097<span class="nb">}</span>,
+</span></span><span class="line"><span class="cl">  Journal = <span class="nb">{{</span>PVLDB<span class="nb">}}}</span>
+</span></span></code></pre></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="pt-2" style=" background:rgb(247, 247, 247); ">
+  <div class="container pt-4 pb-4">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="content">
+          
+          <h1 id="Some interesting uses of the PGM-index">Some interesting uses of the PGM-index</h1>
+          
+          <ul>
+<li><a href="https://github.com/ByteHamster/LeMonHash">LeMonHash</a>. A monotone minimal perfect hash function that uses the PGM-index in its design.</li>
+<li><a href="https://github.com/gvinciguerra/PyGM">PyGM</a>. A Python package of sorted containers that uses the PGM-index for efficient query performance and memory usage.</li>
+<li><a href="https://manticoresearch.com/">Manticore</a>. An open-source fast database that uses the PGM-index in its column-oriented storage library.</li>
+</ul>
+<p style="font-size:0.85rem;padding:0 10px">We would love to be informed whether you used our code in your projects. We will list the most interesting applications of the PGM-index here!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="pt-2" style="">
+  <div class="container pt-4 pb-4">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="content">
+          
+          <h1 id="Contribute">Contribute</h1>
+          
+          <p>There are a lot of ways to contribute on this project, just to mention a few:</p>
+<ol>
+<li><del>Engineering the support for insertions and deletions.</del> <a href="docs/cpp-reference/#classpgm_1_1_dynamic_p_g_m_index">done</a>!</li>
+<li>Making the index SIMD aware. For example, you could set the error to the SIMD register width and use vector instructions to traverse the levels of the index with no branches.</li>
+<li>Adding support for concurrent and batch queries.</li>
+</ol>
+<p>Feel free to submit issues and pull requests in the GitHub repository.</p>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+    
+  </div>
+
+  <div class="footer">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        Made with 👼 at <a href="https://www.di.unipi.it/en/">University of Pisa</a> by the <a
+          href="http://acube.di.unipi.it">A³ Lab</a><br>
+        This library was supported by the Italian Ministry of University and Research &ldquo;Progetti di Rilevante Interesse Nazionale&rdquo; project: &ldquo;<a href="http://learned.di.unipi.it">Multicriteria data structures and algorithms</a>&rdquo; (grant n. 2017WR7SHH), and by the European Union H2020 project &ldquo;<a href="http://www.sobigdata.eu">SoBigData++: European Integrated Infrastructure for Social Mining and Big Data Analytics</a>&rdquo; (grant n. 871042) 
+      </div>
+    </div>
+  </div>
+</div>
+<link rel="stylesheet" href="/js/katex/katex.min.css">
+<script defer src="/js/katex/katex.min.js"></script>
+<script defer src="/js/katex/auto-render.min.js" onload="renderMathInElement(document.body, { macros: { '\\Oh': '\\mathcal{O}' }, delimiters: [
+  {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}] });"></script>
+
+  
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/scripts.min.302a6fc365d5139fb98cf60bdb8f715d96257ea189161d36c190ccfa8182e569.js"></script>
+  
+
+  
+  
+  
+    
+  
+
+
+</body>
+
+</html>

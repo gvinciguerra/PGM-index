@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>Using the tuner - The PGM-index</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link rel="icon" href="https://pgm.di.unipi.it/favicon.png">
+
+  
+  
+  <link rel="stylesheet" href="/css/style.min.47b485d84ade20739e6d7876653baf13d09ef0ece9625f11c9f5c627ed07eda4.css">
+  
+
+  
+
+</head>
+
+<body class='page page-default-single'>
+  <div id="main-menu-mobile" class="main-menu-mobile">
+  <ul>
+    
+    
+    <li class="menu-item-home">
+      <a href="/">
+        <span>Home</span>
+      </a>
+    </li>
+    
+    <li class="menu-item-docs">
+      <a href="/docs/">
+        <span>Docs</span>
+      </a>
+    </li>
+    
+  </ul>
+</div>
+  <div class="wrapper">
+    <div class='header'>
+  <div class="container">
+    <div class="logo">
+      <a href="https://pgm.di.unipi.it/">The PGM-index</a>
+    </div>
+    <div class="logo-mobile">
+      <a href="https://pgm.di.unipi.it/">The PGM-index</a>
+    </div>
+    <div id="main-menu" class="main-menu">
+  <ul>
+    
+    
+    <li class="menu-item-home">
+      <a href="/">
+        <span>Home</span>
+      </a>
+    </li>
+    
+    <li class="menu-item-docs">
+      <a href="/docs/">
+        <span>Docs</span>
+      </a>
+    </li>
+    
+  </ul>
+</div>
+    <button id="toggle-main-menu-mobile" class="hamburger hamburger--slider" type="button">
+  <span class="hamburger-box">
+    <span class="hamburger-inner"></span>
+  </span>
+</button>
+  </div>
+</div>
+
+
+    
+    
+    
+    
+    
+    
+
+    
+    <div class="container pt-2 pt-md-6 pb-3 pb-md-6">
+      <div class="row">
+        <div class="col-12 col-md-3 mb-3">
+          <div class="sidebar">
+            
+<div class="docs-menu">
+  <h4>Docs</h4>
+  <ul>
+    
+    <li class="">
+      <a href="https://pgm.di.unipi.it/docs/building-the-code/">Building the code</a>
+    </li>
+    
+    <li class="active ">
+      <a href="https://pgm.di.unipi.it/docs/tuner/">Using the tuner</a>
+    </li>
+    
+    <li class="">
+      <a href="https://pgm.di.unipi.it/docs/benchmark/">Using the benchmark</a>
+    </li>
+    
+    <li class="">
+      <a href="https://pgm.di.unipi.it/docs/cpp-reference/">C&#43;&#43; Reference</a>
+    </li>
+    
+    <li class="">
+      <a href="https://pgm.di.unipi.it/docs/python-reference/">Python Reference</a>
+    </li>
+    
+    <li class="">
+      <a href="https://pgm.di.unipi.it/docs/computational-complexities/">Computational complexity</a>
+    </li>
+    
+  </ul>
+</div>
+
+          </div>
+        </div>
+        <div class="col-12 col-md-9">
+          
+<h1 class="title">Using the tuner</h1>
+<div class="content anchor-link-enabled">
+  <p>The PGM-index can auto-tune itself to match any given application constraint, either in query time or in space occupancy.</p>
+<p>Once you <a href="/docs/building-the-code">have built</a> the project, you can run the command-line tuner that finds the optimal value for the epsilon parameter when <a href="/docs/cpp-reference/#classpgm_1_1_p_g_m_index">creating the PGM-index</a>.</p>
+<p>For example, to get the fastest PGM-index configuration occupying 3 megabytes of space, you would run:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl">./tuner -s3000000 -U file.bin
+</span></span></code></pre></div><p>Instead, if you need a PGM-index that answers queries in 700±1% nanoseconds and that occupies the least amount of space, you would run:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl">./tuner -t700 -o0.01 -U file.bin
+</span></span></code></pre></div><p>The input data must be provided as a binary file containing a <em>sorted</em> sequence of signed or unsigned 32- or 64-bit integers. The integer type must be specified with the options <code>-U</code>, <code>-I</code>, <code>-u</code>, <code>-i</code>, that corresponds to the types <code>uint64</code>, <code>int64</code>, <code>uint32</code>, <code>int32</code>, respectively.</p>
+<p>The input file can be prepared for instance in Python by calling <code>np.sort(a).astype('uint64').tofile('file.bin')</code> on a NumPy array <code>a</code> containing your data. The following Python code for example converts a text file containing newline-separated positive integers to the binary format required by the tuner:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+</span></span><span class="line"><span class="cl"><span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;my_data.txt&#39;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">.</span><span class="n">tofile</span><span class="p">(</span><span class="s1">&#39;file.bin&#39;</span><span class="p">)</span>
+</span></span></code></pre></div><h2 id="tuner-c-api">Tuner C++ API</h2>
+<p>If you need to use the tuner from your code, have a look at the functions <code>minimize_space_given_time</code> and <code>minimize_time_given_space</code> in <a href="https://github.com/gvinciguerra/PGM-index/blob/master/tuner/tuner.hpp">tuner.hpp</a>.</p>
+<h2 id="program-manual">Program manual</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-gdscript3" data-lang="gdscript3"><span class="line"><span class="cl"><span class="n">tuner</span> <span class="n">file</span> <span class="p">{</span><span class="n">OPTIONS</span><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">Space</span><span class="o">-</span><span class="n">time</span> <span class="n">trade</span><span class="o">-</span><span class="n">off</span> <span class="n">tuner</span> <span class="k">for</span> <span class="n">the</span> <span class="n">PGM</span><span class="o">-</span><span class="n">index</span><span class="o">.</span>
+</span></span><span class="line"><span class="cl"><span class="n">This</span> <span class="n">program</span> <span class="n">lets</span> <span class="n">you</span> <span class="n">specify</span> <span class="n">a</span> <span class="n">maximum</span> <span class="n">space</span> <span class="ow">and</span> <span class="n">get</span> <span class="n">the</span> <span class="n">PGM</span><span class="o">-</span><span class="n">index</span> <span class="n">minimising</span>
+</span></span><span class="line"><span class="cl"><span class="n">the</span> <span class="n">query</span> <span class="n">time</span> <span class="n">within</span> <span class="n">that</span> <span class="n">space</span><span class="o">.</span> <span class="n">Or</span><span class="p">,</span> <span class="n">it</span> <span class="n">lets</span> <span class="n">you</span> <span class="n">specify</span> <span class="n">a</span> <span class="n">maximum</span> <span class="n">query</span> <span class="n">time</span>
+</span></span><span class="line"><span class="cl"><span class="ow">and</span> <span class="n">get</span> <span class="n">the</span> <span class="n">PGM</span><span class="o">-</span><span class="n">index</span> <span class="n">minimising</span> <span class="n">the</span> <span class="n">space</span><span class="o">.</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">OPTIONS</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="o">-</span><span class="n">h</span><span class="p">,</span> <span class="o">--</span><span class="n">help</span>             <span class="n">Display</span> <span class="n">this</span> <span class="n">help</span> <span class="n">menu</span>
+</span></span><span class="line"><span class="cl">  <span class="o">-</span><span class="n">o</span><span class="p">[</span><span class="ne">float</span><span class="p">],</span> <span class="o">--</span><span class="n">tol</span><span class="o">=</span><span class="p">[</span><span class="ne">float</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">                         <span class="n">Tolerance</span> <span class="n">between</span> <span class="mi">0</span> <span class="ow">and</span> <span class="mi">1</span> <span class="n">on</span> <span class="n">the</span> <span class="n">constraint</span> <span class="p">(</span><span class="n">default</span>
+</span></span><span class="line"><span class="cl">                         <span class="mf">0.01</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">  <span class="o">-</span><span class="n">r</span><span class="p">[</span><span class="n">ratio</span><span class="p">],</span> <span class="o">--</span><span class="n">ratio</span><span class="o">=</span><span class="p">[</span><span class="n">ratio</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">                         <span class="n">Ratio</span> <span class="n">of</span> <span class="n">lookups</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">query</span> <span class="n">workload</span> <span class="p">(</span><span class="n">default</span> <span class="mf">0.33</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">  <span class="o">-</span><span class="n">v</span><span class="p">,</span> <span class="o">--</span><span class="n">verbose</span>          <span class="n">Show</span> <span class="n">additional</span> <span class="n">logging</span> <span class="n">info</span>
+</span></span><span class="line"><span class="cl">  <span class="n">OPERATION</span> <span class="n">MODES</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="o">-</span><span class="n">t</span><span class="p">[</span><span class="n">ns</span><span class="p">],</span> <span class="o">--</span><span class="n">time</span><span class="o">=</span><span class="p">[</span><span class="n">ns</span><span class="p">]</span>    <span class="n">Specify</span> <span class="n">a</span> <span class="n">time</span> <span class="n">to</span> <span class="n">minimise</span> <span class="n">the</span> <span class="n">space</span>
+</span></span><span class="line"><span class="cl">    <span class="o">-</span><span class="n">s</span><span class="p">[</span><span class="n">bytes</span><span class="p">],</span> <span class="o">--</span><span class="n">space</span><span class="o">=</span><span class="p">[</span><span class="n">bytes</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">                           <span class="n">Specify</span> <span class="n">a</span> <span class="n">space</span> <span class="n">to</span> <span class="n">minimise</span> <span class="n">the</span> <span class="n">time</span>
+</span></span><span class="line"><span class="cl">  <span class="n">INPUT</span> <span class="n">DATA</span> <span class="n">OPTIONS</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="o">-</span><span class="n">U</span><span class="p">,</span> <span class="o">--</span><span class="n">u64</span>              <span class="ne">Input</span> <span class="n">file</span> <span class="n">contains</span> <span class="n">unsigned</span> <span class="mi">64</span><span class="o">-</span><span class="n">bit</span> <span class="n">ints</span>
+</span></span><span class="line"><span class="cl">    <span class="o">-</span><span class="n">I</span><span class="p">,</span> <span class="o">--</span><span class="n">i64</span>              <span class="ne">Input</span> <span class="n">file</span> <span class="n">contains</span> <span class="n">signed</span> <span class="mi">64</span><span class="o">-</span><span class="n">bit</span> <span class="n">ints</span>
+</span></span><span class="line"><span class="cl">    <span class="o">-</span><span class="n">u</span><span class="p">,</span> <span class="o">--</span><span class="n">u32</span>              <span class="ne">Input</span> <span class="n">file</span> <span class="n">contains</span> <span class="n">unsigned</span> <span class="mi">32</span><span class="o">-</span><span class="n">bit</span> <span class="n">ints</span>
+</span></span><span class="line"><span class="cl">    <span class="o">-</span><span class="n">i</span><span class="p">,</span> <span class="o">--</span><span class="n">i32</span>              <span class="ne">Input</span> <span class="n">file</span> <span class="n">contains</span> <span class="n">signed</span> <span class="mi">32</span><span class="o">-</span><span class="n">bit</span> <span class="n">ints</span>
+</span></span><span class="line"><span class="cl">  <span class="n">file</span>                   <span class="n">The</span> <span class="n">file</span> <span class="n">containing</span> <span class="n">the</span> <span class="n">input</span> <span class="n">data</span>
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;--&#34;</span> <span class="n">can</span> <span class="n">be</span> <span class="n">used</span> <span class="n">to</span> <span class="n">terminate</span> <span class="n">flag</span> <span class="n">options</span> <span class="ow">and</span> <span class="n">force</span> <span class="n">all</span> <span class="n">following</span> <span class="n">arguments</span>
+</span></span><span class="line"><span class="cl">  <span class="n">to</span> <span class="n">be</span> <span class="n">treated</span> <span class="n">as</span> <span class="n">positional</span> <span class="n">options</span>
+</span></span></code></pre></div>
+</div>
+</div>
+
+        </div>
+      </div>
+    </div>
+    
+  </div>
+
+  <div class="footer">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        Made with 👼 at <a href="https://www.di.unipi.it/en/">University of Pisa</a> by the <a
+          href="http://acube.di.unipi.it">A³ Lab</a><br>
+        This library was supported by the Italian Ministry of University and Research &ldquo;Progetti di Rilevante Interesse Nazionale&rdquo; project: &ldquo;<a href="http://learned.di.unipi.it">Multicriteria data structures and algorithms</a>&rdquo; (grant n. 2017WR7SHH), and by the European Union H2020 project &ldquo;<a href="http://www.sobigdata.eu">SoBigData++: European Integrated Infrastructure for Social Mining and Big Data Analytics</a>&rdquo; (grant n. 871042) 
+      </div>
+    </div>
+  </div>
+</div>
+<link rel="stylesheet" href="/js/katex/katex.min.css">
+<script defer src="/js/katex/katex.min.js"></script>
+<script defer src="/js/katex/auto-render.min.js" onload="renderMathInElement(document.body, { macros: { '\\Oh': '\\mathcal{O}' }, delimiters: [
+  {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}] });"></script>
+
+  
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/scripts.min.302a6fc365d5139fb98cf60bdb8f715d96257ea189161d36c190ccfa8182e569.js"></script>
+  
+
+  
+  
+  
+    
+  
+
+
+</body>
+
+</html>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>The PGM-index</title>
+    <link>https://pgm.di.unipi.it/widgets/</link>
+    <description>Recent content on The PGM-index</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 25 Feb 2023 00:00:00 +0000</lastBuildDate>
+    <atom:link href="https://pgm.di.unipi.it/widgets/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title></title>
+      <link>https://pgm.di.unipi.it/widgets/description/</link>
+      <pubDate>Sun, 19 Apr 2020 00:00:00 +0000</pubDate>
+      <guid>https://pgm.di.unipi.it/widgets/description/</guid>
+      <description>New The PGM-index now supports orthogonal range queries in k-dimensions! Unlike traditional tree-based indexes that are blind to the possible regularity present in the input data, the PGM-index exploits a learned mapping between the indexed keys and their location in memory.</description>
+    </item>
+    <item>
+      <title>Features</title>
+      <link>https://pgm.di.unipi.it/widgets/features/</link>
+      <pubDate>Thu, 04 Feb 2021 00:00:00 +0000</pubDate>
+      <guid>https://pgm.di.unipi.it/widgets/features/</guid>
+      <description>Learned It is one of the first results on learned indexes which achieves astonishing performance by capturing the distribution of the input data. Optimal It is the first learned index with provably optimal time and space complexity guarantees.</description>
+    </item>
+    <item>
+      <title>Computational complexity</title>
+      <link>https://pgm.di.unipi.it/widgets/complexity/</link>
+      <pubDate>Sat, 01 May 2021 00:00:00 +0000</pubDate>
+      <guid>https://pgm.di.unipi.it/widgets/complexity/</guid>
+      <description>Let $n$ be the number of keys, and $B$ be the page size of the machine.&#xA;PGM-index B-tree Self-balancing BST† Skip list Sorted array Predecessor query§&#xA;(static case) $\Oh(\log_B n)$ $\Oh(\log_B n)$ $\Oh(\log n)$ $\Oh(\log n)$ w.</description>
+    </item>
+    <item>
+      <title>Running example</title>
+      <link>https://pgm.di.unipi.it/widgets/running-example/</link>
+      <pubDate>Tue, 25 Aug 2020 00:00:00 +0000</pubDate>
+      <guid>https://pgm.di.unipi.it/widgets/running-example/</guid>
+      <description>#include &amp;lt;vector&amp;gt; #include &amp;lt;cstdlib&amp;gt; #include &amp;lt;iostream&amp;gt; #include &amp;lt;algorithm&amp;gt; #include &amp;#34;pgm/pgm_index.hpp&amp;#34; int main() { // Generate some random data std::vector&amp;lt;int&amp;gt; data(1000000); std::generate(data.begin(), data.end(), std::rand); data.push_back(42); std::sort(data.begin(), data.end()); // Construct the PGM-index const int epsilon = 128; // space-time trade-off parameter pgm::PGMIndex&amp;lt;int, epsilon&amp;gt; index(data); // Query the PGM-index auto q = 42; auto range = index.</description>
+    </item>
+    <item>
+      <title>Publications</title>
+      <link>https://pgm.di.unipi.it/widgets/publications/</link>
+      <pubDate>Sat, 01 May 2021 00:00:00 +0000</pubDate>
+      <guid>https://pgm.di.unipi.it/widgets/publications/</guid>
+      <description>Paolo Ferragina and Giorgio Vinciguerra. The PGM-index: a fully-dynamic compressed learned index with provable worst-case bounds. PVLDB, 13(8): 1162-1175, 2020. PDF Video Slides DOI&#xA;Paolo Ferragina, Fabrizio Lillo, and Giorgio Vinciguerra.</description>
+    </item>
+    <item>
+      <title>Cite us</title>
+      <link>https://pgm.di.unipi.it/widgets/cite/</link>
+      <pubDate>Sun, 19 Apr 2020 00:00:00 +0000</pubDate>
+      <guid>https://pgm.di.unipi.it/widgets/cite/</guid>
+      <description>If you use the library please put a link to this website and cite the following paper:&#xA;Paolo Ferragina and Giorgio Vinciguerra. The PGM-index: a fully-dynamic compressed learned index with provable worst-case bounds.</description>
+    </item>
+    <item>
+      <title>Some interesting uses of the PGM-index</title>
+      <link>https://pgm.di.unipi.it/widgets/applications/</link>
+      <pubDate>Sat, 25 Feb 2023 00:00:00 +0000</pubDate>
+      <guid>https://pgm.di.unipi.it/widgets/applications/</guid>
+      <description>LeMonHash. A monotone minimal perfect hash function that uses the PGM-index in its design. PyGM. A Python package of sorted containers that uses the PGM-index for efficient query performance and memory usage.</description>
+    </item>
+    <item>
+      <title>Contribute</title>
+      <link>https://pgm.di.unipi.it/widgets/contribute/</link>
+      <pubDate>Sun, 30 Aug 2020 00:00:00 +0000</pubDate>
+      <guid>https://pgm.di.unipi.it/widgets/contribute/</guid>
+      <description>There are a lot of ways to contribute on this project, just to mention a few:&#xA;Engineering the support for insertions and deletions. done! Making the index SIMD aware. For example, you could set the error to the SIMD register width and use vector instructions to traverse the levels of the index with no branches.</description>
+    </item>
+  </channel>
+</rss>

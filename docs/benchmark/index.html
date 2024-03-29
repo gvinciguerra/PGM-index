@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>Using the benchmark - The PGM-index</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link rel="icon" href="https://pgm.di.unipi.it/favicon.png">
+
+  
+  
+  <link rel="stylesheet" href="/css/style.min.47b485d84ade20739e6d7876653baf13d09ef0ece9625f11c9f5c627ed07eda4.css">
+  
+
+  
+
+</head>
+
+<body class='page page-default-single'>
+  <div id="main-menu-mobile" class="main-menu-mobile">
+  <ul>
+    
+    
+    <li class="menu-item-home">
+      <a href="/">
+        <span>Home</span>
+      </a>
+    </li>
+    
+    <li class="menu-item-docs">
+      <a href="/docs/">
+        <span>Docs</span>
+      </a>
+    </li>
+    
+  </ul>
+</div>
+  <div class="wrapper">
+    <div class='header'>
+  <div class="container">
+    <div class="logo">
+      <a href="https://pgm.di.unipi.it/">The PGM-index</a>
+    </div>
+    <div class="logo-mobile">
+      <a href="https://pgm.di.unipi.it/">The PGM-index</a>
+    </div>
+    <div id="main-menu" class="main-menu">
+  <ul>
+    
+    
+    <li class="menu-item-home">
+      <a href="/">
+        <span>Home</span>
+      </a>
+    </li>
+    
+    <li class="menu-item-docs">
+      <a href="/docs/">
+        <span>Docs</span>
+      </a>
+    </li>
+    
+  </ul>
+</div>
+    <button id="toggle-main-menu-mobile" class="hamburger hamburger--slider" type="button">
+  <span class="hamburger-box">
+    <span class="hamburger-inner"></span>
+  </span>
+</button>
+  </div>
+</div>
+
+
+    
+    
+    
+    
+    
+    
+
+    
+    <div class="container pt-2 pt-md-6 pb-3 pb-md-6">
+      <div class="row">
+        <div class="col-12 col-md-3 mb-3">
+          <div class="sidebar">
+            
+<div class="docs-menu">
+  <h4>Docs</h4>
+  <ul>
+    
+    <li class="">
+      <a href="https://pgm.di.unipi.it/docs/building-the-code/">Building the code</a>
+    </li>
+    
+    <li class="">
+      <a href="https://pgm.di.unipi.it/docs/tuner/">Using the tuner</a>
+    </li>
+    
+    <li class="active ">
+      <a href="https://pgm.di.unipi.it/docs/benchmark/">Using the benchmark</a>
+    </li>
+    
+    <li class="">
+      <a href="https://pgm.di.unipi.it/docs/cpp-reference/">C&#43;&#43; Reference</a>
+    </li>
+    
+    <li class="">
+      <a href="https://pgm.di.unipi.it/docs/python-reference/">Python Reference</a>
+    </li>
+    
+    <li class="">
+      <a href="https://pgm.di.unipi.it/docs/computational-complexities/">Computational complexity</a>
+    </li>
+    
+  </ul>
+</div>
+
+          </div>
+        </div>
+        <div class="col-12 col-md-9">
+          
+<h1 class="title">Using the benchmark</h1>
+<div class="content anchor-link-enabled">
+  <p>The <a href="https://github.com/gvinciguerra/PGM-index">PGM‑index C++ library</a> provides a handy program to benchmark the query time and the space usage of some of the classes implemented in the library with various configuration parameters. The benchmark works both with synthetic and user-given datasets and query workloads, and it includes a Python notebook to plot the results.</p>
+<p>To compile the <code>benchmark</code> executable, follow the instructions for <a href="https://pgm.di.unipi.it/docs/building-the-code/">building the code</a>.</p>
+<h2 id="examples">Examples</h2>
+<p>The simplest example benchmarks the index structures on four datasets of 10 million elements drawn from various distributions (uniform, binomial, negative binomial, and geometric, respectively):</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl">./benchmark -s10000000
+</span></span></code></pre></div><p>The results will appear on the screen in CSV format. The columns are:</p>
+<ul>
+<li><strong>dataset</strong>, the name of the distribution (or the input file, see below).</li>
+<li><strong>class_name</strong>, the name and the template arguments of the class.</li>
+<li><strong>build_ms</strong>, the time to construct the index in milliseconds.</li>
+<li><strong>bytes</strong>, the memory usage of the index in bytes.</li>
+<li><strong>query_ns</strong>, the average time to answer a query in nanoseconds.</li>
+</ul>
+<p>To write the output both to the screen and a file, run:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl">./benchmark -s10000000 <span class="p">|</span> tee results.csv
+</span></span></code></pre></div><p>The <code>results.csv</code> file can be then used to create plots, as explained in the <a href="#plotting-the-results">next section</a>.</p>
+<p>To run the benchmark on some given input data instead, you have to pass the path to a binary file containing a <em>sorted</em> sequence of signed (or unsigned) 64-bit integers and specify the <code>-I</code> option (or <code>-U</code> for unsigned), as in:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl">./benchmark -U file.bin  <span class="p">|</span> tee results.csv
+</span></span></code></pre></div><p>The input file can be prepared for instance in Python by calling <code>np.sort(a).astype('uint64').tofile('file.bin')</code> on a NumPy array <code>a</code> containing your data. The following Python code for example converts a text file containing newline-separated positive integers to the binary format required by the benchmark:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+</span></span><span class="line"><span class="cl"><span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;my_data.txt&#39;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">.</span><span class="n">tofile</span><span class="p">(</span><span class="s1">&#39;file.bin&#39;</span><span class="p">)</span>
+</span></span></code></pre></div><p>Finally, the benchmark program provides <a href="#program-manual">options</a> to customise the query workload or to interleave the  input keys with values of a given size in bytes (to simulate database records).</p>
+<h2 id="plotting-the-results">Plotting the results</h2>
+<p>To plot the results you need to install the following Python 3 packages:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl">pip3 install jupyter <span class="s2">&#34;numpy&gt;=1.18&#34;</span> <span class="s2">&#34;pandas&gt;=0.25&#34;</span> <span class="s2">&#34;matplotlib&gt;=3.1&#34;</span> <span class="s2">&#34;cpufeature&gt;=0.2&#34;</span>
+</span></span></code></pre></div><p>Then, inside the directory containing the benchmark program and <code>plots.ipynb</code>, run</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl">jupyter notebook plots.ipynb
+</span></span></code></pre></div><p>Now, execute all the cells via the <em>Run</em> button in the toolbar, possibly changing the <code>input_file</code> variable to point to the CSV containing the results of the benchmark. The notebook will show the plots on the screen and save a <code>plots.pdf</code> file.</p>
+<h2 id="program-manual">Program manual</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-gdscript3" data-lang="gdscript3"><span class="line"><span class="cl"><span class="n">benchmark</span> <span class="p">[</span><span class="n">file</span><span class="o">...</span><span class="p">]</span> <span class="p">{</span><span class="n">OPTIONS</span><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">Benchmark</span> <span class="k">for</span> <span class="n">the</span> <span class="n">PGM</span><span class="o">-</span><span class="n">index</span> <span class="n">library</span><span class="o">.</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">OPTIONS</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="o">-</span><span class="n">h</span><span class="p">,</span> <span class="o">--</span><span class="n">help</span>             <span class="n">Display</span> <span class="n">this</span> <span class="n">help</span> <span class="n">menu</span>
+</span></span><span class="line"><span class="cl">  <span class="o">-</span><span class="n">v</span><span class="p">,</span> <span class="o">--</span><span class="n">verbose</span>          <span class="n">Verbose</span> <span class="n">output</span>
+</span></span><span class="line"><span class="cl">  <span class="o">-</span><span class="n">V</span><span class="p">[</span><span class="n">bytes</span><span class="p">],</span> <span class="o">--</span><span class="n">values</span><span class="o">=</span><span class="p">[</span><span class="n">bytes</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">                         <span class="n">Size</span> <span class="n">of</span> <span class="n">the</span> <span class="n">values</span> <span class="n">associated</span> <span class="n">to</span> <span class="n">keys</span>
+</span></span><span class="line"><span class="cl">  <span class="n">QUERY</span> <span class="n">WORKLOAD</span> <span class="n">OPTIONS</span> <span class="p">(</span><span class="n">mutually</span> <span class="n">exclusive</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="o">-</span><span class="n">r</span><span class="p">[</span><span class="n">ratio</span><span class="p">],</span> <span class="o">--</span><span class="n">ratio</span><span class="o">=</span><span class="p">[</span><span class="n">ratio</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">                           <span class="n">Random</span> <span class="n">workload</span> <span class="n">with</span> <span class="n">the</span> <span class="n">given</span> <span class="n">lookup</span> <span class="n">ratio</span>
+</span></span><span class="line"><span class="cl">    <span class="o">-</span><span class="n">w</span><span class="p">[</span><span class="n">file</span><span class="p">],</span> <span class="o">--</span><span class="n">workload</span><span class="o">=</span><span class="p">[</span><span class="n">file</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">                           <span class="n">Custom</span> <span class="n">workload</span> <span class="n">file</span><span class="o">.</span> <span class="n">Obeys</span> <span class="n">the</span> <span class="n">format</span> <span class="n">of</span> <span class="n">input</span> <span class="n">files</span>
+</span></span><span class="line"><span class="cl">  <span class="n">INPUT</span> <span class="n">DATA</span> <span class="n">OPTIONS</span> <span class="p">(</span><span class="n">mutually</span> <span class="n">exclusive</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="o">-</span><span class="n">s</span><span class="p">[</span><span class="n">size</span><span class="p">],</span> <span class="o">--</span><span class="n">synthetic</span><span class="o">=</span><span class="p">[</span><span class="n">size</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">                           <span class="n">Generate</span> <span class="n">synthetic</span> <span class="n">data</span> <span class="n">of</span> <span class="n">the</span> <span class="n">given</span> <span class="n">size</span>
+</span></span><span class="line"><span class="cl">    <span class="o">-</span><span class="n">U</span><span class="p">,</span> <span class="o">--</span><span class="n">u64</span>              <span class="ne">Input</span> <span class="n">files</span> <span class="n">contain</span> <span class="n">unsigned</span> <span class="mi">64</span><span class="o">-</span><span class="n">bit</span> <span class="n">ints</span>
+</span></span><span class="line"><span class="cl">    <span class="o">-</span><span class="n">I</span><span class="p">,</span> <span class="o">--</span><span class="n">i64</span>              <span class="ne">Input</span> <span class="n">files</span> <span class="n">contain</span> <span class="n">signed</span> <span class="mi">64</span><span class="o">-</span><span class="n">bit</span> <span class="n">ints</span>
+</span></span><span class="line"><span class="cl">  <span class="n">file</span><span class="o">...</span>                <span class="n">The</span> <span class="n">input</span> <span class="n">files</span>
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;--&#34;</span> <span class="n">can</span> <span class="n">be</span> <span class="n">used</span> <span class="n">to</span> <span class="n">terminate</span> <span class="n">flag</span> <span class="n">options</span> <span class="ow">and</span> <span class="n">force</span> <span class="n">all</span> <span class="n">following</span> <span class="n">arguments</span>
+</span></span><span class="line"><span class="cl">  <span class="n">to</span> <span class="n">be</span> <span class="n">treated</span> <span class="n">as</span> <span class="n">positional</span> <span class="n">options</span>
+</span></span></code></pre></div>
+</div>
+</div>
+
+        </div>
+      </div>
+    </div>
+    
+  </div>
+
+  <div class="footer">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        Made with 👼 at <a href="https://www.di.unipi.it/en/">University of Pisa</a> by the <a
+          href="http://acube.di.unipi.it">A³ Lab</a><br>
+        This library was supported by the Italian Ministry of University and Research &ldquo;Progetti di Rilevante Interesse Nazionale&rdquo; project: &ldquo;<a href="http://learned.di.unipi.it">Multicriteria data structures and algorithms</a>&rdquo; (grant n. 2017WR7SHH), and by the European Union H2020 project &ldquo;<a href="http://www.sobigdata.eu">SoBigData++: European Integrated Infrastructure for Social Mining and Big Data Analytics</a>&rdquo; (grant n. 871042) 
+      </div>
+    </div>
+  </div>
+</div>
+<link rel="stylesheet" href="/js/katex/katex.min.css">
+<script defer src="/js/katex/katex.min.js"></script>
+<script defer src="/js/katex/auto-render.min.js" onload="renderMathInElement(document.body, { macros: { '\\Oh': '\\mathcal{O}' }, delimiters: [
+  {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}] });"></script>
+
+  
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/scripts.min.302a6fc365d5139fb98cf60bdb8f715d96257ea189161d36c190ccfa8182e569.js"></script>
+  
+
+  
+  
+  
+    
+  
+
+
+</body>
+
+</html>

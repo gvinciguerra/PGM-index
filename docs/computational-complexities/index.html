@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>Computational complexity - The PGM-index</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link rel="icon" href="https://pgm.di.unipi.it/favicon.png">
+
+  
+  
+  <link rel="stylesheet" href="/css/style.min.47b485d84ade20739e6d7876653baf13d09ef0ece9625f11c9f5c627ed07eda4.css">
+  
+
+  
+
+</head>
+
+<body class='page page-default-single'>
+  <div id="main-menu-mobile" class="main-menu-mobile">
+  <ul>
+    
+    
+    <li class="menu-item-home">
+      <a href="/">
+        <span>Home</span>
+      </a>
+    </li>
+    
+    <li class="menu-item-docs">
+      <a href="/docs/">
+        <span>Docs</span>
+      </a>
+    </li>
+    
+  </ul>
+</div>
+  <div class="wrapper">
+    <div class='header'>
+  <div class="container">
+    <div class="logo">
+      <a href="https://pgm.di.unipi.it/">The PGM-index</a>
+    </div>
+    <div class="logo-mobile">
+      <a href="https://pgm.di.unipi.it/">The PGM-index</a>
+    </div>
+    <div id="main-menu" class="main-menu">
+  <ul>
+    
+    
+    <li class="menu-item-home">
+      <a href="/">
+        <span>Home</span>
+      </a>
+    </li>
+    
+    <li class="menu-item-docs">
+      <a href="/docs/">
+        <span>Docs</span>
+      </a>
+    </li>
+    
+  </ul>
+</div>
+    <button id="toggle-main-menu-mobile" class="hamburger hamburger--slider" type="button">
+  <span class="hamburger-box">
+    <span class="hamburger-inner"></span>
+  </span>
+</button>
+  </div>
+</div>
+
+
+    
+    
+    
+    
+    
+    
+
+    
+    <div class="container pt-2 pt-md-6 pb-3 pb-md-6">
+      <div class="row">
+        <div class="col-12 col-md-3 mb-3">
+          <div class="sidebar">
+            
+<div class="docs-menu">
+  <h4>Docs</h4>
+  <ul>
+    
+    <li class="">
+      <a href="https://pgm.di.unipi.it/docs/building-the-code/">Building the code</a>
+    </li>
+    
+    <li class="">
+      <a href="https://pgm.di.unipi.it/docs/tuner/">Using the tuner</a>
+    </li>
+    
+    <li class="">
+      <a href="https://pgm.di.unipi.it/docs/benchmark/">Using the benchmark</a>
+    </li>
+    
+    <li class="">
+      <a href="https://pgm.di.unipi.it/docs/cpp-reference/">C&#43;&#43; Reference</a>
+    </li>
+    
+    <li class="">
+      <a href="https://pgm.di.unipi.it/docs/python-reference/">Python Reference</a>
+    </li>
+    
+    <li class="active ">
+      <a href="https://pgm.di.unipi.it/docs/computational-complexities/">Computational complexity</a>
+    </li>
+    
+  </ul>
+</div>
+
+          </div>
+        </div>
+        <div class="col-12 col-md-9">
+          
+<h1 class="title">Computational complexity</h1>
+<div class="content anchor-link-enabled">
+  <style>
+.content {
+    text-align: justify;
+    -webkit-hyphens: auto;
+    -ms-hyphens: auto;
+    hyphens: auto;
+}
+</style>
+<p>This page summarises the results on the space and time complexity of the PGM-index described in detail in <a href="https://pgm.di.unipi.it/#Publications">our publications</a>.</p>
+<p>As model of computation, we do not use the <a href="https://en.wikipedia.org/wiki/Random-access_machine">random-access machine</a> model taught in introductory algorithms textbooks, in which one counts the number of computation steps. What matters in modern machines working on large amounts of data is how algorithms and data structures take advantage of the <a href="https://en.wikipedia.org/wiki/Memory_hierarchy">memory hierarchy</a> and minimise the data-access latency.<sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup>
+Therefore, we use the <em>I/O model of computation</em> (aka the external-memory model or the two-level memory model) defined by the Encyclopedia of Algorithms as follows:</p>
+<blockquote>
+<p>The <em>input/output model</em> (I/O model) views the computer as consisting of a processor, internal memory (RAM), and external memory (disk). The internal memory is of limited size, large enough to hold $M$ data items. The external memory is of conceptually unlimited size and is divided into blocks of $B$ consecutive data items. All computation has to happen on data in internal memory. Data is brought into internal memory and written back to external memory using I/O operations (I/Os), which are performed explicitly by the algorithm. Each such operation reads or writes one block of data from or to external memory. The complexity of an algorithm in this model is the number of I/Os it performs.</p>
+</blockquote>
+<p>When constructing PGM-index, one fixes a positive integer parameter $\varepsilon$, which is the maximum absolute error of the piecewise linear approximation (PLA) at the core of the index. The more $\varepsilon$ is small, the more precise is the PLA in finding the approximate position of a query key, which in turn means that the query operation is faster. On the other hand, this precision comes at a cost: as $\varepsilon$ decreases, the PLA takes more space because the PLA needs more segments (that is, linear models) to guarantee the higher precision.</p>
+<p>Let us denote by $n$ the number of input keys and by $m$ the number of segments in the PLA.<sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup> It turns out that $m \leq \frac{n}{2\varepsilon}$ and that the space of the PGM-index is $\Oh(m)=\Oh(\frac{n}{\varepsilon})$ memory words.<sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup> This space bound is very pessimistic, in fact we have proved that it converges to $\Oh(\frac{n}{\varepsilon^2})$ memory words w.h.p. (see <a href="#on-the-space-complexity">the paragraph below</a>).</p>
+<p>For what concerns the PGM-index operations, let us assume that both the $n$ input keys and the index are kept on disk (we relax this latter assumption below). By setting $\varepsilon=\Theta(B)$, the number of I/Os needed for each operation is minimised, giving the following worst-case bounds:</p>
+<style>
+th {
+  white-space: nowrap;
+}
+</style>
+<table class="table table-borderless table-sm">
+  <tbody>
+    <tr>
+      <th scope="row">Predecessor query<br><small>(static case)</small></th>
+      <td>$\Oh(\log_B n)$ I/Os</td>
+    </tr>
+    <tr>
+      <th scope="row">Predecessor query<br><small>(dynamic case)</small></th>
+      <td>$\Oh(\log^2_B n)$ I/Os</td>
+    </tr>
+    <tr>
+      <th scope="row">Insert/delete</th>
+      <td>$\Oh(\log_B n)$ amortised I/Os</td>
+    </tr>
+    <tr>
+      <th scope="row">Index space</th>
+      <td>$\Oh(\frac{n}{B})$ memory words $= \Oh(\frac{n}{B^2})$ disk pages</td>
+    </tr>
+  </tbody>
+</table>
+<p>A range search takes a number of I/Os equal to the ones of a predecessor query plus optimal $\Oh(\frac{K}{B})$ I/Os, where $K$ is the number of reported keys.</p>
+<h2 id="when-the-pgm-index-fits-in-main-memory">When the PGM-index fits in main memory</h2>
+<p>We can relax the assumption for which PGM-index is kept on disk alongside the $n$ input keys. Indeed, it is reasonable to assume (and, in practice, always the case) that the PGM-index fits in the internal memory, whereas the input keys are stored on disk.</p>
+<p>In this scenario, the PGM-index achieves the following worst-case bounds:</p>
+<table class="table table-borderless table-sm">
+  <tbody>
+    <tr>
+      <th scope="row">Predecessor query<br><small>(static case)</small></th>
+      <td>$\Oh(1)$ I/Os</td>
+    </tr>
+    <tr>
+      <th scope="row">Predecessor query<br><small>(dynamic case)</small></th>
+      <td>$\Oh(\log_B n)$ I/Os</td>
+    </tr>
+    <tr>
+      <th scope="row">Insert/delete</th>
+      <td>$\Oh(\log_B n)$ amortised I/Os</td>
+    </tr>
+    <tr>
+      <th scope="row">Index space</th>
+      <td>$\Oh(\frac{n}{B})$ memory words</td>
+    </tr>
+  </tbody>
+</table>
+<h2 id="on-the-space-complexity">On the space complexity</h2>
+<p>In our experiments, the performance of the PGM-index was better than what the previous bounds show, particularly for what concerns the space of the index, which above we bounded as $\Oh(\frac{n}{B})$ memory words. This motivated us to study what happens to the space occupancy of the PGM-index when one makes some general assumptions on the input data.</p>
+<p>In our journal paper <a href="http://pages.di.unipi.it/vinciguerra/publication/on-the-performance-of-learned-data-structures/">On the performance of learned data structures</a> (which extended the ICML 2020 paper <a href="http://pages.di.unipi.it/vinciguerra/publication/learned-indexes-effectiveness/">Why are learned indexes so effective?</a>), we found that, if we assume that the gaps between input sorted keys are taken from a distribution with finite mean and variance, then the space of the PGM-index converges to $\Oh(\frac{n}{B^2})$ memory words, i.e. $\Oh(\frac{n}{B^3})$ disk pages (versus $\Theta(\frac{n}{B^2})$ disk pages of B-trees).
+This result applies to <em>any</em> distribution (such as Uniform, Lognormal, Pareto, Exponential, and Gamma), as long as the mean and variance of the random variables modelling the gaps are finite.</p>
+<table class="table table-borderless table-sm">
+  <tbody>
+    <tr>
+      <th scope="row">Index space</th>
+      <td>$\Oh(\frac{n}{B^2})$ memory words $=\Oh(\frac{n}{B^3})$ disk pages</td>
+    </tr>
+  </tbody>
+</table>
+<div class="footnotes" role="doc-endnotes">
+<hr>
+<ol>
+<li id="fn:1">
+<p>A classic survey on this topic is &ldquo;External Memory Algorithms and Data Structures: Dealing with Massive Data&rdquo; by Jeffrey Scott Vitter.&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:2">
+<p>One can inspect $m$ by calling the <a href="https://pgm.di.unipi.it/docs/cpp-reference/#classpgm_1_1_p_g_m_index_1ab31ba6049ebca19dc403ac93b44de975"><code>segments_count()</code></a> method.&#160;<a href="#fnref:2" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:3">
+<p>See Lemma 2 and Section 2.2 of the <a href="http://www.vldb.org/pvldb/vol13/p1162-ferragina.pdf">VLDB paper</a>.&#160;<a href="#fnref:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+</ol>
+</div>
+
+</div>
+</div>
+
+        </div>
+      </div>
+    </div>
+    
+  </div>
+
+  <div class="footer">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        Made with 👼 at <a href="https://www.di.unipi.it/en/">University of Pisa</a> by the <a
+          href="http://acube.di.unipi.it">A³ Lab</a><br>
+        This library was supported by the Italian Ministry of University and Research &ldquo;Progetti di Rilevante Interesse Nazionale&rdquo; project: &ldquo;<a href="http://learned.di.unipi.it">Multicriteria data structures and algorithms</a>&rdquo; (grant n. 2017WR7SHH), and by the European Union H2020 project &ldquo;<a href="http://www.sobigdata.eu">SoBigData++: European Integrated Infrastructure for Social Mining and Big Data Analytics</a>&rdquo; (grant n. 871042) 
+      </div>
+    </div>
+  </div>
+</div>
+<link rel="stylesheet" href="/js/katex/katex.min.css">
+<script defer src="/js/katex/katex.min.js"></script>
+<script defer src="/js/katex/auto-render.min.js" onload="renderMathInElement(document.body, { macros: { '\\Oh': '\\mathcal{O}' }, delimiters: [
+  {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}] });"></script>
+
+  
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/scripts.min.302a6fc365d5139fb98cf60bdb8f715d96257ea189161d36c190ccfa8182e569.js"></script>
+  
+
+  
+  
+  
+    
+  
+
+
+</body>
+
+</html>

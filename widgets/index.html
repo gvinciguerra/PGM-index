@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title> - The PGM-index</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link rel="icon" href="https://pgm.di.unipi.it/favicon.png">
+
+  
+  
+  <link rel="stylesheet" href="/css/style.min.47b485d84ade20739e6d7876653baf13d09ef0ece9625f11c9f5c627ed07eda4.css">
+  
+
+  
+
+</head>
+
+<body class='page page-default-list'>
+  <div id="main-menu-mobile" class="main-menu-mobile">
+  <ul>
+    
+    
+    <li class="menu-item-home">
+      <a href="/">
+        <span>Home</span>
+      </a>
+    </li>
+    
+    <li class="menu-item-docs">
+      <a href="/docs/">
+        <span>Docs</span>
+      </a>
+    </li>
+    
+  </ul>
+</div>
+  <div class="wrapper">
+    <div class='header'>
+  <div class="container">
+    <div class="logo">
+      <a href="https://pgm.di.unipi.it/">The PGM-index</a>
+    </div>
+    <div class="logo-mobile">
+      <a href="https://pgm.di.unipi.it/">The PGM-index</a>
+    </div>
+    <div id="main-menu" class="main-menu">
+  <ul>
+    
+    
+    <li class="menu-item-home">
+      <a href="/">
+        <span>Home</span>
+      </a>
+    </li>
+    
+    <li class="menu-item-docs">
+      <a href="/docs/">
+        <span>Docs</span>
+      </a>
+    </li>
+    
+  </ul>
+</div>
+    <button id="toggle-main-menu-mobile" class="hamburger hamburger--slider" type="button">
+  <span class="hamburger-box">
+    <span class="hamburger-inner"></span>
+  </span>
+</button>
+  </div>
+</div>
+
+
+    
+    
+    
+    
+
+    
+    
+
+<span class="overview">Overview</span>
+<h1 class="title"></h1>
+<div class="content">
+  
+</div>
+
+
+<div class="summary mb-2">
+  
+  <h2 class="title-summary"><a href="/widgets/description/"></a></h2>
+  <p>New The PGM-index now supports orthogonal range queries in k-dimensions! Unlike traditional tree-based indexes that are blind to the possible regularity present in the input data, the PGM-index exploits a learned mapping between the indexed keys and their location in memory.</p>
+</div>
+
+
+<div class="summary mb-2">
+  
+  <h2 class="title-summary"><a href="/widgets/features/">Features</a></h2>
+  <p>Learned It is one of the first results on learned indexes which achieves astonishing performance by capturing the distribution of the input data. Optimal It is the first learned index with provably optimal time and space complexity guarantees.</p>
+</div>
+
+
+<div class="summary mb-2">
+  
+  <h2 class="title-summary"><a href="/widgets/complexity/">Computational complexity</a></h2>
+  <p>Let $n$ be the number of keys, and $B$ be the page size of the machine.
+PGM-index B-tree Self-balancing BST† Skip list Sorted array Predecessor query§
+(static case) $\Oh(\log_B n)$ $\Oh(\log_B n)$ $\Oh(\log n)$ $\Oh(\log n)$ w.</p>
+</div>
+
+
+<div class="summary mb-2">
+  
+  <h2 class="title-summary"><a href="/widgets/running-example/">Running example</a></h2>
+  <p>#include &lt;vector&gt; #include &lt;cstdlib&gt; #include &lt;iostream&gt; #include &lt;algorithm&gt; #include &#34;pgm/pgm_index.hpp&#34; int main() { // Generate some random data std::vector&lt;int&gt; data(1000000); std::generate(data.begin(), data.end(), std::rand); data.push_back(42); std::sort(data.begin(), data.end()); // Construct the PGM-index const int epsilon = 128; // space-time trade-off parameter pgm::PGMIndex&lt;int, epsilon&gt; index(data); // Query the PGM-index auto q = 42; auto range = index.</p>
+</div>
+
+
+<div class="summary mb-2">
+  
+  <h2 class="title-summary"><a href="/widgets/publications/">Publications</a></h2>
+  <p>Paolo Ferragina and Giorgio Vinciguerra. The PGM-index: a fully-dynamic compressed learned index with provable worst-case bounds. PVLDB, 13(8): 1162-1175, 2020. PDF Video Slides DOI
+Paolo Ferragina, Fabrizio Lillo, and Giorgio Vinciguerra.</p>
+</div>
+
+
+<div class="summary mb-2">
+  
+  <h2 class="title-summary"><a href="/widgets/cite/">Cite us</a></h2>
+  <p>If you use the library please put a link to this website and cite the following paper:
+Paolo Ferragina and Giorgio Vinciguerra. The PGM-index: a fully-dynamic compressed learned index with provable worst-case bounds.</p>
+</div>
+
+
+<div class="summary mb-2">
+  
+  <h2 class="title-summary"><a href="/widgets/applications/">Some interesting uses of the PGM-index</a></h2>
+  <p>LeMonHash. A monotone minimal perfect hash function that uses the PGM-index in its design. PyGM. A Python package of sorted containers that uses the PGM-index for efficient query performance and memory usage.</p>
+</div>
+
+
+<div class="summary mb-2">
+  
+  <h2 class="title-summary"><a href="/widgets/contribute/">Contribute</a></h2>
+  <p>There are a lot of ways to contribute on this project, just to mention a few:
+Engineering the support for insertions and deletions. done! Making the index SIMD aware. For example, you could set the error to the SIMD register width and use vector instructions to traverse the levels of the index with no branches.</p>
+</div>
+
+
+
+
+    
+  </div>
+
+  <div class="footer">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        Made with 👼 at <a href="https://www.di.unipi.it/en/">University of Pisa</a> by the <a
+          href="http://acube.di.unipi.it">A³ Lab</a><br>
+        This library was supported by the Italian Ministry of University and Research &ldquo;Progetti di Rilevante Interesse Nazionale&rdquo; project: &ldquo;<a href="http://learned.di.unipi.it">Multicriteria data structures and algorithms</a>&rdquo; (grant n. 2017WR7SHH), and by the European Union H2020 project &ldquo;<a href="http://www.sobigdata.eu">SoBigData++: European Integrated Infrastructure for Social Mining and Big Data Analytics</a>&rdquo; (grant n. 871042) 
+      </div>
+    </div>
+  </div>
+</div>
+<link rel="stylesheet" href="/js/katex/katex.min.css">
+<script defer src="/js/katex/katex.min.js"></script>
+<script defer src="/js/katex/auto-render.min.js" onload="renderMathInElement(document.body, { macros: { '\\Oh': '\\mathcal{O}' }, delimiters: [
+  {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}] });"></script>
+
+  
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/scripts.min.302a6fc365d5139fb98cf60bdb8f715d96257ea189161d36c190ccfa8182e569.js"></script>
+  
+
+  
+  
+  
+    
+  
+
+
+</body>
+
+</html>
