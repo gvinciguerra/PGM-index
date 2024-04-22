@@ -399,8 +399,11 @@ protected:
         }
 
         // Fill the top-level table
-        for (auto i = 1ull, k = 1ull; i < actual_top_level_size - 1; ++i) {
-            while (k < segments.size() && (segments[k].key - first_key) < K(i) * step)
+        for (uint64_t i = 1, k = 1; i < actual_top_level_size - 1; ++i) {
+            K upper_bound;
+            if (__builtin_mul_overflow(K(i), step, &upper_bound))
+                upper_bound = std::numeric_limits<K>::max();
+            while (k < segments.size() && (segments[k].key - first_key) < upper_bound)
                 ++k;
             top_level[i] = k;
         }
