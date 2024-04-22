@@ -100,6 +100,8 @@ protected:
     std::vector<Segment> segments;      ///< The segments composing the index.
     std::vector<size_t> levels_offsets; ///< The starting position of each level in segments[], in reverse order.
 
+    static constexpr K sentinel = std::numeric_limits<K>::max(); ///< Sentinel value to avoid bounds checking.
+
     template<typename RandomIt>
     static void build(RandomIt first, RandomIt last,
                       size_t epsilon, size_t epsilon_recursive,
@@ -112,10 +114,10 @@ protected:
         levels_offsets.push_back(0);
         segments.reserve(n / (epsilon * epsilon));
 
-        auto ignore_last = *std::prev(last) == std::numeric_limits<K>::max(); // max() is the sentinel value
-        auto last_n = n - ignore_last;
-        last -= ignore_last;
+        if (*std::prev(last) == sentinel)
+            throw std::invalid_argument("The value " + std::to_string(sentinel) + " is reserved as a sentinel.");
 
+        auto last_n = n;
         auto build_level = [&](auto epsilon, auto in_fun, auto out_fun) {
             auto n_segments = internal::make_segmentation_par(last_n, epsilon, in_fun, out_fun);
             if (last_n > 1 && segments.back().slope == 0) {
@@ -245,7 +247,7 @@ struct PGMIndex<K, Epsilon, EpsilonRecursive, Floating>::Segment {
 
     Segment(K key, Floating slope, int32_t intercept) : key(key), slope(slope), intercept(intercept) {};
 
-    explicit Segment(size_t n) : key(std::numeric_limits<K>::max()), slope(), intercept(n) {};
+    explicit Segment(size_t n) : key(sentinel), slope(), intercept(n) {};
 
     explicit Segment(const typename internal::OptimalPiecewiseLinearModel<K, size_t>::CanonicalSegment &cs)
         : key(cs.get_first_x()) {

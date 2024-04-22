@@ -79,6 +79,8 @@ class CompressedPGMIndex {
     std::vector<Floating> slopes_table;   ///< The vector containing the slopes used by the segments in the index.
     std::vector<CompressedLevel> levels;  ///< The levels composing the compressed index.
 
+    static constexpr K sentinel = std::numeric_limits<K>::max(); ///< Sentinel value to avoid bounds checking.
+
     using floating_pair = std::pair<Floating, Floating>;
     using canonical_segment = typename internal::OptimalPiecewiseLinearModel<K, size_t>::CanonicalSegment;
 
@@ -110,14 +112,13 @@ public:
         std::vector<canonical_segment> segments;
         segments.reserve(n / (Epsilon * Epsilon));
 
-        auto ignore_last = *std::prev(last) == std::numeric_limits<K>::max(); // max is reserved for padding
-        auto last_n = n - ignore_last;
-        last -= ignore_last;
+        if (*std::prev(last) == sentinel)
+            throw std::invalid_argument("The value " + std::to_string(sentinel) + " is reserved as a sentinel.");
 
         // Build first level
         auto in_fun = internal::first_level_in_fun<K, decltype(first)>(first, n);
         auto out_fun = [&](auto cs) { segments.emplace_back(cs); };
-        last_n = internal::make_segmentation_par(last_n, Epsilon, in_fun, out_fun);
+        auto last_n = internal::make_segmentation_par(n, Epsilon, in_fun, out_fun);
         levels_offsets.push_back(levels_offsets.back() + last_n);
 
         // Build upper levels
@@ -304,7 +305,7 @@ struct CompressedPGMIndex<K, Epsilon, EpsilonRecursive, Floating>::CompressedLev
             keys.emplace_back(it->get_first_x());
         if (need_extra_segment)
             keys.emplace_back(last_key + 1);
-        keys.emplace_back(std::numeric_limits<K>::max());
+        keys.emplace_back(sentinel);
 
         // Compress and store intercepts
         auto max_intercept = prev_level_size - intercept_offset + 2;
