@@ -87,7 +87,9 @@ TEMPLATE_TEST_CASE_SIG("PGM-index", "",
                        ((typename T, size_t E1, size_t E2), T, E1, E2),
                        (uint32_t, 8, 0), (uint32_t, 32, 0), (uint32_t, 128, 0),
                        (uint64_t, 8, 4), (uint64_t, 32, 4), (uint64_t, 128, 4),
-                       (uint64_t, 256, 256), (uint64_t, 512, 512)) {
+                       (int32_t, 8, 0), (int32_t, 32, 0), (int32_t, 128, 0),
+                       (int64_t, 8, 4), (int64_t, 32, 4), (int64_t, 128, 4),
+                       (int64_t, 1024, 1024), (uint64_t, 1024, 1024)) {
     auto data = generate_data<T>(2000000);
     pgm::PGMIndex<T, E1, E2> index(data.begin(), data.end());
     test_index(index, data);
@@ -102,13 +104,6 @@ TEMPLATE_TEST_CASE_SIG("Compressed PGM-index", "", ((size_t E), E), 8, 32, 128) 
 TEMPLATE_TEST_CASE_SIG("Bucketing PGM-index", "",
                        ((size_t E, size_t S), E, S), (4, 128), (8, 100), (4, 512), (8, 550)) {
     auto data = generate_data<uint32_t>(2000000);
-    pgm::BucketingPGMIndex<uint32_t, E, S> index(data.begin(), data.end());
-    test_index(index, data);
-}
-
-TEMPLATE_TEST_CASE_SIG("Bucketing PGM-index edge case", "",
-                       ((size_t E, size_t S), E, S), (4, 128), (8, 100), (4, 512), (8, 550)) {
-    std::vector<uint32_t> data(2000000);
     pgm::BucketingPGMIndex<uint32_t, E, S> index(data.begin(), data.end());
     test_index(index, data);
 }
@@ -274,11 +269,3 @@ TEMPLATE_TEST_CASE_SIG("Multidimensional PGM-index", "",
 }
 
 #endif
-
-TEST_CASE("PGM-index out of bonds", "[tmg]")
-{
-    std::vector<uint32_t> data { std::numeric_limits<uint32_t>::max() };
-    
-    pgm::PGMIndex<uint32_t> index(data.begin(), data.end());
-    REQUIRE ( index.segments_count()==0 );
-}

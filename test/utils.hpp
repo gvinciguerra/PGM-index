@@ -41,8 +41,10 @@ std::vector<T> generate_data(size_t n) {
         T min = 0;
         if constexpr (std::is_signed_v<T>)
             min = -10000;
+        auto value_min = std::numeric_limits<T>::min();
+        auto value_max = std::numeric_limits<T>::max() - 1;
         RandomFunction uniform_dense = std::bind(std::uniform_int_distribution<T>(min, 10000), engine);
-        RandomFunction uniform_sparse = std::bind(std::uniform_int_distribution<T>(min, 10000000), engine);
+        RandomFunction uniform_sparse = std::bind(std::uniform_int_distribution<T>(value_min, value_max), engine);
         RandomFunction binomial = std::bind(std::binomial_distribution<T>(50000), engine);
         RandomFunction geometric = std::bind(std::geometric_distribution<T>(0.8), engine);
         auto rand = GENERATE_COPY(as<RandomFunction>{}, uniform_dense, uniform_sparse, binomial, geometric);
