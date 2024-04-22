@@ -270,7 +270,8 @@ struct PGMIndex<K, Epsilon, EpsilonRecursive, Floating>::Segment {
      * @return the approximate position of the specified key
      */
     inline size_t operator()(const K &k) const {
-        auto pos = int64_t(slope * double(k - key)) + intercept;
+        auto gap = std::make_unsigned_t<K>(k) - key;
+        auto pos = int64_t(slope * double(gap)) + intercept;
         return pos > 0 ? size_t(pos) : 0ull;
     }
 };
