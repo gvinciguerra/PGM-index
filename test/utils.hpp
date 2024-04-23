@@ -37,6 +37,11 @@ std::vector<T> generate_data(size_t n) {
         RandomFunction exponential = std::bind(std::exponential_distribution<T>(1.2), engine);
         auto rand = GENERATE_COPY(as<RandomFunction>{}, lognormal, exponential);
         std::generate(data.begin(), data.end(), rand);
+    } else if constexpr (sizeof(T) <= 2) {
+        auto value_min = std::numeric_limits<T>::min();
+        auto value_max = std::numeric_limits<T>::max() - 1;
+        RandomFunction uniform = std::bind(std::uniform_int_distribution<T>(value_min, value_max), engine);
+        std::generate(data.begin(), data.end(), rand);
     } else {
         T min = 0;
         if constexpr (std::is_signed_v<T>)
@@ -52,6 +57,8 @@ std::vector<T> generate_data(size_t n) {
     }
 
     std::sort(data.begin(), data.end());
+    while (data.back() == std::numeric_limits<T>::max())
+        data.pop_back();
     return data;
 }
 

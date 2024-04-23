@@ -16,6 +16,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
@@ -272,32 +273,49 @@ public:
 };
 
 template<typename Fin, typename Fout>
-size_t make_segmentation(size_t n, size_t epsilon, Fin in, Fout out) {
-    if (n == 0)
-        return 0;
-
-    using X = typename std::invoke_result_t<Fin, size_t>::first_type;
-    using Y = typename std::invoke_result_t<Fin, size_t>::second_type;
+size_t make_segmentation(size_t n, size_t start, size_t end, size_t epsilon, Fin in, Fout out) {
+    using K = typename std::invoke_result_t<Fin, size_t>;
     size_t c = 0;
-    auto p = in(0);
-
-    OptimalPiecewiseLinearModel<X, Y> opt(epsilon);
-    opt.add_point(p.first, p.second);
-
-    for (size_t i = 1; i < n; ++i) {
-        auto next_p = in(i);
-        if (next_p.first == p.first)
-            continue;
-        p = next_p;
-        if (!opt.add_point(p.first, p.second)) {
+    OptimalPiecewiseLinearModel<K, size_t> opt(epsilon);
+    auto add_point = [&](K x, size_t y) {
+        if (!opt.add_point(x, y)) {
             out(opt.get_segment());
-            opt.add_point(p.first, p.second);
+            opt.add_point(x, y);
             ++c;
         }
+    };
+
+    add_point(in(start), start);
+    for (size_t i = start + 1; i < end - 1; ++i) {
+        if (in(i) == in(i - 1)) {
+            // Here there is an adjustment for inputs with duplicate keys: at the end of a run of duplicate keys equal
+            // to x=in(i) such that x+1!=in(i+1), we map the values x+1,...,in(i+1)-1 to their correct rank i.
+            // For floating-point keys, the value x+1 above is replaced by the next representable value following x.
+            if constexpr (std::is_floating_point_v<K>) {
+                K next;
+                if ((next = std::nextafter(in(i), std::numeric_limits<K>::infinity())) < in(i + 1))
+                    add_point(next, i);
+            } else {
+                if (in(i) + 1 < in(i + 1))
+                    add_point(in(i) + 1, i);
+            }
+        } else {
+            add_point(in(i), i);
+        }
     }
+    if (in(end - 1) != in(end - 2))
+        add_point(in(end - 1), end - 1);
+
+    if (end == n)
+        add_point(in(n - 1) + 1, n); // Ensure values greater than the last one are mapped to n
 
     out(opt.get_segment());
     return ++c;
+}
+
+template<typename Fin, typename Fout>
+size_t make_segmentation(size_t n, size_t epsilon, Fin in, Fout out) {
+    return make_segmentation(n, 0, n, epsilon, in, out);
 }
 
 template<typename Fin, typename Fout>
@@ -309,9 +327,8 @@ size_t make_segmentation_par(size_t n, size_t epsilon, Fin in, Fout out) {
     if (parallelism == 1 || n < 1ull << 15)
         return make_segmentation(n, epsilon, in, out);
 
-    using X = typename std::invoke_result_t<Fin, size_t>::first_type;
-    using Y = typename std::invoke_result_t<Fin, size_t>::second_type;
-    using canonical_segment = typename OptimalPiecewiseLinearModel<X, Y>::CanonicalSegment;
+    using K = typename std::invoke_result_t<Fin, size_t>;
+    using canonical_segment = typename OptimalPiecewiseLinearModel<K, size_t>::CanonicalSegment;
     std::vector<std::vector<canonical_segment>> results(parallelism);
 
     #pragma omp parallel for reduction(+:c) num_threads(parallelism)
@@ -320,16 +337,16 @@ size_t make_segmentation_par(size_t n, size_t epsilon, Fin in, Fout out) {
         auto last = i == parallelism - 1 ? n : first + chunk_size;
         if (first > 0) {
             for (; first < last; ++first)
-                if (in(first).first != in(first - 1).first)
+                if (in(first) != in(first - 1))
                     break;
             if (first == last)
                 continue;
         }
 
-        auto in_fun = [in, first](auto j) { return in(first + j); };
+        auto in_fun = [in](auto j) { return in(j); };
         auto out_fun = [&results, i](const auto &cs) { results[i].emplace_back(cs); };
         results[i].reserve(chunk_size / (epsilon > 0 ? epsilon * epsilon : 16));
-        c += make_segmentation(last - first, epsilon, in_fun, out_fun);
+        c += make_segmentation(n, first, last, epsilon, in_fun, out_fun);
     }
 
     for (auto &v : results)
@@ -337,23 +354,6 @@ size_t make_segmentation_par(size_t n, size_t epsilon, Fin in, Fout out) {
             out(cs);
 
     return c;
-}
-
-template<typename RandomIt>
-auto make_segmentation(RandomIt first, RandomIt last, size_t epsilon) {
-    using key_type = typename RandomIt::value_type;
-    using canonical_segment = typename OptimalPiecewiseLinearModel<key_type, size_t>::CanonicalSegment;
-    using pair_type = typename std::pair<key_type, size_t>;
-
-    size_t n = std::distance(first, last);
-    std::vector<canonical_segment> out;
-    out.reserve(epsilon > 0 ? n / (epsilon * epsilon) : n / 16);
-
-    auto in_fun = [first](auto i) { return pair_type(first[i], i); };
-    auto out_fun = [&out](const auto &cs) { out.push_back(cs); };
-    make_segmentation(n, epsilon, in_fun, out_fun);
-
-    return out;
 }
 
 }

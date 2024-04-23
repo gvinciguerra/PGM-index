@@ -48,14 +48,14 @@ void test_index(const Index &index, const Data &data) {
         REQUIRE(*k == q);
     }
 
-    // Test elements outside range
-    auto q = data.back() + 42;
+    // Test elements at extremes
+    auto q = std::numeric_limits<typename Data::value_type>::max() - 1;
     auto range = index.search(q);
     auto lo = data.begin() + range.lo;
     auto hi = data.begin() + range.hi;
-    REQUIRE(std::lower_bound(lo, hi, q) == data.end());
+    REQUIRE(std::lower_bound(lo, hi, q) == std::lower_bound(data.begin(), data.end(), q));
 
-    q = std::numeric_limits<typename Data::value_type>::min();
+    q = std::numeric_limits<typename Data::value_type>::lowest();
     range = index.search(q);
     lo = data.begin() + range.lo;
     hi = data.begin() + range.hi;
@@ -65,7 +65,11 @@ void test_index(const Index &index, const Data &data) {
 TEMPLATE_TEST_CASE("Segmentation algorithm", "", float, double, uint32_t, uint64_t) {
     auto epsilon = GENERATE(32, 64, 128);
     auto data = generate_data<TestType>(1000000);
-    auto segments = pgm::internal::make_segmentation(data.begin(), data.end(), epsilon);
+    using canonical_segment = typename pgm::internal::OptimalPiecewiseLinearModel<TestType, size_t>::CanonicalSegment;
+    std::vector<canonical_segment> segments;
+    auto in_fun = [&](auto i) { return data[i]; };
+    auto out_fun = [&](auto cs) { segments.emplace_back(cs); };
+    pgm::internal::make_segmentation(data.size(), epsilon, in_fun, out_fun);
     auto it = segments.begin();
     auto [slope, intercept] = it->get_floating_point_segment(it->get_first_x());
 
@@ -89,7 +93,9 @@ TEMPLATE_TEST_CASE_SIG("PGM-index", "",
                        (uint64_t, 8, 4), (uint64_t, 32, 4), (uint64_t, 128, 4),
                        (int32_t, 8, 0), (int32_t, 32, 0), (int32_t, 128, 0),
                        (int64_t, 8, 4), (int64_t, 32, 4), (int64_t, 128, 4),
-                       (int64_t, 1024, 1024), (uint64_t, 1024, 1024)) {
+                       (int64_t, 1024, 1024), (uint64_t, 1024, 1024),
+                       (int8_t, 16, 4), (uint8_t, 16, 4),  (int16_t, 16, 4), (uint16_t, 16, 4),
+                       (float, 16, 4), (double, 16, 4)) {
     auto data = generate_data<T>(2000000);
     pgm::PGMIndex<T, E1, E2> index(data.begin(), data.end());
     test_index(index, data);
