@@ -240,13 +240,13 @@ public:
 
 template<typename K, size_t Epsilon, size_t EpsilonRecursive, typename Floating>
 struct PGMIndex<K, Epsilon, EpsilonRecursive, Floating>::Segment {
-    K key;             ///< The first key that the segment indexes.
-    Floating slope;    ///< The slope of the segment.
-    int32_t intercept; ///< The intercept of the segment.
+    K key;              ///< The first key that the segment indexes.
+    Floating slope;     ///< The slope of the segment.
+    uint32_t intercept; ///< The intercept of the segment.
 
     Segment() = default;
 
-    Segment(K key, Floating slope, int32_t intercept) : key(key), slope(slope), intercept(intercept) {};
+    Segment(K key, Floating slope, uint32_t intercept) : key(key), slope(slope), intercept(intercept) {};
 
     explicit Segment(size_t n) : key(sentinel), slope(), intercept(n) {};
 
@@ -254,7 +254,9 @@ struct PGMIndex<K, Epsilon, EpsilonRecursive, Floating>::Segment {
         : key(cs.get_first_x()) {
         auto[cs_slope, cs_intercept] = cs.get_floating_point_segment(key);
         if (cs_intercept > std::numeric_limits<decltype(intercept)>::max())
-            throw std::overflow_error("Change the type of Segment::intercept to int64");
+            throw std::overflow_error("Change the type of Segment::intercept to uint64");
+        if (cs_intercept < 0)
+            throw std::overflow_error("Unexpected intercept < 0");
         slope = cs_slope;
         intercept = cs_intercept;
     }
@@ -271,9 +273,12 @@ struct PGMIndex<K, Epsilon, EpsilonRecursive, Floating>::Segment {
      * @return the approximate position of the specified key
      */
     inline size_t operator()(const K &k) const {
-        auto gap = std::make_unsigned_t<K>(k) - key;
-        auto pos = int64_t(slope * double(gap)) + intercept;
-        return pos > 0 ? size_t(pos) : 0ull;
+        size_t pos;
+        if constexpr (std::is_same_v<K, int64_t> || std::is_same_v<K, int32_t>)
+            pos = size_t(slope * double(std::make_unsigned_t<K>(k) - key));
+        else
+            pos = size_t(slope * double(k - key));
+        return pos + intercept;
     }
 };
 
