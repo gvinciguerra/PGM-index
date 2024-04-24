@@ -306,8 +306,14 @@ size_t make_segmentation(size_t n, size_t start, size_t end, size_t epsilon, Fin
     if (in(end - 1) != in(end - 2))
         add_point(in(end - 1), end - 1);
 
-    if (end == n)
-        add_point(in(n - 1) + 1, n); // Ensure values greater than the last one are mapped to n
+    if (end == n) {
+        // Ensure values greater than the last one are mapped to n
+        if constexpr (std::is_floating_point_v<K>) {
+            add_point(std::nextafter(in(n - 1), std::numeric_limits<K>::infinity()), n);
+        } else {
+            add_point(in(n - 1) + 1, n);
+        }
+    }
 
     out(opt.get_segment());
     return ++c;
